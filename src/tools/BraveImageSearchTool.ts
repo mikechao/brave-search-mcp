@@ -30,19 +30,19 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
     });
     this.server.log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
     const base64Strings = [];
-    const titles = [];
+    const texts = [];
     for (const result of imageResults.results) {
       const base64 = await imageToBase64(result.properties.url);
       this.server.log(`Image base64 length: ${base64.length}`, 'debug');
-      titles.push(result.title);
+      texts.push(`Title: ${result.title}\nImage URL: ${result.properties.url}`);
       base64Strings.push(base64);
       this.imageByTitle.set(result.title, base64);
     }
     const results = [];
-    for (const [index, title] of titles.entries()) {
+    for (const [index, text] of texts.entries()) {
       results.push({
         type: 'text',
-        text: `${title}`,
+        text,
       });
       results.push({
         type: 'image',
