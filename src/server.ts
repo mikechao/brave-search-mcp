@@ -9,6 +9,7 @@ import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
+import { NoteTakingTool } from './tools/NoteTakingTool.js';
 
 export class BraveMcpServer {
   private server: McpServer;
@@ -18,6 +19,7 @@ export class BraveMcpServer {
   private localSearchTool: BraveLocalSearchTool;
   private newsSearchTool: BraveNewsSearchTool;
   private videoSearchTool: BraveVideoSearchTool;
+  private noteTakingTool: NoteTakingTool;
 
   constructor(private braveSearchApiKey: string) {
     this.server = new McpServer(
@@ -41,6 +43,7 @@ export class BraveMcpServer {
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool, braveSearchApiKey);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch);
     this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch, braveSearchApiKey);
+    this.noteTakingTool = new NoteTakingTool(this);
     this.setupTools();
     this.setupResourceListener();
     this.setupPrompts();
@@ -76,6 +79,12 @@ export class BraveMcpServer {
       this.videoSearchTool.description,
       this.videoSearchTool.inputSchema.shape,
       this.videoSearchTool.execute.bind(this.videoSearchTool),
+    );
+    this.server.tool(
+      this.noteTakingTool.name,
+      this.noteTakingTool.description,
+      this.noteTakingTool.inputSchema.shape,
+      this.noteTakingTool.execute.bind(this.noteTakingTool),
     );
   }
 
