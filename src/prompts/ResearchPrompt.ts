@@ -12,7 +12,7 @@ export function getResearchPrompt(topic: string) {
     + `\n2. Generate 2 or 3 queries for each part of the research plan for the tools you have available to you.`
     + `\n3. Use the tools and the generated queries to find URLS on the topic.`
     + `\n4. Use the 'note_taking' tool to take notes on the URLS and topics you found.`
-    + `\n5. From the notes you took, generate a summary of the information you found.`
-    + `\n6. Present the information you found to the user in a clear and concise manner by using a HTML artifact format if possible.`
+    + `\n5. From the notes you took, write a report about the topic, be sure to cite the source URL.`
+    + `\n6. Present the information you found to the user by using a HTML artifact format if possible.`
   ;
 }
