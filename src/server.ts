@@ -2,6 +2,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { BraveSearch } from 'brave-search';
+import { z } from 'zod';
+import { getResearchPrompt } from './prompts/ResearchPrompt.js';
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
@@ -26,6 +28,7 @@ export class BraveMcpServer {
       },
       {
         capabilities: {
+          prompts: {},
           resources: {},
           tools: {},
           logging: {},
@@ -40,6 +43,7 @@ export class BraveMcpServer {
     this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch, braveSearchApiKey);
     this.setupTools();
     this.setupResourceListener();
+    this.setupPrompts();
   }
 
   private setupTools(): void {
@@ -106,6 +110,29 @@ export class BraveMcpServer {
         isError: true,
       };
     });
+  }
+
+  private setupPrompts(): void {
+    this.server.prompt(
+      'brave_research',
+      'Research a topic using the various tools available',
+      {
+        topic: z.string().describe('The topic to research'),
+      },
+      async ({ topic }) => {
+        return {
+          messages: [
+            {
+              role: 'user',
+              content: {
+                type: 'text',
+                text: getResearchPrompt(topic),
+              },
+            },
+          ],
+        };
+      },
+    );
   }
 
   public async start() {
