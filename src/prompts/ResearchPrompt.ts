@@ -10,6 +10,6 @@ export function getResearchPrompt(topic: string) {
     + `\n  b. Once the user is satisfied with the research plan proceed to step 2`
     + `\n2. Generate 2 or 3 queries for each part of the research plan for the tools you have available to you.`
     + `\n3. Use the tools and the generated queries to find information on the topic.`
-    + `\n4. Present the information you found to the user in a clear and concise manner.`
+    + `\n4. Present the information you found to the user in a clear and concise manner. Using an artifact format if possible.`
   ;
 }
