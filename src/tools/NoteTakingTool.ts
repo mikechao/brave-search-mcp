@@ -52,9 +52,15 @@ export class NoteTakingTool extends BaseTool<typeof noteTakingInputSchema, any> 
     if (!article.textContent)
       throw new Error('Could not extract text content from article');
     // take notes
+    const instructions = `You will receive scraped website content about ${topic}. Your task is to take clear, organized notes focusing on ${topic}`
+      + `\nPlease provide detailed research notes that:`
+      + `\n1. Are well-organized and easy to read`
+      + `\n2. Focus on the topic of ${topic}`
+      + `\n3. Include specific facts, dates, and figures when available`
+      + `\n4. Maintain accuracy of the original content`;
     const resp = await this.client.responses.create({
       model: 'gpt-4o-mini',
-      instructions: `Take notes on the following article about ${topic}`,
+      instructions,
       input: article.textContent,
     });
     return resp.output_text;
