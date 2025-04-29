@@ -10,6 +10,12 @@ if (!BRAVE_API_KEY) {
   process.exit(1);
 }
 
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+if (!OPENAI_API_KEY) {
+  console.error('Error: OPENAI_API_KEY environment variable is required');
+  process.exit(1);
+}
+
 const braveMcpServer = new BraveMcpServer(BRAVE_API_KEY);
 braveMcpServer.start().catch((error) => {
   console.error('Error starting server:', error);
