@@ -44,10 +44,11 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.8.0",
+    "@mozilla/readability": "^0.6.0",
     "brave-search": "^0.9.0",
     "image-to-base64": "^2.2.0",
+    "jsdom": "^26.1.0",
     "openai": "^4.96.2",
-    "puppeteer": "^24.7.2",
     "zod": "^3.24.3"
   },
   "devDependencies": {
@@ -55,6 +56,7 @@
     "@modelcontextprotocol/inspector": "^0.10.2",
     "@types/express": "^5.0.1",
     "@types/image-to-base64": "^2.1.2",
+    "@types/jsdom": "^21.1.7",
     "@types/node": "^22.13.14",
     "eslint": "^9.23.0",
     "eslint-plugin-format": "^1.0.1",
