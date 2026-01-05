@@ -48,13 +48,13 @@
     "zod": "^3.24.3"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^4.11.0",
+    "@antfu/eslint-config": "^6.7.3",
     "@modelcontextprotocol/inspector": "^0.18.0",
     "@types/express": "^5.0.1",
     "@types/image-to-base64": "^2.1.2",
     "@types/node": "^22.13.14",
-    "eslint": "^9.23.0",
-    "eslint-plugin-format": "^1.0.1",
+    "eslint": "^9.39.2",
+    "eslint-plugin-format": "^1.1.0",
     "shx": "^0.4.0",
     "typescript": "^5.8.2"
   },
