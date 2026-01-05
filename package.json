@@ -42,14 +42,14 @@
     "check": "npm run lint:check && npm run typecheck"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.8.0",
+    "@modelcontextprotocol/sdk": "^1.25.1",
     "brave-search": "^0.9.0",
     "image-to-base64": "^2.2.0",
     "zod": "^3.24.3"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.11.0",
-    "@modelcontextprotocol/inspector": "^0.14.1",
+    "@modelcontextprotocol/inspector": "^0.18.0",
     "@types/express": "^5.0.1",
     "@types/image-to-base64": "^2.1.2",
     "@types/node": "^22.13.14",
