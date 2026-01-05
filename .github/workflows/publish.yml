@@ -37,20 +37,20 @@ jobs:
         run: |
           npm ci
           npm run build || (echo "Build failed" && exit 1)
-      - name: Install Anthropic DXT CLI
-        run: npm install -g @anthropic-ai/dxt
-      - name: Create DXT file
+      - name: Install Anthropic MCPB CLI
+        run: npm install -g @anthropic-ai/mcpb
+      - name: Create MCPB file
         run: |
           npm install --omit=dev
-          dxt pack
-      - name: Debug DXT file
+          mcpb pack
+      - name: Debug MCPB file
         run: |
-          ls -la *.dxt || echo "No .dxt files found"
-          find . -name "*.dxt" -type f || echo "No .dxt files found in subdirectories"
-      - name: Upload DXT to GitHub Release
+          ls -la *.mcpb || echo "No .mcpb files found"
+          find . -name "*.mcpb" -type f || echo "No .mcpb files found in subdirectories"
+      - name: Upload MCPB to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./brave-search-mcp.dxt
+          files: ./brave-search-mcp.mcpb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:

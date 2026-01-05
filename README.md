@@ -174,21 +174,21 @@ brave-search:
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## Desktop Extensions (DXT)
+## MCP Bundles (MCPB)
 
-Anthropic recently released [Desktop Extensions](https://github.com/anthropics/dxt) allowing installation of local MCP Servers with one click.
+Anthropic recently released [MCP Bundles](https://github.com/modelcontextprotocol/mcpb/) allowing installation of local MCP Servers with one click.
 
-Install the CLI tool to help generate both `manifest.json` and final `.dxt` file.
+Install the CLI tool to help generate both `manifest.json` and final `.mcpb` file.
 
 ```sh
-npm install -g @anthropic-ai/dxt
+npm install -g @anthropic-ai/mcpb
 ```
 
 ### Creating the manifest.json file
 
-1. In this folder/directory which contains the local MCP Server, run `dxt init`. The command will start an interactive CLI to help create the `manifest.json`.
+1. In this folder/directory which contains the local MCP Server, run `mcpb init`. The command will start an interactive CLI to help create the `manifest.json`.
 
-### Creating the `dxt` file
+### Creating the `mcpb` file
 
 1. First install dev dependencies and build
 
@@ -203,7 +203,7 @@ npm run build
 npm install --omit=dev
 ```
 
-3. Run `dxt pack` to create a `dxt` file. This will also validate the manifest.json that was created. The `dxt` is essentially a zip file and will contain everything in this directory.
+3. Run `mcpb pack` to create a `mcpb` file. This will also validate the manifest.json that was created. The `mcpb` is essentially a zip file and will contain everything in this directory.
 
 ## Disclaimer
 

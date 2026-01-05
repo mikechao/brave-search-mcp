@@ -4,3 +4,4 @@ dist
 .env
 notes.txt
 .vscode
+.DS_Store
