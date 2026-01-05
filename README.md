@@ -17,7 +17,6 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 ## Tools
 
 - **brave_web_search**
-
   - Execute web searches using Brave's API
   - Inputs:
     - `query` (string): The term to search the internet for
@@ -32,14 +31,12 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
         - YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)
 
 - **brave_image_search**
-
   - Get images from the web relevant to the query
   - Inputs:
     - `query` (string): The term to search the internet for images of
     - `count` (number, optional): The number of images to return (max 3, default 1)
 
 - **brave_news_search**
-
   - Searches the web for news
   - Inputs:
     - `query` (string): The term to search the internet for news articles, trending topics, or recent events
@@ -53,7 +50,6 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
         - YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)
 
 - **brave_local_search**
-
   - Search for local businesses, services and points of interest
   - **REQUIRES** subscription to the Pro api plan for location results
   - Falls back to brave_web_search if no location results are found
@@ -62,7 +58,6 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
     - `count` (number, optional): The number of results to return (max 20, default 5)
 
 - **brave_video_search**
-
   - Search the web for videos
   - Inputs:
     - `query`: (string): The term to search for videos

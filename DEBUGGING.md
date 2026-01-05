@@ -32,7 +32,6 @@ functional breakpoints in the code:
 To set up local debugging with breakpoints:
 
 1. Store Brave API Key in the VS Code
-
    - Open the Command Palette (Cmd/Ctrl + Shift + P).
    - Type `Preferences: Open User Settings (JSON)`.
    - Add the following snippet:

@@ -10,7 +10,7 @@ const webSearchInputSchema = z.object({
   offset: z.number().min(0).default(0).optional().describe('The offset for pagination, minimum 0'),
   freshness: z.union([
     z.enum(['pd', 'pw', 'pm', 'py']),
-    z.string().regex(/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/, 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD')
+    z.string().regex(/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/, 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD'),
   ])
     .optional()
     .describe(
