@@ -126,7 +126,7 @@ export class BraveMcpServer {
   ): void {
     this.server.server.sendLoggingMessage({
       level,
-      message,
+      data: message,
     });
   }
 }
