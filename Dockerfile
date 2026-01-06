@@ -5,18 +5,22 @@ COPY . /app
 
 WORKDIR /app
 
-RUN --mount=type=cache,target=/root/.npm npm install
+RUN npm install -g pnpm@10
+
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 
 FROM node:23.11-alpine AS release
 
 WORKDIR /app
 
+RUN npm install -g pnpm@10
+
 COPY --from=builder /app/dist /app/dist
 COPY --from=builder /app/package.json /app/package.json
-COPY --from=builder /app/package-lock.json /app/package-lock.json
+COPY --from=builder /app/pnpm-lock.yaml /app/pnpm-lock.yaml
 
 ENV NODE_ENV=production
 
-RUN npm ci --ignore-scripts --omit-dev
+RUN pnpm install --prod --ignore-scripts
 
 ENTRYPOINT ["node", "dist/index.js"]

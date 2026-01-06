@@ -193,14 +193,14 @@ npm install -g @anthropic-ai/mcpb
 1. First install dev dependencies and build
 
 ```sh
-npm install
-npm run build
+pnpm install
+pnpm run build
 ```
 
 2. Then install only the production dependencies, generate a smaller nodule_modules directory
 
 ```sh
-npm install --omit=dev
+pnpm install --prod
 ```
 
 3. Run `mcpb pack` to create a `mcpb` file. This will also validate the manifest.json that was created. The `mcpb` is essentially a zip file and will contain everything in this directory.

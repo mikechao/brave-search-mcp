@@ -34,16 +34,17 @@
   ],
   "scripts": {
     "clean": "shx rm -rf dist && shx mkdir dist",
-    "build": "npm run clean && tsc && shx chmod +x dist/*.js",
+    "build": "pnpm run clean && tsc && shx chmod +x dist/*.js",
     "build:watch": "tsc --sourceMap -p tsconfig.json -w",
     "lint": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
     "lint:check": "eslint . --ext .ts,.js,.mjs,.cjs",
     "typecheck": "tsc --noEmit",
-    "check": "npm run lint:check && npm run typecheck",
+    "check": "pnpm run lint:check && pnpm run typecheck",
     "changeset:version": "changeset version && node scripts/sync-manifest-version.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.1",
+    "axios": "^1.13.2",
     "brave-search": "^0.9.0",
     "image-to-base64": "^2.2.0",
     "zod": "^3.24.3"
