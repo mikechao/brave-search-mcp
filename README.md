@@ -98,12 +98,12 @@ Replace `YOUR_API_KEY_HERE` with your actual Brave Search API key.
 
 ### Usage with Claude Desktop
 
-## Desktop Extension (DXT)
+## MCP Bundle (MCPB)
 
-1. Download the `dxt` file from the [Releases](https://github.com/mikechao/brave-search-mcp/releases)
+1. Download the `mcpb` file from the [Releases](https://github.com/mikechao/brave-search-mcp/releases)
 2. Open it with Claude Desktop
    or
-   Go to File -> Settings -> Extensions and drag the .DXT file to the window to install it
+   Go to File -> Settings -> Extensions and drag the .mcpb file to the window to install it
 
 ## Docker
 
