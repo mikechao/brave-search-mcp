@@ -12,14 +12,17 @@ jobs:
           node-version: 20.19.0
           registry-url: 'https://registry.npmjs.org/'
           cache: npm
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm --version
+          npm i -g npm@^11.5.1
+          npm --version
       - name: Install dependencies and build 🔧
         run: |
           npm ci
           npm run build || (echo "Build failed" && exit 1)
       - name: Publish to NPM 📦
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
     permissions:
       contents: read
       id-token: write
@@ -33,6 +36,11 @@ jobs:
         with:
           node-version: 20.19.0
           cache: npm
+      - name: Ensure npm supports trusted publishing
+        run: |
+          npm --version
+          npm i -g npm@^11.5.1
+          npm --version
       - name: Install dependencies and build 🔧
         run: |
           npm ci
