@@ -43,34 +43,44 @@ export class BraveMcpServer {
   }
 
   private setupTools(): void {
-    this.server.tool(
+    this.server.registerTool(
       this.imageSearchTool.name,
-      this.imageSearchTool.description,
-      this.imageSearchTool.inputSchema.shape,
+      {
+        description: this.imageSearchTool.description,
+        inputSchema: this.imageSearchTool.inputSchema,
+      },
       this.imageSearchTool.execute.bind(this.imageSearchTool),
     );
-    this.server.tool(
+    this.server.registerTool(
       this.webSearchTool.name,
-      this.webSearchTool.description,
-      this.webSearchTool.inputSchema.shape,
+      {
+        description: this.webSearchTool.description,
+        inputSchema: this.webSearchTool.inputSchema,
+      },
       this.webSearchTool.execute.bind(this.webSearchTool),
     );
-    this.server.tool(
+    this.server.registerTool(
       this.localSearchTool.name,
-      this.localSearchTool.description,
-      this.localSearchTool.inputSchema.shape,
+      {
+        description: this.localSearchTool.description,
+        inputSchema: this.localSearchTool.inputSchema,
+      },
       this.localSearchTool.execute.bind(this.localSearchTool),
     );
-    this.server.tool(
+    this.server.registerTool(
       this.newsSearchTool.name,
-      this.newsSearchTool.description,
-      this.newsSearchTool.inputSchema.shape,
+      {
+        description: this.newsSearchTool.description,
+        inputSchema: this.newsSearchTool.inputSchema,
+      },
       this.newsSearchTool.execute.bind(this.newsSearchTool),
     );
-    this.server.tool(
+    this.server.registerTool(
       this.videoSearchTool.name,
-      this.videoSearchTool.description,
-      this.videoSearchTool.inputSchema.shape,
+      {
+        description: this.videoSearchTool.description,
+        inputSchema: this.videoSearchTool.inputSchema,
+      },
       this.videoSearchTool.execute.bind(this.videoSearchTool),
     );
   }
