@@ -226,11 +226,8 @@ class BraveSearch {
   async localPoiSearch(ids: string[], signal?: AbortSignal): Promise<LocalPoiSearchApiResponse> {
     try {
       const response = await axios.get<LocalPoiSearchApiResponse>(
-        `${this.baseUrl}/local/pois`,
+        `${this.baseUrl}/local/pois?${this.formatIdsQuery(ids)}`,
         {
-          params: {
-            ids: ids.join(","),
-          },
           headers: this.getHeaders(),
           signal,
         },
@@ -252,11 +249,8 @@ class BraveSearch {
   ): Promise<LocalDescriptionsSearchApiResponse> {
     try {
       const response = await axios.get<LocalDescriptionsSearchApiResponse>(
-        `${this.baseUrl}/local/descriptions`,
+        `${this.baseUrl}/local/descriptions?${this.formatIdsQuery(ids)}`,
         {
-          params: {
-            ids: ids.join(","),
-          },
           headers: this.getHeaders(),
           signal,
         },
@@ -346,6 +340,10 @@ class BraveSearch {
       },
       {} as Record<string, string>,
     );
+  }
+
+  private formatIdsQuery(ids: string[]): string {
+    return ids.map((id) => `ids=${encodeURIComponent(id)}`).join("&");
   }
 
   private handleApiError(error: any): BraveSearchError {

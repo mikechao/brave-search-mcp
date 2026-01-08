@@ -1,4 +1,4 @@
-import type { BraveSearch, LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse } from 'brave-search';
+import type { BraveSearch, LocalDescriptionsSearchApiResponse } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import type { BraveWebSearchTool } from './BraveWebSearchTool.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
@@ -24,9 +24,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
 
   public readonly inputSchema = localSearchInputSchema;
 
-  private baseUrl = 'https://api.search.brave.com/res/v1';
-
-  constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch, private webSearchTool: BraveWebSearchTool, private apiKey: string) {
+  constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch, private webSearchTool: BraveWebSearchTool) {
     super();
   }
 
@@ -49,97 +47,26 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     this.braveMcpServer.log(`Using ${ids.length} of ${allIds.length} location IDs for "${query}"`, 'debug');
     const formattedText = [];
 
-    const localPoiSearchApiResponse = await this.localPoiSearch(ids);
+    const localPoiSearchApiResponse = await this.braveSearch.localPoiSearch(ids);
     // the call to localPoiSearch does not return the id of the pois
     // add them here, they should be in the same order as the ids
     // and the same order of id in localDescriptionsSearchApiResponse
     localPoiSearchApiResponse.results.forEach((result, index) => {
       (result as any).id = ids[index];
     });
-    const localDescriptionsSearchApiResponse = await this.localDescriptionsSearch(ids);
+    let localDescriptionsSearchApiResponse: LocalDescriptionsSearchApiResponse;
+    try {
+      localDescriptionsSearchApiResponse = await this.braveSearch.localDescriptionsSearch(ids);
+    } catch (error) {
+      this.braveMcpServer.log(`${error}`, 'error');
+      localDescriptionsSearchApiResponse = {
+        type: 'local_descriptions',
+        results: [],
+      };
+    }
     const text = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
     formattedText.push(text);
     const finalText = formattedText.join('\n\n');
     return { content: [{ type: 'text' as const, text: finalText }] };
   }
-
-  // workaround for https://github.com/erik-balfe/brave-search/pull/3
-  // not being merged yet into brave-search
-  private async localPoiSearch(ids: string[]) {
-    try {
-      const qs = ids.map(id => `ids=${encodeURIComponent(id)}`).join('&');
-      const url = `${this.baseUrl}/local/pois?${qs}`;
-      this.braveMcpServer.log(`Fetching local POI data from ${url}`, 'debug');
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: this.getHeaders(),
-        redirect: 'follow',
-      });
-      if (!res.ok) {
-        throw new Error(`Error fetching local POI data Status:${res.status} Status Text:${res.statusText} Headers:${JSON.stringify(res.headers)}`);
-      }
-      const data = (await res.json()) as LocalPoiSearchApiResponse;
-      return data;
-    }
-    catch (error) {
-      this.handleError(error);
-      throw error;
-    }
-  }
-
-  private async localDescriptionsSearch(ids: string[]) {
-    try {
-      const qs = ids.map(id => `ids=${encodeURIComponent(id)}`).join('&');
-      const url = `${this.baseUrl}/local/descriptions?${qs}`;
-      const res = await fetch(url, {
-        method: 'GET',
-        headers: this.getHeaders(),
-        redirect: 'follow',
-      });
-      if (!res.ok) {
-        const responseText = await res.text();
-        this.braveMcpServer.log(`Error response body: ${responseText}`, 'error');
-        this.braveMcpServer.log(`Response headers: ${JSON.stringify(Object.fromEntries(res.headers.entries()))}`, 'error');
-        this.braveMcpServer.log(`Request URL: ${url}`, 'error');
-        this.braveMcpServer.log(`Request headers: ${JSON.stringify(this.getHeaders())}`, 'error');
-        if (res.status === 429) {
-          this.braveMcpServer.log('429 Rate limit exceeded, consider adding delay between requests', 'error');
-        }
-        else if (res.status === 403) {
-          this.braveMcpServer.log('403 Authentication error - check your API key', 'error');
-        }
-        else if (res.status === 500) {
-          this.braveMcpServer.log('500 Internal server error - might be an issue with request format or API temporary issues', 'error');
-        }
-        // return an empty response instead of error so we can at least return the pois results
-        return {
-          type: 'local_descriptions',
-          results: [],
-        } as LocalDescriptionsSearchApiResponse;
-      }
-      const data = (await res.json()) as LocalDescriptionsSearchApiResponse;
-      return data;
-    }
-    catch (error) {
-      this.handleError(error);
-      throw error;
-    }
-  }
-
-  private handleError(error: any) {
-    this.braveMcpServer.log(`${error}`, 'error');
-  }
-
-  private getHeaders() {
-    return {
-      'Accept': '*/*',
-      'Accept-Encoding': 'gzip, deflate, br',
-      'Connection': 'keep-alive',
-      'X-Subscription-Token': this.apiKey,
-      'User-Agent': 'BraveSearchMCP/1.0',
-      'Content-Type': 'application/json',
-      'Cache-Control': 'no-cache',
-    };
-  }
-  // end workaround
 }
