@@ -2,7 +2,6 @@ import type { BraveSearch } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
-import { formatVideoResults } from '../utils.js';
 import { BaseTool } from './BaseTool.js';
 
 const videoSearchInputSchema = z.object({
@@ -50,7 +49,26 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
       return { content: [{ type: 'text' as const, text }] };
     }
 
-    const text = formatVideoResults(videoSearchResults.results);
-    return { content: [{ type: 'text' as const, text }] };
+    const content = videoSearchResults.results.map(video => {
+      const subscriptionText = ('requires_subscription' in video.video)
+        ? (video.video.requires_subscription ? 'Requires subscription' : 'No subscription')
+        : null;
+      const tagsText = ('tags' in video.video && video.video.tags)
+        ? `Tags: ${video.video.tags.join(', ')}`
+        : null;
+      const extraLines = [subscriptionText, tagsText]
+        .filter((value): value is string => Boolean(value))
+        .join('\n');
+      const text = `Title: ${video.title}\n`
+        + `URL: ${video.url}\n`
+        + `Description: ${video.description}\n`
+        + `Age: ${video.age}\n`
+        + `Duration: ${video.video.duration}\n`
+        + `Views: ${video.video.views}\n`
+        + `Creator: ${video.video.creator}`
+        + (extraLines ? `\n${extraLines}` : '');
+      return { type: 'text' as const, text };
+    });
+    return { content };
   }
 }
