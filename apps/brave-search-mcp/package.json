@@ -1,0 +1,68 @@
+{
+  "name": "brave-search-mcp",
+  "type": "module",
+  "version": "0.9.0",
+  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a",
+  "description": "MCP Server that uses Brave Search API to search for images, general web search, video, news and points of interest.",
+  "author": "mike.chao.one@gmail.com",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/mikechao/brave-search-mcp",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikechao/brave-search-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mikechao/brave-search-mcp/issues"
+  },
+  "keywords": [
+    "brave",
+    "mcp",
+    "web-search",
+    "image-search",
+    "news-search",
+    "brave-search-api",
+    "brave-search",
+    "brave-search-mcp"
+  ],
+  "main": "dist/index.js",
+  "bin": {
+    "brave-search-mcp": "dist/index.js"
+  },
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "clean": "shx rm -rf dist && shx mkdir dist",
+    "build": "pnpm run clean && tsc && shx chmod +x dist/*.js",
+    "build:watch": "tsc --sourceMap -p tsconfig.json -w",
+    "lint": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
+    "lint:check": "eslint . --ext .ts,.js,.mjs,.cjs",
+    "typecheck": "tsc --noEmit",
+    "check": "pnpm run lint:check && pnpm run typecheck",
+    "changeset:version": "changeset version && node scripts/sync-manifest-version.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.2",
+    "axios": "^1.13.2",
+    "brave-search": "workspace:*",
+    "image-to-base64": "^2.2.0",
+    "zod": "^3.24.3"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^6.7.3",
+    "@changesets/cli": "^2.28.1",
+    "@modelcontextprotocol/inspector": "^0.18.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.1",
+    "@types/image-to-base64": "^2.1.2",
+    "@types/node": "^22.13.14",
+    "cors": "^2.8.5",
+    "eslint": "^9.39.2",
+    "eslint-plugin-format": "^1.1.0",
+    "express": "^5.2.1",
+    "shx": "^0.4.0",
+    "typescript": "^5.8.2"
+  }
+}

@@ -1,71 +1,74 @@
-# Brave Search MCP Server
+# Brave Search MCP Monorepo
 
 ## Project Overview
 
-`brave-search-mcp` is a Model Context Protocol (MCP) Server that integrates with the [Brave Search API](https://brave.com/search/api/). It allows AI assistants (like Claude or Gemini) to perform web searches, image searches, news searches, video searches, and local business searches securely and efficiently.
+This project is a monorepo containing the **Brave Search MCP Server** and its underlying dependencies. It is managed using **Turbo** and **pnpm workspaces**.
 
-### Key Features
-*   **Web Search:** General web search functionality.
-*   **Image Search:** Search for images (returns results as resources).
-*   **News Search:** Find news articles and trending topics.
-*   **Video Search:** Search for videos.
-*   **Local Search:** Find local businesses and points of interest.
+The primary goal is to provide a Model Context Protocol (MCP) Server that integrates with the [Brave Search API](https://brave.com/search/api/) for AI assistants.
 
-### Tech Stack
+## Structure
+
+*   **`apps/brave-search-mcp`**: The MCP Server application.
+    *   Exposes tools for Web, Image, News, Video, and Local search.
+    *   Consumes the `brave-search` package.
+*   **`packages/brave-search`**: A typed SDK/wrapper for the Brave Search API.
+    *   Standalone library used by the MCP server.
+
+## Tech Stack
+
+*   **Monorepo Tools:** Turbo, pnpm workspaces
 *   **Language:** TypeScript / Node.js
-*   **Framework:** `@modelcontextprotocol/sdk`
-*   **API Wrapper:** `brave-search`
+*   **Frameworks:** `@modelcontextprotocol/sdk`
 *   **Utilities:** `axios`, `zod`
-*   **Package Manager:** pnpm
-
-## Architecture
-
-The project follows a modular structure centered around the `BraveMcpServer` class and individual `Tool` implementations.
-
-*   **Entry Point (`src/index.ts`):** Validates the `BRAVE_API_KEY` environment variable and starts the server (supports stdio and http modes).
-*   **Server Core (`src/server.ts`):** Defines `BraveMcpServer`, which initializes the MCP server instance, registers tools, and manages resources.
-*   **Tools (`src/tools/`):**
-    *   `BaseTool.ts`: Abstract base class that defines the contract for all tools (name, description, schema, execution logic).
-    *   Specific implementations: `BraveWebSearchTool.ts`, `BraveImageSearchTool.ts`, etc.
-*   **Resources:** The server exposes image search results as MCP resources (e.g., `brave-image://...`).
 
 ## Building and Running
 
 ### Prerequisites
-*   Node.js (LTS recommended)
-*   pnpm
+*   Node.js (LTS)
+*   pnpm (`npm install -g pnpm`)
 *   Brave Search API Key
 
 ### Installation
+From the root:
 ```bash
 pnpm install
 ```
 
-### Build
-To clean and build the project:
+### Build (All)
+Build all apps and packages using Turbo:
 ```bash
-pnpm run build
+pnpm build
 ```
-This compiles TypeScript files from `src/` to `dist/` and makes the output executable.
 
-### Running
-To run the server locally (requires API key):
+### Development
+You can run tasks from the root, which will propagate to the workspaces via Turbo.
+
+*   `pnpm build`: Build all packages/apps.
+*   `pnpm lint`: Lint all packages/apps.
+*   `pnpm check`: Typecheck and lint all.
+*   `pnpm run clean`: Clean dist folders.
+
+### Running the MCP Server
+To run the server locally:
+
 ```bash
+cd apps/brave-search-mcp
 export BRAVE_API_KEY=your_api_key_here
 node dist/index.js
 ```
-Or via the convenient script if added, otherwise directly through the built artifact.
 
-### Development Scripts
-*   `pnpm run build:watch`: Watch mode for development.
-*   `pnpm run lint`: Run ESLint.
-*   `pnpm run typecheck`: Run TypeScript type checking.
-*   `pnpm run check`: Run both linting and type checking.
-*   `pnpm run clean`: Clean the `dist` directory.
+## Architecture Details
 
-## Development Conventions
+### `apps/brave-search-mcp`
+*   **Entry Point:** `src/index.ts`
+*   **Core:** `src/server.ts` (BraveMcpServer)
+*   **Tools:** `src/tools/*.ts` (BaseTool implementation)
 
-*   **Code Style:** The project uses ESLint with `@antfu/eslint-config`. ensure all code passes `pnpm run lint`.
-*   **TypeScript:** Strict mode is enabled (`"strict": true` in `tsconfig.json`).
-*   **Tool Implementation:** New tools should extend `BaseTool` and be registered in `BraveMcpServer.setupTools()`.
-*   **Error Handling:** Tools should gracefully handle errors and return structured error responses to the MCP client.
+### `packages/brave-search`
+*   **Entry Point:** `src/braveSearch.ts`
+*   **Types:** `src/types.ts`
+
+## Conventions
+*   **Workspaces:** Internal dependencies are referenced via `workspace:*` (e.g., `"brave-search": "workspace:*"`).
+*   **Code Style:** ESLint with `@antfu/eslint-config`.
+*   **TypeScript:** Strict mode enabled.

@@ -1,0 +1,50 @@
+{
+  "name": "brave-search",
+  "version": "0.9.0",
+  "description": "A fully typed Brave Search API wrapper, providing easy access to web search, local POI search, and automatic polling for web search summary feature.",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "release:major": "npm version major && node scripts/sync-versions.js",
+    "release:minor": "npm version minor && node scripts/sync-versions.js",
+    "release:patch": "npm version patch && node scripts/sync-versions.js"
+  },
+  "main": "dist/braveSearch.js",
+  "types": "dist/braveSearch.d.ts",
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md"
+  ],
+  "keywords": [
+    "brave",
+    "web-search",
+    "brave-search",
+    "search",
+    "api",
+    "search-engine",
+    "web-search",
+    "web-api",
+    "search-results",
+    "data-retrieval",
+    "information-retrieval",
+    "internet-search",
+    "brave-api",
+    "search-integration",
+    "web-scraping",
+    "data-mining"
+  ],
+  "author": "erik.balfe@protonmail.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/erik-balfe/brave-search.git"
+  },
+  "license": "GPL-3.0-or-later",
+  "devDependencies": {
+    "@types/node": "^20.14.10",
+    "typescript": "^5.5.3"
+  },
+  "dependencies": {
+    "axios": "^1.7.2"
+  }
+}
