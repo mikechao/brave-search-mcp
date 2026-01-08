@@ -45,7 +45,6 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.2",
-    "axios": "^1.13.2",
     "brave-search": "workspace:*",
     "image-to-base64": "^2.2.0",
     "zod": "^3.24.3"
