@@ -29,6 +29,8 @@ import {
   PollingOptions,
   SummarizerOptions,
   SummarizerSearchApiResponse,
+  VideoSearchApiResponse,
+  VideoSearchOptions,
   WebSearchApiResponse,
 } from "./types";
 
@@ -140,6 +142,30 @@ class BraveSearch {
     try {
       const response = await axios.get<NewsSearchApiResponse>(
         `${this.baseUrl}/news/search?`,
+        {
+          params: {
+            q: query,
+            ...this.formatOptions(options),
+          },
+          headers: this.getHeaders(),
+          signal,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      const handledError = this.handleApiError(error);
+      throw handledError;
+    }
+  }
+
+  async videoSearch(
+    query: string,
+    options: VideoSearchOptions = {},
+    signal?: AbortSignal,
+  ): Promise<VideoSearchApiResponse> {
+    try {
+      const response = await axios.get<VideoSearchApiResponse>(
+        `${this.baseUrl}/videos/search?`,
         {
           params: {
             q: query,
@@ -353,4 +379,6 @@ export {
   type ImageSearchApiResponse,
   type NewsSearchApiResponse,
   type NewsSearchOptions,
+  type VideoSearchApiResponse,
+  type VideoSearchOptions,
 };

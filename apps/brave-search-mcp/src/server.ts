@@ -36,7 +36,7 @@ export class BraveMcpServer {
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool, braveSearchApiKey);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch);
-    this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch, braveSearchApiKey);
+    this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch);
     this.setupTools();
     this.setupResourceListener();
   }

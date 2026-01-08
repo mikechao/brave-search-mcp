@@ -1,5 +1,4 @@
-import type { LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse, OpeningHours } from 'brave-search/dist/types.js';
-import type { BraveVideoResult } from './tools/BraveVideoSearchTool.js';
+import type { LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse, OpeningHours, VideoResult } from 'brave-search/dist/types.js';
 
 export function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDesc: LocalDescriptionsSearchApiResponse) {
   return (poiData.results || []).map((poi) => {
@@ -16,7 +15,7 @@ export function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDesc: Lo
   }).join('\n---\n');
 }
 
-export function formatVideoResults(results: BraveVideoResult[]) {
+export function formatVideoResults(results: VideoResult[]) {
   return (results || []).map((video) => {
     return `Title: ${video.title}\n`
       + `URL: ${video.url}\n`
