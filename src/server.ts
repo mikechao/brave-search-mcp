@@ -1,5 +1,4 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { BraveSearch } from 'brave-search';
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
@@ -118,10 +117,8 @@ export class BraveMcpServer {
     });
   }
 
-  public async start() {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    this.log('Server is running with Stdio transport');
+  public get serverInstance(): McpServer {
+    return this.server;
   }
 
   public resourceChangedNotification() {

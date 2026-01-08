@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ESNext",
     "rootDir": "./src",
-    "module": "Node16",
-    "moduleResolution": "Node16",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
     "strict": true,
     "outDir": "./dist",
     "esModuleInterop": true,

@@ -33,6 +33,9 @@ importers:
       '@modelcontextprotocol/inspector':
         specifier: ^0.18.0
         version: 0.18.0(@types/node@22.19.3)(hono@4.11.3)(typescript@5.9.3)
+      '@types/cors':
+        specifier: ^2.8.19
+        version: 2.8.19
       '@types/express':
         specifier: ^5.0.1
         version: 5.0.6
@@ -42,12 +45,18 @@ importers:
       '@types/node':
         specifier: ^22.13.14
         version: 22.19.3
+      cors:
+        specifier: ^2.8.5
+        version: 2.8.5
       eslint:
         specifier: ^9.39.2
         version: 9.39.2
       eslint-plugin-format:
         specifier: ^1.1.0
         version: 1.2.0(eslint@9.39.2)
+      express:
+        specifier: ^5.2.1
+        version: 5.2.1
       shx:
         specifier: ^0.4.0
         version: 0.4.0
@@ -820,6 +829,9 @@ packages:
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
+
+  '@types/cors@2.8.19':
+    resolution: {integrity: sha512-mFNylyeyqN93lfe/9CSxOGREz8cpzAhH+E93xJ4xWQf62V8sQ/24reV2nyzUWM6H6Xji+GGHpkbLe7pVoUEskg==}
 
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
@@ -3829,6 +3841,10 @@ snapshots:
       '@types/node': 22.19.3
 
   '@types/connect@3.4.38':
+    dependencies:
+      '@types/node': 22.19.3
+
+  '@types/cors@2.8.19':
     dependencies:
       '@types/node': 22.19.3
 
