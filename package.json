@@ -6,9 +6,12 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "check": "turbo run check",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "prepare": "husky install",
+    "sync-readme": "node scripts/sync-readme.js"
   },
   "devDependencies": {
+    "husky": "^8.0.3",
     "turbo": "^2.7.3"
   },
   "packageManager": "pnpm@10.27.0"

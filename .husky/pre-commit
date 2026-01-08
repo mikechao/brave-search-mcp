@@ -1,0 +1,7 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+if git diff --cached --name-only | grep -q '^apps/brave-search-mcp/README.md$'; then
+  pnpm run sync-readme
+  git add README.md
+fi
