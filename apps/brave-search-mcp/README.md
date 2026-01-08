@@ -170,6 +170,10 @@ brave-search:
     - BRAVE_API_KEY=API KEY npx -y brave-search-mcp
 ```
 
+## Monorepo Structure
+
+This repository is a monorepo. The MCP server lives in `apps/brave-search-mcp`, and the shared Brave Search SDK lives in `packages/brave-search`. Most development and release work happens from the repo root using `pnpm` and `turbo`.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
