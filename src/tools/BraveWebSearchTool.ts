@@ -45,7 +45,7 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
       ...(freshness ? { freshness } : {}),
     });
     if (!results.web || results.web?.results.length === 0) {
-      this.braveMcpServer.log(`No results found for "${query}"`);
+      this.braveMcpServer.log(`No results found for "${query}"`, 'info');
       const text = `No results found for "${query}"`;
       return { content: [{ type: 'text' as const, text }] };
     }
