@@ -73,7 +73,7 @@ importers:
   packages/brave-search:
     dependencies:
       axios:
-        specifier: ^1.7.2
+        specifier: ^1.13.2
         version: 1.13.2
     devDependencies:
       '@types/node':
