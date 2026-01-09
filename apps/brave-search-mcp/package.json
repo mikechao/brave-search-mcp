@@ -28,15 +28,19 @@
   "bin": {
     "brave-search-mcp": "dist/index.js"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "files": [
     "LICENSE",
     "README.md",
     "dist"
   ],
   "scripts": {
-    "clean": "shx rm -rf dist && shx mkdir dist",
-    "build": "pnpm run clean && tsc && shx chmod +x dist/*.js",
-    "build:watch": "tsc --sourceMap -p tsconfig.json -w",
+    "clean": "shx rm -rf dist",
+    "build": "tsup && shx chmod +x dist/*.js",
+    "build:all": "pnpm run typecheck && pnpm run build",
+    "build:watch": "tsup --watch",
     "lint": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
     "lint:check": "eslint . --ext .ts,.js,.mjs,.cjs",
     "typecheck": "tsc --noEmit",
@@ -46,7 +50,9 @@
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.2",
     "brave-search": "workspace:*",
+    "cors": "^2.8.5",
     "image-to-base64": "^2.2.0",
+    "express": "^5.2.1",
     "zod": "^3.24.3"
   },
   "devDependencies": {
@@ -57,11 +63,10 @@
     "@types/express": "^5.0.1",
     "@types/image-to-base64": "^2.1.2",
     "@types/node": "^22.13.14",
-    "cors": "^2.8.5",
     "eslint": "^9.39.2",
     "eslint-plugin-format": "^1.1.0",
-    "express": "^5.2.1",
     "shx": "^0.4.0",
+    "tsup": "^8.0.1",
     "typescript": "^5.8.2"
   }
 }
