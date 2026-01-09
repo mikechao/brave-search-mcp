@@ -209,6 +209,15 @@ pnpm install --prod
 
 3. Run `mcpb pack` to create a `mcpb` file. This will also validate the manifest.json that was created. The `mcpb` is essentially a zip file and will contain everything in this directory.
 
+## Releasing the package
+
+- The `brave-search` SDK is bundled into the server build; only `apps/brave-search-mcp` is published to npm.
+- Requires Node 20+ (see the `engines` field in `apps/brave-search-mcp/package.json`).
+- Build with `pnpm -C apps/brave-search-mcp build` (or `pnpm -C apps/brave-search-mcp build:all`).
+  - If pnpm blocks esbuild postinstall, run `pnpm approve-builds` and allow `esbuild`.
+- If user-facing behavior changes, create a changeset in `.changeset/` (e.g. `pnpm changeset`) and run `pnpm -C apps/brave-search-mcp changeset:version` to apply versions and sync `manifest.json`.
+- Verify locally with `BRAVE_API_KEY=... node dist/index.js --http`.
+
 ## Disclaimer
 
 This library is not officially associated with Brave Software. It is a third-party implementation of the Brave Search API with a MCP Server.
