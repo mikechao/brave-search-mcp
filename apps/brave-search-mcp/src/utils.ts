@@ -12,7 +12,7 @@ export function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDesc: Lo
       + `Ratings: ${poi.rating?.ratingValue || 'N/A'} (${poi.rating?.reviewCount}) reviews\n`
       + `Hours:\n ${(poi.opening_hours) ? formatOpeningHours(poi.opening_hours) : 'No opening hours found'}\n`
       + `Description: ${(description) ? description.description : 'No description found'}\n`;
-  }).join('\n---\n');
+  });
 }
 
 export function formatVideoResults(results: VideoResult[]) {

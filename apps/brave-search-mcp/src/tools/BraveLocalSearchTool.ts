@@ -64,9 +64,13 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         results: [],
       };
     }
-    const text = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
-    formattedText.push(text);
-    const finalText = formattedText.join('\n\n');
-    return { content: [{ type: 'text' as const, text: finalText }] };
+    const texts = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
+    formattedText.push(...texts);
+    if (formattedText.length === 0) {
+      const text = `No local results found for "${query}"`;
+      return { content: [{ type: 'text' as const, text }] };
+    }
+    const content = formattedText.map(text => ({ type: 'text' as const, text }));
+    return { content };
   }
 }
