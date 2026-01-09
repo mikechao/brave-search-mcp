@@ -47,14 +47,10 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
       return { content: [{ type: 'text' as const, text }] };
     }
 
-    const text = newsResult.results
-      .map(result =>
-        `Title: ${result.title}\n`
-        + `URL: ${result.url}\n`
-        + `Age: ${result.age}\n`
-        + `Description: ${result.description}\n`,
-      )
-      .join('\n\n');
-    return { content: [{ type: 'text' as const, text }] };
+    const content = newsResult.results.map(result => ({
+      type: 'text' as const,
+      text: `Title: ${result.title}\nURL: ${result.url}\nAge: ${result.age}\nDescription: ${result.description}`,
+    }));
+    return { content };
   }
 }
