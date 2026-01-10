@@ -28,14 +28,14 @@
   "bin": {
     "brave-search-mcp": "dist/index.js"
   },
-  "engines": {
-    "node": ">=20"
-  },
   "files": [
     "LICENSE",
     "README.md",
     "dist"
   ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "clean": "shx rm -rf dist",
     "build": "tsup && shx chmod +x dist/*.js",
@@ -51,8 +51,8 @@
     "@modelcontextprotocol/sdk": "^1.25.2",
     "brave-search": "workspace:*",
     "cors": "^2.8.5",
-    "image-to-base64": "^2.2.0",
     "express": "^5.2.1",
+    "image-to-base64": "^2.2.0",
     "zod": "^3.24.3"
   },
   "devDependencies": {

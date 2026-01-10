@@ -79,6 +79,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 3. Generate your API key [from the developer dashboard](https://api.search.brave.com/app/keys)
 
 ### Streamable HTTP mode
+
 By default the MCP server runs in stdio mode.
 
 ```bash
@@ -93,6 +94,7 @@ BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http
 
 By default the server listens on port 3001.
 The URL is:
+
 ```
 http://localhost:3001/mcp
 ```

@@ -2,12 +2,12 @@
  * Shared utilities for running MCP servers with various transports.
  */
 
-import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import cors from "cors";
-import type { Request, Response } from "express";
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { Request, Response } from 'express';
+import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js';
+import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
+import cors from 'cors';
 
 /**
  * Starts an MCP server using the appropriate transport based on command-line arguments.
@@ -23,10 +23,12 @@ export async function startServer(
   try {
     if (isHttp) {
       await startStreamableHttpServer(createServer);
-    } else {
+    }
+    else {
       await startStdioServer(createServer);
     }
-  } catch (e) {
+  }
+  catch (e) {
     console.error(e);
     process.exit(1);
   }
@@ -57,13 +59,13 @@ export async function startStdioServer(
 export async function startStreamableHttpServer(
   createServer: () => McpServer,
 ): Promise<void> {
-  const port = parseInt(process.env.PORT ?? "3001", 10);
+  const port = Number.parseInt(process.env.PORT ?? '3001', 10);
 
   // Express app - bind to all interfaces for development/testing
-  const expressApp = createMcpExpressApp({ host: "0.0.0.0" });
+  const expressApp = createMcpExpressApp({ host: '0.0.0.0' });
   expressApp.use(cors());
 
-  expressApp.all("/mcp", async (req: Request, res: Response) => {
+  expressApp.all('/mcp', async (req: Request, res: Response) => {
     // Create fresh server and transport for each request (stateless mode)
     const server = createServer();
     const transport = new StreamableHTTPServerTransport({
@@ -71,7 +73,7 @@ export async function startStreamableHttpServer(
     });
 
     // Clean up when response ends
-    res.on("close", () => {
+    res.on('close', () => {
       transport.close().catch(() => {});
       server.close().catch(() => {});
     });
@@ -79,12 +81,13 @@ export async function startStreamableHttpServer(
     try {
       await server.connect(transport);
       await transport.handleRequest(req, res, req.body);
-    } catch (error) {
-      console.error("MCP error:", error);
+    }
+    catch (error) {
+      console.error('MCP error:', error);
       if (!res.headersSent) {
         res.status(500).json({
-          jsonrpc: "2.0",
-          error: { code: -32603, message: "Internal server error" },
+          jsonrpc: '2.0',
+          error: { code: -32603, message: 'Internal server error' },
           id: null,
         });
       }
@@ -94,18 +97,19 @@ export async function startStreamableHttpServer(
   const { promise, resolve, reject } = Promise.withResolvers<void>();
 
   const httpServer = expressApp.listen(port, (err?: Error) => {
-    if (err) return reject(err);
+    if (err)
+      return reject(err);
     console.log(`Server listening on http://localhost:${port}/mcp`);
     resolve();
   });
 
   const shutdown = () => {
-    console.log("\nShutting down...");
+    console.log('\nShutting down...');
     httpServer.close(() => process.exit(0));
   };
 
-  process.on("SIGINT", shutdown);
-  process.on("SIGTERM", shutdown);
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
 
   return promise;
 }

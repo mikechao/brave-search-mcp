@@ -63,7 +63,8 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     let localDescriptionsSearchApiResponse: LocalDescriptionsSearchApiResponse;
     try {
       localDescriptionsSearchApiResponse = await this.braveSearch.localDescriptionsSearch(ids);
-    } catch (error) {
+    }
+    catch (error) {
       this.braveMcpServer.log(`${error}`, 'error');
       localDescriptionsSearchApiResponse = {
         type: 'local_descriptions',

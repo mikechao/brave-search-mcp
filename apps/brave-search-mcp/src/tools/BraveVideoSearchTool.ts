@@ -49,7 +49,7 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
       return { content: [{ type: 'text' as const, text }] };
     }
 
-    const items = videoSearchResults.results.map(video => {
+    const items = videoSearchResults.results.map((video) => {
       const subscriptionText = ('requires_subscription' in video.video)
         ? (video.video.requires_subscription ? 'Requires subscription' : 'No subscription')
         : null;
@@ -65,8 +65,8 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
         + `Age: ${video.age}\n`
         + `Duration: ${video.video.duration}\n`
         + `Views: ${video.video.views}\n`
-        + `Creator: ${video.video.creator}`
-        + (extraLines ? `\n${extraLines}` : '');
+        + `Creator: ${video.video.creator}${
+          extraLines ? `\n${extraLines}` : ''}`;
       return text;
     });
     const combinedText = items

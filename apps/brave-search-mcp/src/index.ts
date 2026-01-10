@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
+import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import process from 'node:process';
-import { BraveMcpServer } from './server.js';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { startServer } from './server-utils.js';
+import { BraveMcpServer } from './server.js';
 
 function createServer(): McpServer {
   // Check for API key
