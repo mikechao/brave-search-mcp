@@ -51,9 +51,15 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     // the call to localPoiSearch does not return the id of the pois
     // add them here, they should be in the same order as the ids
     // and the same order of id in localDescriptionsSearchApiResponse
-    localPoiSearchApiResponse.results.forEach((result, index) => {
-      (result as any).id = ids[index];
-    });
+    const poiResults = (localPoiSearchApiResponse.results || []).map((result, index) => {
+      if (!result)
+        return null;
+      const id = ids[index];
+      if (id && !(result as any).id)
+        (result as any).id = id;
+      return result;
+    }).filter(Boolean);
+    localPoiSearchApiResponse.results = poiResults as typeof localPoiSearchApiResponse.results;
     let localDescriptionsSearchApiResponse: LocalDescriptionsSearchApiResponse;
     try {
       localDescriptionsSearchApiResponse = await this.braveSearch.localDescriptionsSearch(ids);
