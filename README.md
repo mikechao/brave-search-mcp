@@ -9,7 +9,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 ## Features
 
 - **Web Search**: Perform a regular search on the web
-- **Image Search**: Search the web for images. Image search results will be available as a Resource
+- **Image Search**: Search the web for images.
 - **News Search**: Search the web for news
 - **Video Search**: Search the web for videos
 - **Local Points of Interest Search**: Search for local physical locations, businesses, restaurants, services, etc
@@ -34,7 +34,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
   - Get images from the web relevant to the query
   - Inputs:
     - `query` (string): The term to search the internet for images of
-    - `count` (number, optional): The number of images to return (max 3, default 1)
+    - `count` (number, optional): The number of images to return (max 20, default 5)
 
 - **brave_news_search**
   - Searches the web for news
