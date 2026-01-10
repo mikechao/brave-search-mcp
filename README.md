@@ -98,14 +98,14 @@ Replace `YOUR_API_KEY_HERE` with your actual Brave Search API key.
 
 ### Usage with Claude Desktop
 
-## MCP Bundle (MCPB)
+#### MCP Bundle (MCPB)
 
 1. Download the `mcpb` file from the [Releases](https://github.com/mikechao/brave-search-mcp/releases)
 2. Open it with Claude Desktop
    or
    Go to File -> Settings -> Extensions and drag the .mcpb file to the window to install it
 
-## Docker
+#### Docker
 
 1. Clone the repo
 2. Docker build
@@ -137,7 +137,7 @@ docker build -t brave-search-mcp:latest -f ./Dockerfile .
 }
 ```
 
-### NPX
+#### NPX
 
 Add this to your `claude_desktop_config.json`:
 
