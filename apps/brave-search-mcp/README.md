@@ -78,6 +78,31 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 2. Choose a plan (Free tier available with 2,000 queries/month)
 3. Generate your API key [from the developer dashboard](https://api.search.brave.com/app/keys)
 
+### Streamable HTTP mode
+By default the MCP server runs in stdio mode.
+
+```bash
+BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp
+```
+
+To enable Streamable HTTP mode:
+
+```bash
+BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http
+```
+
+By default the server listens on port 3001.
+The URL is:
+```
+http://localhost:3001/mcp
+```
+
+The port can be configured via the PORT environment variable. For example:
+
+```bash
+PORT=4000 BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http
+```
+
 ### Usage with Claude Code
 
 For [Claude Code](https://claude.ai/code) users, run this command:
