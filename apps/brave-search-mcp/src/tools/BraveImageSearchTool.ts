@@ -6,7 +6,7 @@ import { BaseTool } from './BaseTool.js';
 
 const imageSearchInputSchema = z.object({
   searchTerm: z.string().describe('The term to search the internet for images of'),
-  count: z.number().min(1).max(3).optional().default(1).describe('The number of images to search for, minimum 1, maximum 3'),
+  count: z.number().min(1).max(20).optional().default(5).describe('The number of images to search for, minimum 1, maximum 20'),
 });
 
 export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema, any> {
