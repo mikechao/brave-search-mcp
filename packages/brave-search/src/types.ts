@@ -2674,6 +2674,11 @@ export interface Image {
      * @type {ImageResult[]}
      */
     results: ImageResult[]
+    /**
+     * Additional metadata about the image search response.
+     * @type {ImageSearchExtra}
+     */
+    extra?: ImageSearchExtra
   }
 
   /**
@@ -2722,6 +2727,11 @@ export interface Image {
      * @type {MetaUrl}
      */
     meta_url: MetaUrl
+    /**
+     * The confidence level of the image result.
+     * @type {string}
+     */
+    confidence?: string
   }
 
   /**
@@ -2740,6 +2750,27 @@ export interface Image {
      * @type {string}
      */
     placeholder: string
+    /**
+     * The width of the image.
+     * @type {number}
+     */
+    width?: number
+    /**
+     * The height of the image.
+     * @type {number}
+     */
+    height?: number
+  }
+
+  /**
+   * Extra metadata returned by image search.
+   */
+  export interface ImageSearchExtra {
+    /**
+     * Whether the result set might be offensive.
+     * @type {boolean}
+     */
+    might_be_offensive: boolean
   }
 
   /**

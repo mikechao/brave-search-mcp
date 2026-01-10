@@ -1,7 +1,6 @@
 import type { BraveSearch } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
-import imageToBase64 from 'image-to-base64';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
 
@@ -14,7 +13,6 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
   public readonly name = 'brave_image_search';
   public readonly description = 'A tool for searching the web for images using the Brave Search API.';
   public readonly inputSchema = imageSearchInputSchema;
-  public readonly imageByTitle = new Map<string, string>();
 
   constructor(private server: BraveMcpServer, private braveSearch: BraveSearch) {
     super();
@@ -28,29 +26,47 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
       count,
       safesearch: SafeSearchLevel.Strict,
     });
+    if (!imageResults.results || imageResults.results.length === 0) {
+      this.server.log(`No image results found for "${searchTerm}"`, 'info');
+      const text = `No image results found for "${searchTerm}"`;
+      return { content: [{ type: 'text' as const, text }] };
+    }
     this.server.log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
-    const base64Strings = [];
-    const titles = [];
+    const imageItems: Array<{
+      title: string;
+      pageUrl: string;
+      imageUrl: string;
+      source: string;
+      confidence?: string;
+      width?: number;
+      height?: number;
+    }> = [];
     for (const result of imageResults.results) {
-      const base64 = await imageToBase64(result.properties.url);
-      this.server.log(`Image base64 length: ${base64.length}`, 'debug');
-      titles.push(result.title);
-      base64Strings.push(base64);
-      this.imageByTitle.set(result.title, base64);
+      const width = result.properties?.width ?? result.thumbnail?.width;
+      const height = result.properties?.height ?? result.thumbnail?.height;
+      imageItems.push({
+        title: result.title,
+        pageUrl: result.url,
+        imageUrl: result.properties.url,
+        source: result.source,
+        confidence: result.confidence,
+        width,
+        height,
+      });
     }
     const results = [];
-    for (const [index, title] of titles.entries()) {
+    for (const item of imageItems) {
       results.push({
         type: 'text',
-        text: `${title}`,
-      });
-      results.push({
-        type: 'image',
-        data: base64Strings[index],
-        mimeType: 'image/png',
+        text: `Title: ${item.title}\n`
+          + `URL: ${item.pageUrl}\n`
+          + `Image URL: ${item.imageUrl}\n`
+          + `Source: ${item.source}\n`
+          + `Confidence: ${item.confidence ?? 'N/A'}\n`
+          + `Width: ${item.width ?? 'N/A'}\n`
+          + `Height: ${item.height ?? 'N/A'}`,
       });
     }
-    this.server.resourceChangedNotification();
     return { content: results };
   }
 }
