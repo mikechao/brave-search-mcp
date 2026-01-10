@@ -54,19 +54,17 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
         height,
       });
     }
-    const results = [];
-    for (const item of imageItems) {
-      results.push({
-        type: 'text',
-        text: `Title: ${item.title}\n`
-          + `URL: ${item.pageUrl}\n`
-          + `Image URL: ${item.imageUrl}\n`
-          + `Source: ${item.source}\n`
-          + `Confidence: ${item.confidence ?? 'N/A'}\n`
-          + `Width: ${item.width ?? 'N/A'}\n`
-          + `Height: ${item.height ?? 'N/A'}`,
-      });
-    }
-    return { content: results };
+    const combinedText = imageItems
+      .map((item, index) => (
+        `${index + 1}: Title: ${item.title}\n`
+        + `URL: ${item.pageUrl}\n`
+        + `Image URL: ${item.imageUrl}\n`
+        + `Source: ${item.source}\n`
+        + `Confidence: ${item.confidence ?? 'N/A'}\n`
+        + `Width: ${item.width ?? 'N/A'}\n`
+        + `Height: ${item.height ?? 'N/A'}`
+      ))
+      .join('\n\n');
+    return { content: [{ type: 'text' as const, text: combinedText }] };
   }
 }

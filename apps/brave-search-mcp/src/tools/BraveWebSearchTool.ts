@@ -49,10 +49,11 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
       const text = `No results found for "${query}"`;
       return { content: [{ type: 'text' as const, text }] };
     }
-    const content = results.web.results.map(result => ({
-      type: 'text' as const,
-      text: `Title: ${result.title}\nURL: ${result.url}\nDescription: ${result.description}`,
-    }));
-    return { content };
+    const combinedText = results.web.results
+      .map((result, index) => (
+        `${index + 1}: Title: ${result.title}\nURL: ${result.url}\nDescription: ${result.description}`
+      ))
+      .join('\n\n');
+    return { content: [{ type: 'text' as const, text: combinedText }] };
   }
 }

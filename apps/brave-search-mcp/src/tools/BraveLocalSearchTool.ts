@@ -70,7 +70,9 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       const text = `No local results found for "${query}"`;
       return { content: [{ type: 'text' as const, text }] };
     }
-    const content = formattedText.map(text => ({ type: 'text' as const, text }));
-    return { content };
+    const combinedText = formattedText
+      .map((text, index) => `${index + 1}: ${text}`)
+      .join('\n\n');
+    return { content: [{ type: 'text' as const, text: combinedText }] };
   }
 }
