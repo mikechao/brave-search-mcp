@@ -105,6 +105,62 @@ The port can be configured via the PORT environment variable. For example:
 PORT=4000 BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http
 ```
 
+### Usage with ChatGPT
+
+The Brave Search MCP Server can be used with the web UI of ChatGPT. It takes a few steps.
+
+#### 1. Enable Developer Mode in ChatGPT
+
+Settings → Apps → Advanced settings → Developer mode
+
+Additional instructions [here](https://platform.openai.com/docs/guides/developer-mode)
+
+#### 2. Run the Brave Search MCP in HTTP mode
+
+```bash
+BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http
+```
+
+#### 3. Create a local tunnel to expose the MCP Server to ChatGPT
+
+Sign up and configure [ngrok](https://ngrok.com/), the free plan works.
+
+```bash
+ngrok http 3001
+```
+
+Take note of the forwarding URL.
+
+```bash
+...
+Forwarding                    https://bertie-gnomonic-solomon.ngrok-free.dev -> http://localhost:3001
+...
+```
+
+#### 4. Add Brave Search MCP as a Connector to ChatGPT
+
+Open [ChatGPT Apps settings](https://chatgpt.com/#settings/Connectors)
+
+Click Apps
+
+Click Create Apps
+
+Fill out the form using the URL from step 3 as the MCP Server URL, but add `/mcp`.
+
+```
+https://bertie-gnomonic-solomon.ngrok-free.dev/mcp
+```
+
+For Authentication, select 'No Auth'
+
+Tick the checkbox for 'I understand and want to continue'
+
+Then click Create.
+
+#### 5. Using the Brave Search MCP Server
+
+In the ChatGPT UI, click the '+' button, scroll to '...more', select the newly created Brave Search app, and enter your query.
+
 ### Usage with Claude Code
 
 For [Claude Code](https://claude.ai/code) users, run this command:
