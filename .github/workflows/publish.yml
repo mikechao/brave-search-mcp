@@ -18,9 +18,11 @@ jobs:
       - name: Install dependencies and build 🔧
         run: |
           pnpm install --frozen-lockfile
-          pnpm -C apps/brave-search-mcp build || (echo "Build failed" && exit 1)
+          pnpm run build || (echo "Build failed" && exit 1)
+        working-directory: apps/brave-search-mcp
       - name: Publish to NPM 📦
-        run: pnpm -C apps/brave-search-mcp publish --no-git-checks --provenance
+        run: pnpm publish --no-git-checks --provenance
+        working-directory: apps/brave-search-mcp
     permissions:
       contents: read
       id-token: write
@@ -40,14 +42,15 @@ jobs:
       - name: Install dependencies and build 🔧
         run: |
           pnpm install --frozen-lockfile
-          pnpm -C apps/brave-search-mcp build || (echo "Build failed" && exit 1)
+          pnpm run build || (echo "Build failed" && exit 1)
+        working-directory: apps/brave-search-mcp
       - name: Install Anthropic MCPB CLI
         run: pnpm add -g @anthropic-ai/mcpb
       - name: Create MCPB file
         run: |
-          pnpm -C apps/brave-search-mcp install --prod --frozen-lockfile
-          cd apps/brave-search-mcp
+          pnpm install --prod --frozen-lockfile
           mcpb pack
+        working-directory: apps/brave-search-mcp
       - name: Debug MCPB file
         run: |
           ls -la apps/brave-search-mcp/*.mcpb || echo "No .mcpb files found"
