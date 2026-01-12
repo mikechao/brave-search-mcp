@@ -295,10 +295,15 @@ pnpm install --prod
 ## Releasing the package
 
 - The `brave-search` SDK is bundled into the server build; only `apps/brave-search-mcp` is published to npm.
-- Requires Node 20+ (see the `engines` field in `apps/brave-search-mcp/package.json`).
+- Requires Node 20+ (see the `engines` field in `apps/brave-search-mcp/package.json`). CI uses Node 24.
 - Build with `pnpm -C apps/brave-search-mcp build` (or `pnpm -C apps/brave-search-mcp build:all`).
   - If pnpm blocks esbuild postinstall, run `pnpm approve-builds` and allow `esbuild`.
-- If user-facing behavior changes, create a changeset in `.changeset/` (e.g. `pnpm changeset`) and run `pnpm -C apps/brave-search-mcp changeset:version` to apply versions and sync `manifest.json`.
+- To release (e.g. 1.0.1):
+  1. Run `pnpm changeset` and select `brave-search-mcp` with a patch bump.
+  2. Apply versions + sync manifest with `pnpm -C apps/brave-search-mcp changeset:version`.
+  3. Commit and push the version changes.
+  4. Create a GitHub release/tag (this triggers the publish workflow).
+- If user-facing behavior changes, create a changeset in `.changeset/` before releasing.
 - Verify locally with `BRAVE_API_KEY=... node dist/index.js --http`.
 
 ## Disclaimer
