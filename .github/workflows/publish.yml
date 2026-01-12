@@ -2,8 +2,22 @@ name: Publish to NPM
 on:
   release:
     types: [created]
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "Which job(s) to run"
+        type: choice
+        options:
+          - publish
+          - dxt
+          - both
+        default: dxt
+      tag:
+        description: "Release tag to attach MCPB to (required for dxt/both)"
+        required: false
 jobs:
   publish-to-npm:
+    if: ${{ github.event_name == 'release' || inputs.job == 'publish' || inputs.job == 'both' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,9 +48,16 @@ jobs:
 
   create-dxt-release:
     needs: publish-to-npm
+    if: ${{ (github.event_name == 'release' && needs.publish-to-npm.result == 'success') || (github.event_name == 'workflow_dispatch' && (inputs.job == 'dxt' || inputs.job == 'both')) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Validate tag input
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ inputs.tag }}" ]; then
+            echo "Input 'tag' is required for workflow_dispatch when running dxt or both."
+            exit 1
+          fi
       - uses: pnpm/action-setup@v2
         with:
           version: 10
@@ -53,9 +74,12 @@ jobs:
         run: pnpm add -g @anthropic-ai/mcpb
       - name: Create MCPB file
         run: |
-          pnpm install --prod --frozen-lockfile
+          pnpm install --prod --frozen-lockfile --ignore-scripts
           mcpb pack
         working-directory: apps/brave-search-mcp
+        env:
+          HUSKY: 0
+          npm_config_ignore_scripts: "true"
       - name: Debug MCPB file
         run: |
           ls -la apps/brave-search-mcp/*.mcpb || echo "No .mcpb files found"
@@ -63,6 +87,7 @@ jobs:
       - name: Upload MCPB to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
           files: apps/brave-search-mcp/brave-search-mcp.mcpb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
