@@ -52,9 +52,7 @@ jobs:
       - name: Install Anthropic MCPB CLI
         run: pnpm add -g @anthropic-ai/mcpb
       - name: Create MCPB file
-        run: |
-          pnpm install --prod --frozen-lockfile
-          mcpb pack
+        run: mcpb pack
         working-directory: apps/brave-search-mcp
       - name: Debug MCPB file
         run: |

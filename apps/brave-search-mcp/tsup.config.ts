@@ -10,7 +10,7 @@ export default defineConfig({
   splitting: false,
   dts: false,
   shims: true,
-  noExternal: ['brave-search'],
+  noExternal: [/.*/],
   banner: {
     js: 'import { createRequire as __createRequire } from "module";\nconst require = __createRequire(import.meta.url);',
   },
