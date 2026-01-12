@@ -18,9 +18,9 @@ jobs:
       - name: Install dependencies and build 🔧
         run: |
           pnpm install --frozen-lockfile
-          pnpm run build || (echo "Build failed" && exit 1)
+          pnpm -C apps/brave-search-mcp build || (echo "Build failed" && exit 1)
       - name: Publish to NPM 📦
-        run: pnpm publish --no-git-checks --provenance
+        run: pnpm -C apps/brave-search-mcp publish --no-git-checks --provenance
     permissions:
       contents: read
       id-token: write
@@ -40,21 +40,22 @@ jobs:
       - name: Install dependencies and build 🔧
         run: |
           pnpm install --frozen-lockfile
-          pnpm run build || (echo "Build failed" && exit 1)
+          pnpm -C apps/brave-search-mcp build || (echo "Build failed" && exit 1)
       - name: Install Anthropic MCPB CLI
         run: pnpm add -g @anthropic-ai/mcpb
       - name: Create MCPB file
         run: |
-          pnpm install --prod
+          pnpm -C apps/brave-search-mcp install --prod --frozen-lockfile
+          cd apps/brave-search-mcp
           mcpb pack
       - name: Debug MCPB file
         run: |
-          ls -la *.mcpb || echo "No .mcpb files found"
-          find . -name "*.mcpb" -type f || echo "No .mcpb files found in subdirectories"
+          ls -la apps/brave-search-mcp/*.mcpb || echo "No .mcpb files found"
+          find apps/brave-search-mcp -name "*.mcpb" -type f || echo "No .mcpb files found in subdirectories"
       - name: Upload MCPB to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: ./brave-search-mcp.mcpb
+          files: apps/brave-search-mcp/brave-search-mcp.mcpb
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     permissions:
