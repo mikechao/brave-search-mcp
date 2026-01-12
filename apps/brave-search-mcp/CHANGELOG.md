@@ -1,5 +1,12 @@
 # brave-search-mcp
 
+## 1.0.3
+
+### Patch Changes
+
+- MCPB package cleanup
+- Rewrite workspace dependency for publish
+
 ## 1.0.2
 
 ### Patch Changes
