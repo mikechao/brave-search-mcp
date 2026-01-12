@@ -12,7 +12,7 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.19.0
+          node-version: 24
           cache: pnpm
       - name: Prepare npm config for trusted publishing
         run: |
@@ -42,7 +42,7 @@ jobs:
           version: 10
       - uses: actions/setup-node@v4
         with:
-          node-version: 20.19.0
+          node-version: 24
           cache: pnpm
       - name: Install dependencies and build 🔧
         run: |
