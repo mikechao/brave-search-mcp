@@ -48,7 +48,7 @@
     "lint:check": "eslint . --ext .ts,.js,.mjs,.cjs",
     "typecheck": "tsc --noEmit",
     "check": "pnpm run lint:check && pnpm run typecheck",
-    "changeset:version": "changeset version && node scripts/sync-manifest-version.js"
+    "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.25.2",
