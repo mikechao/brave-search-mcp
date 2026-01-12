@@ -1,5 +1,11 @@
 # brave-search-mcp
 
+## 1.0.2
+
+### Patch Changes
+
+- MCPB package cleanup
+
 ## 1.0.1
 
 ### Patch Changes
