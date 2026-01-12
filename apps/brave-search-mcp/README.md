@@ -133,7 +133,7 @@ Take note of the forwarding URL.
 
 ```bash
 ...
-Forwarding                    https://bertie-gnomonic-solomon.ngrok-free.dev -> http://localhost:3001
+Forwarding                    https://john-joe-asdf.ngrok-free.dev -> http://localhost:3001
 ...
 ```
 
@@ -148,7 +148,7 @@ Click Create Apps
 Fill out the form using the URL from step 3 as the MCP Server URL, but add `/mcp`.
 
 ```
-https://bertie-gnomonic-solomon.ngrok-free.dev/mcp
+https://john-joe-asdf.ngrok-free.dev/mcp
 ```
 
 For Authentication, select 'No Auth'
