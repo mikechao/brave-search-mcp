@@ -51,6 +51,11 @@ jobs:
         working-directory: apps/brave-search-mcp
       - name: Install Anthropic MCPB CLI
         run: pnpm add -g @anthropic-ai/mcpb
+      - name: Clean for MCPB packaging
+        run: |
+          rm -rf node_modules
+          rm -rf ../../node_modules
+        working-directory: apps/brave-search-mcp
       - name: Create MCPB file
         run: mcpb pack
         working-directory: apps/brave-search-mcp
