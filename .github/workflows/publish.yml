@@ -18,25 +18,13 @@ jobs:
         run: |
           echo "registry=https://registry.npmjs.org/" > "$RUNNER_TEMP/npmrc"
           npm config delete //registry.npmjs.org/:_authToken || true
-      - name: Debug npm auth env
-        run: |
-          if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
-            echo "NODE_AUTH_TOKEN is set"
-          else
-            echo "NODE_AUTH_TOKEN is not set"
-          fi
-          if [ -n "${NPM_TOKEN:-}" ]; then
-            echo "NPM_TOKEN is set"
-          else
-            echo "NPM_TOKEN is not set"
-          fi
       - name: Install dependencies and build 🔧
         run: |
           pnpm install --frozen-lockfile
           pnpm run build || (echo "Build failed" && exit 1)
         working-directory: apps/brave-search-mcp
       - name: Publish to NPM 📦
-        run: pnpm publish --no-git-checks --provenance
+        run: npm publish --provenance
         working-directory: apps/brave-search-mcp
         env:
           NPM_CONFIG_USERCONFIG: ${{ runner.temp }}/npmrc
