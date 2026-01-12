@@ -1,7 +1,7 @@
 {
   "dxt_version": "0.1",
   "name": "brave-search-mcp",
-  "version": "2.0.0",
+  "version": "1.0.0",
   "description": "MCP Server that uses Brave Search API to search for images, general web search, video, news and points of interest.",
   "author": {
     "name": "Mike Chao",
