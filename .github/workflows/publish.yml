@@ -13,8 +13,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20.19.0
-          registry-url: 'https://registry.npmjs.org/'
           cache: pnpm
+      - name: Prepare npm config for trusted publishing
+        run: |
+          echo "registry=https://registry.npmjs.org/" > "$RUNNER_TEMP/npmrc"
+          npm config delete //registry.npmjs.org/:_authToken || true
       - name: Install dependencies and build 🔧
         run: |
           pnpm install --frozen-lockfile
@@ -23,6 +26,8 @@ jobs:
       - name: Publish to NPM 📦
         run: pnpm publish --no-git-checks --provenance
         working-directory: apps/brave-search-mcp
+        env:
+          NPM_CONFIG_USERCONFIG: ${{ runner.temp }}/npmrc
     permissions:
       contents: read
       id-token: write
