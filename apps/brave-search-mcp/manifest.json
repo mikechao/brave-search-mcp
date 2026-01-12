@@ -14,10 +14,8 @@
     "type": "node",
     "entry_point": "dist/index.js",
     "mcp_config": {
-      "command": "node",
-      "args": [
-        "${__dirname}/dist/index.js"
-      ],
+      "command": "${__dirname}/dist/index.js",
+      "args": [],
       "env": {
         "BRAVE_API_KEY": "${user_config.brave_api_key}"
       }

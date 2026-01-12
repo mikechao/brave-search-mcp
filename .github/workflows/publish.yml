@@ -52,13 +52,8 @@ jobs:
       - name: Install Anthropic MCPB CLI
         run: pnpm add -g @anthropic-ai/mcpb
       - name: Create MCPB file
-        run: |
-          pnpm install --prod --frozen-lockfile --ignore-scripts
-          mcpb pack
+        run: mcpb pack
         working-directory: apps/brave-search-mcp
-        env:
-          HUSKY: 0
-          npm_config_ignore_scripts: "true"
       - name: Debug MCPB file
         run: |
           ls -la apps/brave-search-mcp/*.mcpb || echo "No .mcpb files found"
