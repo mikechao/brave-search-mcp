@@ -51,6 +51,7 @@
     "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
   "dependencies": {
+    "@modelcontextprotocol/ext-apps": "^0.4.0",
     "@modelcontextprotocol/sdk": "^1.25.2",
     "brave-search": "workspace:*",
     "cors": "^2.8.5",
