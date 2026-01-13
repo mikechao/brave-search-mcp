@@ -41,9 +41,10 @@
   },
   "scripts": {
     "clean": "shx rm -rf dist",
-    "build": "tsup && shx chmod +x dist/*.js",
+    "build": "tsup && pnpm run build:ui && shx chmod +x dist/*.js",
     "build:all": "pnpm run typecheck && pnpm run build",
     "build:watch": "tsup --watch",
+    "build:ui": "INPUT=mcp-app.html vite build --config ui/vite.config.ts",
     "lint": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
     "lint:check": "eslint . --ext .ts,.js,.mjs,.cjs",
     "typecheck": "tsc --noEmit",
@@ -69,10 +70,15 @@
     "@types/express": "^5.0.1",
     "@types/image-to-base64": "^2.1.2",
     "@types/node": "^22.13.14",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^9.39.2",
     "eslint-plugin-format": "^1.1.0",
     "shx": "^0.4.0",
     "tsup": "^8.0.1",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vite": "^7.3.1",
+    "vite-plugin-singlefile": "^2.1.0"
   }
 }

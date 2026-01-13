@@ -1,10 +1,17 @@
+import { RESOURCE_MIME_TYPE, registerAppResource, registerAppTool } from '@modelcontextprotocol/ext-apps/server';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { BraveSearch } from 'brave-search';
-import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
+import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
+
+const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
 export class BraveMcpServer {
   private server: McpServer;
@@ -39,14 +46,64 @@ export class BraveMcpServer {
   }
 
   private setupTools(): void {
-    this.server.registerTool(
-      this.imageSearchTool.name,
-      {
-        description: this.imageSearchTool.description,
-        inputSchema: this.imageSearchTool.inputSchema,
-      },
-      this.imageSearchTool.execute.bind(this.imageSearchTool),
-    );
+    if (this.isUI) {
+      const resourceUri = 'ui://brave-image-search/mcp-app.html';
+      registerAppTool(
+        this.server,
+        this.imageSearchTool.name,
+        {
+          description: this.imageSearchTool.description,
+          inputSchema: this.imageSearchTool.inputSchema.shape,
+          outputSchema: imageSearchOutputSchema.shape,
+          _meta: { ui: { resourceUri } },
+        },
+        this.imageSearchTool.execute.bind(this.imageSearchTool),
+      );
+      registerAppResource(
+        this.server,
+        resourceUri,
+        resourceUri,
+        { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Image Search UI' },
+        async (): Promise<ReadResourceResult> => {
+          const uiPath = path.join(DIST_DIR, 'ui', 'mcp-app.html');
+          try {
+            const html = await fs.readFile(uiPath, 'utf-8');
+            return {
+              contents: [
+                {
+                  uri: resourceUri,
+                  mimeType: RESOURCE_MIME_TYPE,
+                  text: html,
+                },
+              ],
+            };
+          }
+          catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            this.log(`UI bundle missing at ${uiPath}: ${message}`, 'warning');
+            return {
+              contents: [
+                {
+                  uri: resourceUri,
+                  mimeType: RESOURCE_MIME_TYPE,
+                  text: `<!doctype html><html><body><pre>Missing UI bundle at ${uiPath}: ${message}</pre></body></html>`,
+                },
+              ],
+            };
+          }
+        },
+      );
+    }
+    else {
+      this.server.registerTool(
+        this.imageSearchTool.name,
+        {
+          description: this.imageSearchTool.description,
+          inputSchema: this.imageSearchTool.inputSchema,
+        },
+        this.imageSearchTool.execute.bind(this.imageSearchTool),
+      );
+    }
     this.server.registerTool(
       this.webSearchTool.name,
       {
