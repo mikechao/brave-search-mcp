@@ -47,62 +47,10 @@ export class BraveMcpServer {
 
   private setupTools(): void {
     if (this.isUI) {
-      const resourceUri = 'ui://brave-image-search/mcp-app.html';
-      registerAppTool(
-        this.server,
-        this.imageSearchTool.name,
-        {
-          description: this.imageSearchTool.description,
-          inputSchema: this.imageSearchTool.inputSchema.shape,
-          outputSchema: imageSearchOutputSchema.shape,
-          _meta: { ui: { resourceUri } },
-        },
-        this.imageSearchTool.execute.bind(this.imageSearchTool),
-      );
-      registerAppResource(
-        this.server,
-        resourceUri,
-        resourceUri,
-        { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Image Search UI' },
-        async (): Promise<ReadResourceResult> => {
-          const uiPath = path.join(DIST_DIR, 'ui', 'mcp-app.html');
-          try {
-            const html = await fs.readFile(uiPath, 'utf-8');
-            return {
-              contents: [
-                {
-                  uri: resourceUri,
-                  mimeType: RESOURCE_MIME_TYPE,
-                  text: html,
-                },
-              ],
-            };
-          }
-          catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            this.log(`UI bundle missing at ${uiPath}: ${message}`, 'warning');
-            return {
-              contents: [
-                {
-                  uri: resourceUri,
-                  mimeType: RESOURCE_MIME_TYPE,
-                  text: `<!doctype html><html><body><pre>Missing UI bundle at ${uiPath}: ${message}</pre></body></html>`,
-                },
-              ],
-            };
-          }
-        },
-      );
+      this.setupUITools();
     }
     else {
-      this.server.registerTool(
-        this.imageSearchTool.name,
-        {
-          description: this.imageSearchTool.description,
-          inputSchema: this.imageSearchTool.inputSchema,
-        },
-        this.imageSearchTool.execute.bind(this.imageSearchTool),
-      );
+      this.setupImageSearchTool();
     }
     this.server.registerTool(
       this.webSearchTool.name,
@@ -135,6 +83,66 @@ export class BraveMcpServer {
         inputSchema: this.videoSearchTool.inputSchema,
       },
       this.videoSearchTool.execute.bind(this.videoSearchTool),
+    );
+  }
+
+  private setupUITools(): void {
+    const resourceUri = 'ui://brave-image-search/mcp-app.html';
+    registerAppTool(
+      this.server,
+      this.imageSearchTool.name,
+      {
+        description: this.imageSearchTool.description,
+        inputSchema: this.imageSearchTool.inputSchema.shape,
+        outputSchema: imageSearchOutputSchema.shape,
+        _meta: { ui: { resourceUri } },
+      },
+      this.imageSearchTool.execute.bind(this.imageSearchTool),
+    );
+    registerAppResource(
+      this.server,
+      resourceUri,
+      resourceUri,
+      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Image Search UI' },
+      async (): Promise<ReadResourceResult> => {
+        const uiPath = path.join(DIST_DIR, 'ui', 'mcp-app.html');
+        try {
+          const html = await fs.readFile(uiPath, 'utf-8');
+          return {
+            contents: [
+              {
+                uri: resourceUri,
+                mimeType: RESOURCE_MIME_TYPE,
+                text: html,
+              },
+            ],
+          };
+        }
+        catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          this.log(`UI bundle missing at ${uiPath}: ${message}`, 'warning');
+          return {
+            contents: [
+              {
+                uri: resourceUri,
+                mimeType: RESOURCE_MIME_TYPE,
+                text: `<!doctype html><html><body><pre>Missing UI bundle at ${uiPath}: ${message}</pre></body></html>`,
+              },
+            ],
+          };
+        }
+      },
+    );
+  }
+
+  private setupImageSearchTool(): void {
+    this.server.registerTool(
+      this.imageSearchTool.name,
+      {
+        description: this.imageSearchTool.description,
+        inputSchema: this.imageSearchTool.inputSchema,
+      },
+      this.imageSearchTool.execute.bind(this.imageSearchTool),
     );
   }
 
