@@ -57,7 +57,8 @@
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "image-to-base64": "^2.2.0",
-    "react": "link:@modelcontextprotocol/ext-apps/react",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "zod": "^3.24.3"
   },
   "devDependencies": {
