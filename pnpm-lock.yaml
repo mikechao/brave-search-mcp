@@ -19,7 +19,7 @@ importers:
     dependencies:
       '@modelcontextprotocol/ext-apps':
         specifier: ^0.4.0
-        version: 0.4.0(@modelcontextprotocol/sdk@1.25.2(hono@4.11.3)(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)
+        version: 0.4.0(@modelcontextprotocol/sdk@1.25.2(hono@4.11.3)(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@apps+brave-search-mcp+@modelcontextprotocol+ext-apps+react)(zod@3.25.76)
       '@modelcontextprotocol/sdk':
         specifier: ^1.25.2
         version: 1.25.2(hono@4.11.3)(zod@3.25.76)
@@ -35,6 +35,9 @@ importers:
       image-to-base64:
         specifier: ^2.2.0
         version: 2.2.0
+      react:
+        specifier: link:@modelcontextprotocol/ext-apps/react
+        version: link:@modelcontextprotocol/ext-apps/react
       zod:
         specifier: ^3.24.3
         version: 3.25.76
@@ -3999,7 +4002,7 @@ snapshots:
       globby: 11.1.0
       read-yaml-file: 1.1.0
 
-  '@modelcontextprotocol/ext-apps@0.4.0(@modelcontextprotocol/sdk@1.25.2(hono@4.11.3)(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(zod@3.25.76)':
+  '@modelcontextprotocol/ext-apps@0.4.0(@modelcontextprotocol/sdk@1.25.2(hono@4.11.3)(zod@3.25.76))(react-dom@18.3.1(react@18.3.1))(react@apps+brave-search-mcp+@modelcontextprotocol+ext-apps+react)(zod@3.25.76)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.25.2(hono@4.11.3)(zod@3.25.76)
       zod: 3.25.76
@@ -4021,7 +4024,7 @@ snapshots:
       '@rollup/rollup-linux-x64-gnu': 4.55.1
       '@rollup/rollup-win32-arm64-msvc': 4.55.1
       '@rollup/rollup-win32-x64-msvc': 4.55.1
-      react: 18.3.1
+      react: link:apps/brave-search-mcp/@modelcontextprotocol/ext-apps/react
       react-dom: 18.3.1(react@18.3.1)
 
   '@modelcontextprotocol/inspector-cli@0.18.0(hono@4.11.3)(zod@3.25.76)':
