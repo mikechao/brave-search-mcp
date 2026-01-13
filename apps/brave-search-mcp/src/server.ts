@@ -15,7 +15,7 @@ export class BraveMcpServer {
   private newsSearchTool: BraveNewsSearchTool;
   private videoSearchTool: BraveVideoSearchTool;
 
-  constructor(private braveSearchApiKey: string) {
+  constructor(private braveSearchApiKey: string, private isUI: boolean = false) {
     this.server = new McpServer(
       {
         name: 'Brave Search MCP Server',
@@ -30,7 +30,7 @@ export class BraveMcpServer {
       },
     );
     this.braveSearch = new BraveSearch(braveSearchApiKey);
-    this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch);
+    this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch, this.isUI);
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch);

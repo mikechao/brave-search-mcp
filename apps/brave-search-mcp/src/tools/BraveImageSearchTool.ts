@@ -14,7 +14,7 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
   public readonly description = 'A tool for searching the web for images using the Brave Search API.';
   public readonly inputSchema = imageSearchInputSchema;
 
-  constructor(private server: BraveMcpServer, private braveSearch: BraveSearch) {
+  constructor(private server: BraveMcpServer, private braveSearch: BraveSearch, private isUI: boolean = false) {
     super();
   }
 
