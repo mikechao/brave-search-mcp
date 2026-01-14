@@ -28,7 +28,6 @@ export class BraveMcpServer {
   constructor(
     private braveSearchApiKey: string,
     private isUI: boolean = false,
-    private isChatGPT: boolean = false,
   ) {
     this.server = new McpServer(
       {
@@ -44,9 +43,8 @@ export class BraveMcpServer {
       },
     );
     this.braveSearch = new BraveSearch(braveSearchApiKey);
-    // Enable structured content for both UI modes
-    const enableStructuredContent = this.isUI || this.isChatGPT;
-    this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch, enableStructuredContent);
+    // Enable structured content when UI mode is enabled
+    this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch, this.isUI);
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch);
@@ -55,11 +53,9 @@ export class BraveMcpServer {
   }
 
   private setupTools(): void {
-    if (this.isChatGPT) {
-      this.setupChatGPTTools();
-    }
-    else if (this.isUI) {
-      this.setupUITools();
+    if (this.isUI) {
+      // Dual-resource strategy: register BOTH MCP-APP and ChatGPT resources
+      this.setupDualResourceTools();
     }
     else {
       this.setupImageSearchTool();
@@ -99,53 +95,43 @@ export class BraveMcpServer {
   }
 
   /**
-   * Setup tools and resources for MCP-APP (ext-apps) hosts
-   * Uses RESOURCE_MIME_TYPE (text/html+mcpappoutput) and ext-apps format
+   * Dual-Resource Strategy: Register both MCP-APP and ChatGPT resources
+   * 
+   * This allows the same server instance to serve both hosts:
+   * - MCP-APP hosts (MCPJam, Claude Desktop) use the ui:// resource with ext-apps
+   * - ChatGPT uses the chatgpt:// resource with text/html+skybridge
+   * 
+   * The tool metadata includes pointers to both resources.
    */
-  private setupUITools(): void {
-    const resourceUri = 'ui://brave-image-search/mcp-app.html';
-    registerAppTool(
-      this.server,
-      this.imageSearchTool.name,
-      {
-        description: this.imageSearchTool.description,
-        inputSchema: this.imageSearchTool.inputSchema.shape,
-        outputSchema: imageSearchOutputSchema.shape,
-        _meta: { ui: { resourceUri } },
-      },
-      this.imageSearchTool.execute.bind(this.imageSearchTool),
-    );
+  private setupDualResourceTools(): void {
+    const mcpAppResourceUri = 'ui://brave-image-search/mcp-app.html';
+    const chatgptResourceUri = 'ui://brave-image-search/chatgpt-widget.html';
+
+    // Register MCP-APP resource (ext-apps format)
     registerAppResource(
       this.server,
-      resourceUri,
-      resourceUri,
-      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Image Search UI' },
+      mcpAppResourceUri,
+      mcpAppResourceUri,
+      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Image Search UI (MCP-APP)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(resourceUri, RESOURCE_MIME_TYPE);
+        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'mcp-app.html');
       },
     );
-  }
 
-  /**
-   * Setup tools and resources for ChatGPT Apps SDK hosts
-   * Uses text/html+skybridge MIME type and OpenAI metadata format
-   */
-  private setupChatGPTTools(): void {
-    const resourceUri = 'ui://brave-image-search/widget.html';
-
-    // Register resource with ChatGPT MIME type
+    // Register ChatGPT resource (skybridge format)
     this.server.registerResource(
-      'brave-image-search-widget',
-      resourceUri,
-      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Image Search Widget' },
+      'brave-image-search-chatgpt',
+      chatgptResourceUri,
+      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Image Search Widget (ChatGPT)' },
       async (): Promise<ReadResourceResult> => {
-        // Use the separate ChatGPT bundle (no ext-apps SDK)
-        return this.loadUIBundle(resourceUri, CHATGPT_MIME_TYPE, 'chatgpt-app.html');
+        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'chatgpt-app.html');
       },
     );
 
-    // Register tool with ChatGPT metadata format
-    this.server.registerTool(
+    // Register tool with BOTH metadata pointers
+    // Each host will pick the resource that matches its capabilities
+    registerAppTool(
+      this.server,
       this.imageSearchTool.name,
       {
         title: 'Brave Image Search',
@@ -153,7 +139,10 @@ export class BraveMcpServer {
         inputSchema: this.imageSearchTool.inputSchema.shape,
         outputSchema: imageSearchOutputSchema.shape,
         _meta: {
-          'openai/outputTemplate': resourceUri,
+          // MCP-APP (ext-apps) metadata
+          ui: { resourceUri: mcpAppResourceUri },
+          // ChatGPT Apps SDK metadata
+          'openai/outputTemplate': chatgptResourceUri,
           'openai/toolInvocation/invoking': 'Searching for images…',
           'openai/toolInvocation/invoked': 'Images found.',
         },
