@@ -68,6 +68,49 @@ node dist/index.js
 *   **Entry Point:** `src/braveSearch.ts`
 *   **Types:** `src/types.ts`
 
+## Dual-Host Widget Pattern (MCP-APP + ChatGPT)
+
+When creating UI widgets for MCP tools, use the **Dual-Resource Strategy** to support both MCP-APP hosts (Claude Desktop, MCPJam) and ChatGPT from a single server instance.
+
+### Key Points
+
+1. **Separate bundles required** - `vite-plugin-singlefile` bundles everything, so ext-apps SDK initialization runs even with `React.lazy()`. Create two entry points:
+   - `mcp-app.html` - includes ext-apps SDK for MCP-APP hosts
+   - `chatgpt-app.html` - standalone, no ext-apps imports (uses `window.openai`)
+
+2. **Register both resources** with combined metadata:
+```typescript
+registerAppTool(server, toolName, {
+  _meta: {
+    // MCP-APP (ext-apps) looks for this
+    ui: { resourceUri: 'ui://tool/mcp-app.html' },
+    // ChatGPT looks for this
+    'openai/outputTemplate': 'ui://tool/chatgpt-widget.html',
+  },
+}, handler);
+```
+
+3. **MIME types**:
+   - MCP-APP: `text/html+mcpappoutput` (via `RESOURCE_MIME_TYPE`)
+   - ChatGPT: `text/html+skybridge`
+
+4. **ChatGPT widget specifics**:
+   - Data: Poll `window.openai.toolOutput` (null at mount, populated later)
+   - Links: Use `openExternal({ href: url })` not `openExternal(url)`
+   - Types: Create `openai.d.ts` for `window.openai` API
+
+5. **Build scripts** in `package.json`:
+```json
+"build:ui": "INPUT=mcp-app.html vite build --config ui/vite.config.ts",
+"build:ui:chatgpt": "INPUT=chatgpt-app.html vite build --config ui/vite.config.ts"
+```
+
+### Usage
+```bash
+node dist/index.js --ui --http
+```
+Single flag serves both hosts - each picks the resource matching its capabilities.
+
 ## Conventions
 *   **Workspaces:** Internal dependencies are referenced via `workspace:*` (e.g., `"brave-search": "workspace:*"`).
 *   **Code Style:** ESLint with `@antfu/eslint-config`.
