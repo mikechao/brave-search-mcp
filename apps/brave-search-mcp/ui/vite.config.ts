@@ -15,6 +15,11 @@ const inputPath = path.isAbsolute(INPUT) ? INPUT : path.resolve(rootDir, INPUT);
 export default defineConfig({
   root: rootDir,
   plugins: [react(), viteSingleFile()],
+  resolve: {
+    alias: {
+      '@': path.resolve(rootDir, 'src'),
+    },
+  },
   build: {
     sourcemap: isDevelopment ? 'inline' : undefined,
     cssMinify: !isDevelopment,

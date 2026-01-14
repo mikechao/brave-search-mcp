@@ -56,6 +56,7 @@
     "@modelcontextprotocol/ext-apps": "^0.4.0",
     "@modelcontextprotocol/sdk": "^1.25.2",
     "@radix-ui/react-slot": "^1.2.4",
+    "@tabler/icons-react": "^3.36.1",
     "brave-search": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

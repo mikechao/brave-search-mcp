@@ -274,6 +274,14 @@ body::before {
   letter-spacing: 0.08em;
 }
 
+.carousel-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px 0 60px;
+  overflow: hidden;
+}
+
 .loading,
 .error {
   padding: 24px;

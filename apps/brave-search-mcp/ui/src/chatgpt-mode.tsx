@@ -3,7 +3,9 @@
  * COMPLETELY STANDALONE - no ext-apps SDK dependency
  */
 import { useState, useEffect } from 'react';
+import './global.css';
 import './openai.d.ts';
+import Carousel, { type ImageSlideData } from '@/components/ui/carousel';
 
 // Define interfaces locally to avoid importing from ext-apps
 interface ImageItem {
@@ -34,7 +36,6 @@ export default function ChatGPTMode() {
         // Check immediately
         const currentData = window.openai?.toolOutput as ImageSearchData | undefined;
         if (currentData) {
-
             setData(currentData);
         }
 
@@ -42,7 +43,6 @@ export default function ChatGPTMode() {
         const interval = setInterval(() => {
             const newData = window.openai?.toolOutput as ImageSearchData | undefined;
             if (newData) {
-
                 setData(newData);
                 clearInterval(interval); // Stop polling once we have data
             }
@@ -65,14 +65,22 @@ export default function ChatGPTMode() {
         paddingLeft: safeAreaInsets?.left,
     };
 
-    const handleOpen = async (item: ImageItem) => {
+    // Convert ImageItem[] to ImageSlideData[] for carousel
+    const slides: ImageSlideData[] = items.map(item => ({
+        title: item.title,
+        src: item.imageUrl,
+        source: item.source,
+        pageUrl: item.pageUrl,
+    }));
+
+    const handleOpenLink = async (slide: ImageSlideData) => {
         try {
             if (window.openai?.openExternal) {
                 // ChatGPT expects { href: url } object, not just the url string
-                await window.openai.openExternal({ href: item.pageUrl });
+                await window.openai.openExternal({ href: slide.pageUrl });
             } else {
                 // Fallback to window.open
-                window.open(item.pageUrl, '_blank');
+                window.open(slide.pageUrl, '_blank');
             }
         } catch (e) {
             console.error('Open link failed:', e instanceof Error ? e.message : String(e));
@@ -106,7 +114,7 @@ export default function ChatGPTMode() {
                 <section className="empty-state">
                     <h2>Ready for images</h2>
                     <p>
-                        Call <code>brave_image_search</code> with a search term to populate the grid.
+                        Call <code>brave_image_search</code> with a search term to see the carousel.
                     </p>
                 </section>
             )}
@@ -118,40 +126,9 @@ export default function ChatGPTMode() {
                 </section>
             )}
 
-            {items.length > 0 && (
-                <section className="grid">
-                    {items.map((item, index) => {
-                        const aspectRatio = item.width && item.height
-                            ? `${item.width} / ${item.height}`
-                            : '4 / 3';
-                        const dims = item.width && item.height
-                            ? `${item.width}×${item.height}`
-                            : 'Unknown size';
-                        return (
-                            <button
-                                key={`${item.pageUrl}-${index}`}
-                                type="button"
-                                className="card"
-                                style={{ animationDelay: `${index * 35}ms` }}
-                                onClick={() => handleOpen(item)}
-                            >
-                                <div className="thumb" style={{ aspectRatio }}>
-                                    <img src={item.imageUrl} alt={item.title} loading="lazy" />
-                                    <div className="overlay">
-                                        <div className="overlay-title">{item.title}</div>
-                                        <div className="overlay-meta">
-                                            <span>{item.source}</span>
-                                            <span>{dims}</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="caption">
-                                    <span className="caption-title">{item.title}</span>
-                                    <span className="caption-source">{item.source}</span>
-                                </div>
-                            </button>
-                        );
-                    })}
+            {slides.length > 0 && (
+                <section className="carousel-container">
+                    <Carousel slides={slides} onOpenLink={handleOpenLink} />
                 </section>
             )}
         </main>
