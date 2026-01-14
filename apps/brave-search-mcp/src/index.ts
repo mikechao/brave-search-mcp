@@ -12,8 +12,9 @@ function createServer(): McpServer {
     console.error('Error: BRAVE_API_KEY environment variable is required');
     process.exit(1);
   }
-  const isUI = process.argv.includes('--ui');
-  return new BraveMcpServer(BRAVE_API_KEY, isUI).serverInstance;
+  const isChatGPT = process.argv.includes('--chatgpt');
+  const isUI = process.argv.includes('--ui') || isChatGPT;
+  return new BraveMcpServer(BRAVE_API_KEY, isUI, isChatGPT).serverInstance;
 }
 
 const http = process.argv.includes('--http');

@@ -1,7 +1,7 @@
 /**
  * Brave Image Search UI
  */
-import type { WidgetProps } from './mcp-app-wrapper.tsx';
+import type { WidgetProps } from './widget-props.ts';
 
 interface ImageItem {
   title: string;

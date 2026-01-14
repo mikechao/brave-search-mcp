@@ -13,6 +13,9 @@ import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
+/** ChatGPT Apps SDK MIME type for widget resources */
+const CHATGPT_MIME_TYPE = 'text/html+skybridge';
+
 export class BraveMcpServer {
   private server: McpServer;
   private braveSearch: BraveSearch;
@@ -22,7 +25,11 @@ export class BraveMcpServer {
   private newsSearchTool: BraveNewsSearchTool;
   private videoSearchTool: BraveVideoSearchTool;
 
-  constructor(private braveSearchApiKey: string, private isUI: boolean = false) {
+  constructor(
+    private braveSearchApiKey: string,
+    private isUI: boolean = false,
+    private isChatGPT: boolean = false,
+  ) {
     this.server = new McpServer(
       {
         name: 'Brave Search MCP Server',
@@ -37,7 +44,9 @@ export class BraveMcpServer {
       },
     );
     this.braveSearch = new BraveSearch(braveSearchApiKey);
-    this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch, this.isUI);
+    // Enable structured content for both UI modes
+    const enableStructuredContent = this.isUI || this.isChatGPT;
+    this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch, enableStructuredContent);
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch);
@@ -46,7 +55,10 @@ export class BraveMcpServer {
   }
 
   private setupTools(): void {
-    if (this.isUI) {
+    if (this.isChatGPT) {
+      this.setupChatGPTTools();
+    }
+    else if (this.isUI) {
       this.setupUITools();
     }
     else {
@@ -86,6 +98,10 @@ export class BraveMcpServer {
     );
   }
 
+  /**
+   * Setup tools and resources for MCP-APP (ext-apps) hosts
+   * Uses RESOURCE_MIME_TYPE (text/html+mcpappoutput) and ext-apps format
+   */
   private setupUITools(): void {
     const resourceUri = 'ui://brave-image-search/mcp-app.html';
     registerAppTool(
@@ -105,34 +121,82 @@ export class BraveMcpServer {
       resourceUri,
       { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Image Search UI' },
       async (): Promise<ReadResourceResult> => {
-        const uiPath = path.join(DIST_DIR, 'ui', 'mcp-app.html');
-        try {
-          const html = await fs.readFile(uiPath, 'utf-8');
-          return {
-            contents: [
-              {
-                uri: resourceUri,
-                mimeType: RESOURCE_MIME_TYPE,
-                text: html,
-              },
-            ],
-          };
-        }
-        catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          this.log(`UI bundle missing at ${uiPath}: ${message}`, 'warning');
-          return {
-            contents: [
-              {
-                uri: resourceUri,
-                mimeType: RESOURCE_MIME_TYPE,
-                text: `<!doctype html><html><body><pre>Missing UI bundle at ${uiPath}: ${message}</pre></body></html>`,
-              },
-            ],
-          };
-        }
+        return this.loadUIBundle(resourceUri, RESOURCE_MIME_TYPE);
       },
     );
+  }
+
+  /**
+   * Setup tools and resources for ChatGPT Apps SDK hosts
+   * Uses text/html+skybridge MIME type and OpenAI metadata format
+   */
+  private setupChatGPTTools(): void {
+    const resourceUri = 'ui://brave-image-search/widget.html';
+
+    // Register resource with ChatGPT MIME type
+    this.server.registerResource(
+      'brave-image-search-widget',
+      resourceUri,
+      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Image Search Widget' },
+      async (): Promise<ReadResourceResult> => {
+        // Use the separate ChatGPT bundle (no ext-apps SDK)
+        return this.loadUIBundle(resourceUri, CHATGPT_MIME_TYPE, 'chatgpt-app.html');
+      },
+    );
+
+    // Register tool with ChatGPT metadata format
+    this.server.registerTool(
+      this.imageSearchTool.name,
+      {
+        title: 'Brave Image Search',
+        description: this.imageSearchTool.description,
+        inputSchema: this.imageSearchTool.inputSchema.shape,
+        outputSchema: imageSearchOutputSchema.shape,
+        _meta: {
+          'openai/outputTemplate': resourceUri,
+          'openai/toolInvocation/invoking': 'Searching for images…',
+          'openai/toolInvocation/invoked': 'Images found.',
+        },
+      },
+      this.imageSearchTool.execute.bind(this.imageSearchTool),
+    );
+  }
+
+  /**
+   * Load the UI bundle HTML from disk
+   * @param bundleName - The HTML file to load (defaults to mcp-app.html)
+   */
+  private async loadUIBundle(
+    resourceUri: string,
+    mimeType: string,
+    bundleName: string = 'mcp-app.html',
+  ): Promise<ReadResourceResult> {
+    const uiPath = path.join(DIST_DIR, 'ui', bundleName);
+    try {
+      const html = await fs.readFile(uiPath, 'utf-8');
+      return {
+        contents: [
+          {
+            uri: resourceUri,
+            mimeType,
+            text: html,
+          },
+        ],
+      };
+    }
+    catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.log(`UI bundle missing at ${uiPath}: ${message}`, 'warning');
+      return {
+        contents: [
+          {
+            uri: resourceUri,
+            mimeType,
+            text: `<!doctype html><html><body><pre>Missing UI bundle at ${uiPath}: ${message}</pre></body></html>`,
+          },
+        ],
+      };
+    }
   }
 
   private setupImageSearchTool(): void {
