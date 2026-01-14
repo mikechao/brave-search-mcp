@@ -58,7 +58,6 @@
     "brave-search": "workspace:*",
     "cors": "^2.8.5",
     "express": "^5.2.1",
-    "image-to-base64": "^2.2.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "zod": "^3.24.3"
@@ -69,7 +68,6 @@
     "@modelcontextprotocol/inspector": "^0.18.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.1",
-    "@types/image-to-base64": "^2.1.2",
     "@types/node": "^22.13.14",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
