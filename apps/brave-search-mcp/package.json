@@ -41,7 +41,7 @@
   },
   "scripts": {
     "clean": "shx rm -rf dist",
-    "build": "tsup && pnpm run build:ui:image && pnpm run build:ui:image:chatgpt && pnpm run build:ui:news && pnpm run build:ui:news:chatgpt && pnpm run build:ui:video && pnpm run build:ui:video:chatgpt && shx chmod +x dist/*.js",
+    "build": "tsup && pnpm run build:ui:image && pnpm run build:ui:image:chatgpt && pnpm run build:ui:news && pnpm run build:ui:news:chatgpt && pnpm run build:ui:video && pnpm run build:ui:video:chatgpt && pnpm run build:ui:web && pnpm run build:ui:web:chatgpt && shx chmod +x dist/*.js",
     "build:all": "pnpm run typecheck && pnpm run build",
     "build:watch": "tsup --watch",
     "build:ui:image": "INPUT=image-mcp-app.html vite build --config ui/vite.config.ts",
@@ -50,6 +50,8 @@
     "build:ui:news:chatgpt": "INPUT=news-chatgpt-app.html vite build --config ui/vite.config.ts",
     "build:ui:video": "INPUT=video-mcp-app.html vite build --config ui/vite.config.ts",
     "build:ui:video:chatgpt": "INPUT=video-chatgpt-app.html vite build --config ui/vite.config.ts",
+    "build:ui:web": "INPUT=web-mcp-app.html vite build --config ui/vite.config.ts",
+    "build:ui:web:chatgpt": "INPUT=web-chatgpt-app.html vite build --config ui/vite.config.ts",
     "lint": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
     "lint:check": "eslint . --ext .ts,.js,.mjs,.cjs",
     "typecheck": "tsc --noEmit",

@@ -24,6 +24,29 @@ The following values are supported:
     ),
 });
 
+const webResultSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  description: z.string(),
+  domain: z.string().optional().default(''),
+  favicon: z.string().optional(),
+  age: z.string().optional(),
+  thumbnail: z.object({
+    src: z.string(),
+    height: z.number().optional(),
+    width: z.number().optional(),
+  }).optional(),
+});
+
+export const webSearchOutputSchema = z.object({
+  query: z.string(),
+  count: z.number(),
+  items: z.array(webResultSchema),
+  error: z.string().optional(),
+});
+
+export type BraveWebSearchStructuredContent = z.infer<typeof webSearchOutputSchema>;
+
 export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, any> {
   public readonly name = 'brave_web_search';
   public readonly description = 'Performs a web search using the Brave Search API, ideal for general queries, and online content. '
@@ -32,8 +55,39 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
 
   public readonly inputSchema = webSearchInputSchema;
 
-  constructor(private braveMcpServer: BraveMcpServer, private braveSearch: BraveSearch) {
+  constructor(
+    private braveMcpServer: BraveMcpServer,
+    private braveSearch: BraveSearch,
+    private isUI: boolean = false,
+  ) {
     super();
+  }
+
+  public async execute(input: z.infer<typeof webSearchInputSchema>) {
+    try {
+      return await this.executeCore(input);
+    }
+    catch (error) {
+      console.error(`Error executing ${this.name}:`, error);
+      const message = error instanceof Error ? error.message : String(error);
+      const result: {
+        content: Array<{ type: 'text'; text: string }>;
+        isError: true;
+        structuredContent?: BraveWebSearchStructuredContent;
+      } = {
+        content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
+        isError: true,
+      };
+      if (this.isUI) {
+        result.structuredContent = {
+          query: input.query,
+          count: 0,
+          items: [],
+          error: message,
+        };
+      }
+      return result;
+    }
   }
 
   public async executeCore(input: z.infer<typeof webSearchInputSchema>) {
@@ -44,16 +98,72 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
       safesearch: SafeSearchLevel.Strict,
       ...(freshness ? { freshness } : {}),
     });
+
     if (!results.web || results.web?.results.length === 0) {
       this.braveMcpServer.log(`No results found for "${query}"`, 'info');
       const text = `No results found for "${query}"`;
-      return { content: [{ type: 'text' as const, text }] };
+      const result = { content: [{ type: 'text' as const, text }] } as {
+        content: Array<{ type: 'text'; text: string }>;
+        structuredContent?: BraveWebSearchStructuredContent;
+      };
+      if (this.isUI) {
+        result.structuredContent = {
+          query,
+          count: 0,
+          items: [],
+        };
+      }
+      return result;
     }
-    const combinedText = results.web.results
-      .map((result, index) => (
-        `${index + 1}: Title: ${result.title}\nURL: ${result.url}\nDescription: ${result.description}`
+
+    // Build structured items
+    const webItems: Array<{
+      title: string;
+      url: string;
+      description: string;
+      domain: string;
+      favicon?: string;
+      age?: string;
+      thumbnail?: { src: string; height?: number; width?: number };
+    }> = [];
+
+    for (const webResult of results.web.results) {
+      webItems.push({
+        title: webResult.title,
+        url: webResult.url,
+        description: webResult.description,
+        domain: webResult.meta_url?.netloc ?? webResult.meta_url?.hostname ?? '',
+        favicon: webResult.meta_url?.favicon,
+        age: webResult.age,
+        thumbnail: webResult.thumbnail
+          ? {
+            src: webResult.thumbnail.src,
+            height: webResult.thumbnail.height,
+            width: webResult.thumbnail.width,
+          }
+          : undefined,
+      });
+    }
+
+    const combinedText = webItems
+      .map((item, index) => (
+        `${index + 1}: Title: ${item.title}\nURL: ${item.url}\nDescription: ${item.description}`
       ))
       .join('\n\n');
-    return { content: [{ type: 'text' as const, text: combinedText }] };
+
+    const result = { content: [{ type: 'text' as const, text: combinedText }] } as {
+      content: Array<{ type: 'text'; text: string }>;
+      structuredContent?: BraveWebSearchStructuredContent;
+    };
+
+    if (this.isUI) {
+      result.structuredContent = {
+        query,
+        count: webItems.length,
+        items: webItems,
+      };
+    }
+
+    return result;
   }
 }

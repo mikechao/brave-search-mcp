@@ -9,7 +9,7 @@ import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImag
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool, newsSearchOutputSchema } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool, videoSearchOutputSchema } from './tools/BraveVideoSearchTool.js';
-import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
+import { BraveWebSearchTool, webSearchOutputSchema } from './tools/BraveWebSearchTool.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
@@ -45,7 +45,7 @@ export class BraveMcpServer {
     this.braveSearch = new BraveSearch(braveSearchApiKey);
     // Enable structured content when UI mode is enabled
     this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch, this.isUI);
-    this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
+    this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch, this.isUI);
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch, this.isUI);
     this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch, this.isUI);
@@ -58,20 +58,14 @@ export class BraveMcpServer {
       this.setupDualResourceImageTools();
       this.setupDualResourceNewsTools();
       this.setupDualResourceVideoTools();
+      this.setupDualResourceWebTools();
     }
     else {
       this.setupImageSearchTool();
       this.setupNewsSearchTool();
       this.setupVideoSearchTool();
+      this.setupWebSearchTool();
     }
-    this.server.registerTool(
-      this.webSearchTool.name,
-      {
-        description: this.webSearchTool.description,
-        inputSchema: this.webSearchTool.inputSchema,
-      },
-      this.webSearchTool.execute.bind(this.webSearchTool),
-    );
     this.server.registerTool(
       this.localSearchTool.name,
       {
@@ -299,6 +293,65 @@ export class BraveMcpServer {
         inputSchema: this.videoSearchTool.inputSchema,
       },
       this.videoSearchTool.execute.bind(this.videoSearchTool),
+    );
+  }
+
+  /**
+   * Dual-Resource Strategy for Web Search: Register both MCP-APP and ChatGPT resources
+   */
+  private setupDualResourceWebTools(): void {
+    const mcpAppResourceUri = 'ui://brave-web-search/mcp-app.html';
+    const chatgptResourceUri = 'ui://brave-web-search/chatgpt-widget.html';
+
+    // Register MCP-APP resource (ext-apps format)
+    registerAppResource(
+      this.server,
+      mcpAppResourceUri,
+      mcpAppResourceUri,
+      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Web Search UI (MCP-APP)' },
+      async (): Promise<ReadResourceResult> => {
+        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'web-mcp-app.html');
+      },
+    );
+
+    // Register ChatGPT resource (skybridge format)
+    this.server.registerResource(
+      'brave-web-search-chatgpt',
+      chatgptResourceUri,
+      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Web Search Widget (ChatGPT)' },
+      async (): Promise<ReadResourceResult> => {
+        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'web-chatgpt-app.html');
+      },
+    );
+
+    // Register tool with BOTH metadata pointers
+    registerAppTool(
+      this.server,
+      this.webSearchTool.name,
+      {
+        title: 'Brave Web Search',
+        description: this.webSearchTool.description,
+        inputSchema: this.webSearchTool.inputSchema.shape,
+        outputSchema: webSearchOutputSchema.shape,
+        _meta: {
+          'ui': { resourceUri: mcpAppResourceUri },
+          'openai/outputTemplate': chatgptResourceUri,
+          'openai/toolInvocation/invoking': 'Searching the web…',
+          'openai/toolInvocation/invoked': 'Search complete.',
+        },
+      },
+      this.webSearchTool.execute.bind(this.webSearchTool),
+    );
+  }
+
+  private setupWebSearchTool(): void {
+    this.server.registerTool(
+      this.webSearchTool.name,
+      {
+        description: this.webSearchTool.description,
+        inputSchema: this.webSearchTool.inputSchema,
+      },
+      this.webSearchTool.execute.bind(this.webSearchTool),
     );
   }
 
