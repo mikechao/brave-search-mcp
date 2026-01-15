@@ -128,11 +128,13 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
     }> = [];
 
     for (const result of newsResult.results) {
+      // Extract source from meta_url.netloc (e.g., "nytimes.com", "techcrunch.com")
+      const source = result.meta_url?.netloc ?? result.meta_url?.hostname ?? 'Unknown';
       newsItems.push({
         title: result.title,
         url: result.url,
         description: result.description,
-        source: result.source ?? 'Unknown',
+        source,
         age: result.age,
         breaking: result.breaking ?? false,
         thumbnail: result.thumbnail
