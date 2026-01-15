@@ -1,0 +1,25 @@
+/**
+ * Type definitions for News Search Widget
+ */
+
+export interface NewsItem {
+    title: string;
+    url: string;
+    description: string;
+    source: string;
+    age: string;
+    breaking: boolean;
+    thumbnail?: {
+        src: string;
+        height?: number;
+        width?: number;
+    };
+    favicon?: string;
+}
+
+export interface NewsSearchData {
+    query: string;
+    count: number;
+    items: NewsItem[];
+    error?: string;
+}

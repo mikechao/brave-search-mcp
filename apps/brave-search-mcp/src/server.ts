@@ -7,7 +7,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
 import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
-import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
+import { BraveNewsSearchTool, newsSearchOutputSchema } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 
@@ -47,7 +47,7 @@ export class BraveMcpServer {
     this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch, this.isUI);
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool);
-    this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch);
+    this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch, this.isUI);
     this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch);
     this.setupTools();
   }
@@ -55,10 +55,12 @@ export class BraveMcpServer {
   private setupTools(): void {
     if (this.isUI) {
       // Dual-resource strategy: register BOTH MCP-APP and ChatGPT resources
-      this.setupDualResourceTools();
+      this.setupDualResourceImageTools();
+      this.setupDualResourceNewsTools();
     }
     else {
       this.setupImageSearchTool();
+      this.setupNewsSearchTool();
     }
     this.server.registerTool(
       this.webSearchTool.name,
@@ -76,14 +78,7 @@ export class BraveMcpServer {
       },
       this.localSearchTool.execute.bind(this.localSearchTool),
     );
-    this.server.registerTool(
-      this.newsSearchTool.name,
-      {
-        description: this.newsSearchTool.description,
-        inputSchema: this.newsSearchTool.inputSchema,
-      },
-      this.newsSearchTool.execute.bind(this.newsSearchTool),
-    );
+    // Note: news search tool is registered in setupDualResourceNewsTools or setupNewsSearchTool
     this.server.registerTool(
       this.videoSearchTool.name,
       {
@@ -95,15 +90,9 @@ export class BraveMcpServer {
   }
 
   /**
-   * Dual-Resource Strategy: Register both MCP-APP and ChatGPT resources
-   *
-   * This allows the same server instance to serve both hosts:
-   * - MCP-APP hosts (MCPJam, Claude Desktop) use the ui:// resource with ext-apps
-   * - ChatGPT uses the chatgpt:// resource with text/html+skybridge
-   *
-   * The tool metadata includes pointers to both resources.
+   * Dual-Resource Strategy for Image Search: Register both MCP-APP and ChatGPT resources
    */
-  private setupDualResourceTools(): void {
+  private setupDualResourceImageTools(): void {
     const mcpAppResourceUri = 'ui://brave-image-search/mcp-app.html';
     const chatgptResourceUri = 'ui://brave-image-search/chatgpt-widget.html';
 
@@ -129,7 +118,6 @@ export class BraveMcpServer {
     );
 
     // Register tool with BOTH metadata pointers
-    // Each host will pick the resource that matches its capabilities
     registerAppTool(
       this.server,
       this.imageSearchTool.name,
@@ -139,15 +127,61 @@ export class BraveMcpServer {
         inputSchema: this.imageSearchTool.inputSchema.shape,
         outputSchema: imageSearchOutputSchema.shape,
         _meta: {
-          // MCP-APP (ext-apps) metadata
           'ui': { resourceUri: mcpAppResourceUri },
-          // ChatGPT Apps SDK metadata
           'openai/outputTemplate': chatgptResourceUri,
           'openai/toolInvocation/invoking': 'Searching for images…',
           'openai/toolInvocation/invoked': 'Images found.',
         },
       },
       this.imageSearchTool.execute.bind(this.imageSearchTool),
+    );
+  }
+
+  /**
+   * Dual-Resource Strategy for News Search: Register both MCP-APP and ChatGPT resources
+   */
+  private setupDualResourceNewsTools(): void {
+    const mcpAppResourceUri = 'ui://brave-news-search/mcp-app.html';
+    const chatgptResourceUri = 'ui://brave-news-search/chatgpt-widget.html';
+
+    // Register MCP-APP resource (ext-apps format)
+    registerAppResource(
+      this.server,
+      mcpAppResourceUri,
+      mcpAppResourceUri,
+      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave News Search UI (MCP-APP)' },
+      async (): Promise<ReadResourceResult> => {
+        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'news-mcp-app.html');
+      },
+    );
+
+    // Register ChatGPT resource (skybridge format)
+    this.server.registerResource(
+      'brave-news-search-chatgpt',
+      chatgptResourceUri,
+      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave News Search Widget (ChatGPT)' },
+      async (): Promise<ReadResourceResult> => {
+        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'news-chatgpt-app.html');
+      },
+    );
+
+    // Register tool with BOTH metadata pointers
+    registerAppTool(
+      this.server,
+      this.newsSearchTool.name,
+      {
+        title: 'Brave News Search',
+        description: this.newsSearchTool.description,
+        inputSchema: this.newsSearchTool.inputSchema.shape,
+        outputSchema: newsSearchOutputSchema.shape,
+        _meta: {
+          'ui': { resourceUri: mcpAppResourceUri },
+          'openai/outputTemplate': chatgptResourceUri,
+          'openai/toolInvocation/invoking': 'Searching for news…',
+          'openai/toolInvocation/invoked': 'News articles found.',
+        },
+      },
+      this.newsSearchTool.execute.bind(this.newsSearchTool),
     );
   }
 
@@ -198,6 +232,17 @@ export class BraveMcpServer {
         inputSchema: this.imageSearchTool.inputSchema,
       },
       this.imageSearchTool.execute.bind(this.imageSearchTool),
+    );
+  }
+
+  private setupNewsSearchTool(): void {
+    this.server.registerTool(
+      this.newsSearchTool.name,
+      {
+        description: this.newsSearchTool.description,
+        inputSchema: this.newsSearchTool.inputSchema,
+      },
+      this.newsSearchTool.execute.bind(this.newsSearchTool),
     );
   }
 
