@@ -103,7 +103,7 @@ export class BraveMcpServer {
       mcpAppResourceUri,
       { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Image Search UI (MCP-APP)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'mcp-app.html');
+        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'image-mcp-app.html');
       },
     );
 
@@ -113,7 +113,7 @@ export class BraveMcpServer {
       chatgptResourceUri,
       { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Image Search Widget (ChatGPT)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'chatgpt-app.html');
+        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'image-chatgpt-app.html');
       },
     );
 
