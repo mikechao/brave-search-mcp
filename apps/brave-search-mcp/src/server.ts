@@ -281,6 +281,10 @@ export class BraveMcpServer {
           'openai/outputTemplate': chatgptResourceUri,
           'openai/toolInvocation/invoking': 'Searching for videos…',
           'openai/toolInvocation/invoked': 'Videos found.',
+          'openai/widgetCSP': {
+            frame_domains: ['www.youtube.com', 'youtube.com', 'player.vimeo.com', 'vimeo.com'],
+            resource_domains: ['imgs.search.brave.com', 'i.ytimg.com'],
+          },
         },
       },
       this.videoSearchTool.execute.bind(this.videoSearchTool),
