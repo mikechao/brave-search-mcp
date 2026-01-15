@@ -83,11 +83,10 @@ body::before {
 }
 
 .app {
-  min-height: 100vh;
-  padding: 32px 28px 48px;
+  padding: 16px 16px 24px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 16px;
 }
 
 .header {
@@ -278,7 +277,7 @@ body::before {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px 0 60px;
+  padding: 8px 0 48px;
   overflow: hidden;
 }
 
