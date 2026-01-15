@@ -28,6 +28,7 @@ const newsItemSchema = z.object({
   description: z.string(),
   source: z.string().optional().default('Unknown'),
   age: z.string(),
+  pageAge: z.string().optional(),
   breaking: z.boolean().optional().default(false),
   thumbnail: z.object({
     src: z.string(),
@@ -122,6 +123,7 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
       description: string;
       source: string;
       age: string;
+      pageAge?: string;
       breaking: boolean;
       thumbnail?: { src: string; height?: number; width?: number };
       favicon?: string;
@@ -136,6 +138,7 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
         description: result.description,
         source,
         age: result.age,
+        pageAge: result.page_age, // ISO date string for sorting
         breaking: result.breaking ?? false,
         thumbnail: result.thumbnail
           ? {
@@ -147,6 +150,14 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
         favicon: result.meta_url?.favicon,
       });
     }
+
+    // Sort by pageAge (most recent first)
+    newsItems.sort((a, b) => {
+      if (!a.pageAge && !b.pageAge) return 0;
+      if (!a.pageAge) return 1; // Items without pageAge go to the end
+      if (!b.pageAge) return -1;
+      return new Date(b.pageAge).getTime() - new Date(a.pageAge).getTime();
+    });
 
     const combinedText = newsItems
       .map((item, index) => (
