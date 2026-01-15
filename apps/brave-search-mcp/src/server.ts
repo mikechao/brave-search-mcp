@@ -8,7 +8,7 @@ import { BraveSearch } from 'brave-search';
 import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool, newsSearchOutputSchema } from './tools/BraveNewsSearchTool.js';
-import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
+import { BraveVideoSearchTool, videoSearchOutputSchema } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
@@ -48,7 +48,7 @@ export class BraveMcpServer {
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch);
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch, this.isUI);
-    this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch);
+    this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch, this.isUI);
     this.setupTools();
   }
 
@@ -57,10 +57,12 @@ export class BraveMcpServer {
       // Dual-resource strategy: register BOTH MCP-APP and ChatGPT resources
       this.setupDualResourceImageTools();
       this.setupDualResourceNewsTools();
+      this.setupDualResourceVideoTools();
     }
     else {
       this.setupImageSearchTool();
       this.setupNewsSearchTool();
+      this.setupVideoSearchTool();
     }
     this.server.registerTool(
       this.webSearchTool.name,
@@ -77,15 +79,6 @@ export class BraveMcpServer {
         inputSchema: this.localSearchTool.inputSchema,
       },
       this.localSearchTool.execute.bind(this.localSearchTool),
-    );
-    // Note: news search tool is registered in setupDualResourceNewsTools or setupNewsSearchTool
-    this.server.registerTool(
-      this.videoSearchTool.name,
-      {
-        description: this.videoSearchTool.description,
-        inputSchema: this.videoSearchTool.inputSchema,
-      },
-      this.videoSearchTool.execute.bind(this.videoSearchTool),
     );
   }
 
@@ -243,6 +236,65 @@ export class BraveMcpServer {
         inputSchema: this.newsSearchTool.inputSchema,
       },
       this.newsSearchTool.execute.bind(this.newsSearchTool),
+    );
+  }
+
+  /**
+   * Dual-Resource Strategy for Video Search: Register both MCP-APP and ChatGPT resources
+   */
+  private setupDualResourceVideoTools(): void {
+    const mcpAppResourceUri = 'ui://brave-video-search/mcp-app.html';
+    const chatgptResourceUri = 'ui://brave-video-search/chatgpt-widget.html';
+
+    // Register MCP-APP resource (ext-apps format)
+    registerAppResource(
+      this.server,
+      mcpAppResourceUri,
+      mcpAppResourceUri,
+      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Video Search UI (MCP-APP)' },
+      async (): Promise<ReadResourceResult> => {
+        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'video-mcp-app.html');
+      },
+    );
+
+    // Register ChatGPT resource (skybridge format)
+    this.server.registerResource(
+      'brave-video-search-chatgpt',
+      chatgptResourceUri,
+      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Video Search Widget (ChatGPT)' },
+      async (): Promise<ReadResourceResult> => {
+        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'video-chatgpt-app.html');
+      },
+    );
+
+    // Register tool with BOTH metadata pointers
+    registerAppTool(
+      this.server,
+      this.videoSearchTool.name,
+      {
+        title: 'Brave Video Search',
+        description: this.videoSearchTool.description,
+        inputSchema: this.videoSearchTool.inputSchema.shape,
+        outputSchema: videoSearchOutputSchema.shape,
+        _meta: {
+          'ui': { resourceUri: mcpAppResourceUri },
+          'openai/outputTemplate': chatgptResourceUri,
+          'openai/toolInvocation/invoking': 'Searching for videos…',
+          'openai/toolInvocation/invoked': 'Videos found.',
+        },
+      },
+      this.videoSearchTool.execute.bind(this.videoSearchTool),
+    );
+  }
+
+  private setupVideoSearchTool(): void {
+    this.server.registerTool(
+      this.videoSearchTool.name,
+      {
+        description: this.videoSearchTool.description,
+        inputSchema: this.videoSearchTool.inputSchema,
+      },
+      this.videoSearchTool.execute.bind(this.videoSearchTool),
     );
   }
 
