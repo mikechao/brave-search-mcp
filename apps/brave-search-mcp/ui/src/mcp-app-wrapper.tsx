@@ -1,11 +1,11 @@
 /**
  * Brave Image Search UI - App Wrapper with Runtime Detection
  * Supports both MCP-APP (ext-apps) and ChatGPT (OpenAI Apps SDK)
- * 
+ *
  * IMPORTANT: Detection happens inside the component with a retry mechanism
  * because ChatGPT's skybridge may inject window.openai after initial script execution.
  */
-import { StrictMode, Suspense, lazy, useState, useEffect } from 'react';
+import { lazy, StrictMode, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './global.css';
 
@@ -40,7 +40,8 @@ function AppWrapper() {
       attempt++;
       if (attempt < checkIntervals.length) {
         timer = setTimeout(checkRuntime, checkIntervals[attempt]);
-      } else {
+      }
+      else {
         // Fallback to MCP-APP mode if window.openai not found
         console.log('[Brave Widget] Using MCP-APP runtime');
         setMode('mcp-app');
@@ -50,7 +51,8 @@ function AppWrapper() {
     checkRuntime();
 
     return () => {
-      if (timer) clearTimeout(timer);
+      if (timer)
+        clearTimeout(timer);
     };
   }, []);
 

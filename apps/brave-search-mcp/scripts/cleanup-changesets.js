@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import process from 'node:process';
 
 const changesetDir = path.resolve(process.cwd(), '.changeset');
 
@@ -9,9 +10,9 @@ if (!fs.existsSync(changesetDir)) {
 
 const entries = fs.readdirSync(changesetDir, { withFileTypes: true });
 const filesToRemove = entries
-  .filter((entry) => entry.isFile())
-  .map((entry) => entry.name)
-  .filter((name) => name.endsWith('.md') && name !== 'README.md');
+  .filter(entry => entry.isFile())
+  .map(entry => entry.name)
+  .filter(name => name.endsWith('.md') && name !== 'README.md');
 
 for (const file of filesToRemove) {
   fs.unlinkSync(path.join(changesetDir, file));

@@ -1,9 +1,9 @@
-import { RESOURCE_MIME_TYPE, registerAppResource, registerAppTool } from '@modelcontextprotocol/ext-apps/server';
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
 import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
@@ -96,11 +96,11 @@ export class BraveMcpServer {
 
   /**
    * Dual-Resource Strategy: Register both MCP-APP and ChatGPT resources
-   * 
+   *
    * This allows the same server instance to serve both hosts:
    * - MCP-APP hosts (MCPJam, Claude Desktop) use the ui:// resource with ext-apps
    * - ChatGPT uses the chatgpt:// resource with text/html+skybridge
-   * 
+   *
    * The tool metadata includes pointers to both resources.
    */
   private setupDualResourceTools(): void {
@@ -140,7 +140,7 @@ export class BraveMcpServer {
         outputSchema: imageSearchOutputSchema.shape,
         _meta: {
           // MCP-APP (ext-apps) metadata
-          ui: { resourceUri: mcpAppResourceUri },
+          'ui': { resourceUri: mcpAppResourceUri },
           // ChatGPT Apps SDK metadata
           'openai/outputTemplate': chatgptResourceUri,
           'openai/toolInvocation/invoking': 'Searching for images…',
@@ -153,6 +153,8 @@ export class BraveMcpServer {
 
   /**
    * Load the UI bundle HTML from disk
+   * @param resourceUri - The URI of the resource
+   * @param mimeType - The MIME type of the resource
    * @param bundleName - The HTML file to load (defaults to mcp-app.html)
    */
   private async loadUIBundle(

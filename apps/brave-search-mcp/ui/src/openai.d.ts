@@ -3,39 +3,39 @@
  */
 
 interface SafeAreaInsets {
-    top?: number;
-    right?: number;
-    bottom?: number;
-    left?: number;
+  top?: number;
+  right?: number;
+  bottom?: number;
+  left?: number;
 }
 
 interface OpenAIToolOutput {
-    [key: string]: unknown;
+  [key: string]: unknown;
 }
 
 interface OpenAIWidgetRuntime {
-    toolOutput?: OpenAIToolOutput;
-    toolInput?: Record<string, unknown>;
-    toolResponseMetadata?: Record<string, unknown>;
-    widgetState?: Record<string, unknown>;
-    theme?: 'light' | 'dark';
-    displayMode?: string;
-    maxHeight?: number;
-    locale?: string;
-    safeAreaInsets?: SafeAreaInsets;
+  toolOutput?: OpenAIToolOutput;
+  toolInput?: Record<string, unknown>;
+  toolResponseMetadata?: Record<string, unknown>;
+  widgetState?: Record<string, unknown>;
+  theme?: 'light' | 'dark';
+  displayMode?: string;
+  maxHeight?: number;
+  locale?: string;
+  safeAreaInsets?: SafeAreaInsets;
 
-    // Methods
-    setWidgetState?: (state: Record<string, unknown>) => void;
-    callTool?: (name: string, args: Record<string, unknown>) => Promise<unknown>;
-    sendFollowUpMessage?: (message: string) => Promise<void>;
-    openExternal?: (options: { href: string }) => Promise<void>;
-    notifyIntrinsicHeight?: (height: number) => void;
+  // Methods
+  setWidgetState?: (state: Record<string, unknown>) => void;
+  callTool?: (name: string, args: Record<string, unknown>) => Promise<unknown>;
+  sendFollowUpMessage?: (message: string) => Promise<void>;
+  openExternal?: (options: { href: string }) => Promise<void>;
+  notifyIntrinsicHeight?: (height: number) => void;
 }
 
 declare global {
-    interface Window {
-        openai?: OpenAIWidgetRuntime;
-    }
+  interface Window {
+    openai?: OpenAIWidgetRuntime;
+  }
 }
 
 export { };

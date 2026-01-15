@@ -2,7 +2,8 @@
  * Brave Image Search UI - using Aceternity Carousel
  */
 import type { WidgetProps } from './widget-props.ts';
-import Carousel, { type ImageSlideData } from '@/components/ui/carousel';
+import type { ImageSlideData } from '@/components/ui/carousel';
+import Carousel from '@/components/ui/carousel';
 
 interface ImageItem {
   title: string;
@@ -82,7 +83,9 @@ export default function ImageSearchApp({
 
       {error && (
         <div className="error-banner">
-          <strong>Error:</strong> {error}
+          <strong>Error:</strong>
+          {' '}
+          {error}
         </div>
       )}
 
@@ -90,7 +93,11 @@ export default function ImageSearchApp({
         <section className="empty-state">
           <h2>Ready for images</h2>
           <p>
-            Call <code>brave_image_search</code> with a search term to see the carousel.
+            Call
+            {' '}
+            <code>brave_image_search</code>
+            {' '}
+            with a search term to see the carousel.
           </p>
         </section>
       )}

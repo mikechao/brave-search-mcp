@@ -12,6 +12,7 @@ if (dep === 'workspace:*') {
   pkg.dependencies['brave-search'] = `^${sdk}`;
   fs.writeFileSync(app, `${JSON.stringify(pkg, null, 2)}\n`);
   console.log('Set brave-search dependency to', pkg.dependencies['brave-search']);
-} else {
+}
+else {
   console.log('brave-search dependency is', dep || 'missing');
 }

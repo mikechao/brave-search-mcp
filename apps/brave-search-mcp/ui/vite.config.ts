@@ -1,6 +1,7 @@
 import path from 'node:path';
-import { defineConfig } from 'vite';
+import process from 'node:process';
 import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
 const INPUT = process.env.INPUT;

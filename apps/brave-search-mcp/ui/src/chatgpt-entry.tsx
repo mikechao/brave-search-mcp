@@ -7,9 +7,8 @@ import { createRoot } from 'react-dom/client';
 import ChatGPTMode from './chatgpt-mode.tsx';
 import './global.css';
 
-
 createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-        <ChatGPTMode />
-    </StrictMode>,
+  <StrictMode>
+    <ChatGPTMode />
+  </StrictMode>,
 );
