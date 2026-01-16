@@ -176,6 +176,7 @@ export class BraveMcpServer {
     resourceUri: string,
     mimeType: string,
     bundlePath: string,
+    csp?: { connectDomains?: string[]; resourceDomains?: string[]; frameDomains?: string[]; baseUriDomains?: string[] },
   ): Promise<ReadResourceResult> {
     const uiPath = path.join(DIST_DIR, 'ui', bundlePath);
     try {
@@ -186,6 +187,11 @@ export class BraveMcpServer {
             uri: resourceUri,
             mimeType,
             text: html,
+            ...(csp && {
+              _meta: {
+                ui: { csp },
+              },
+            }),
           },
         ],
       };
@@ -304,7 +310,12 @@ export class BraveMcpServer {
       mcpAppResourceUri,
       { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Web Search UI (MCP-APP)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'src/lib/web/mcp-app.html');
+        return this.loadUIBundle(
+          mcpAppResourceUri,
+          RESOURCE_MIME_TYPE,
+          'src/lib/web/mcp-app.html',
+          { resourceDomains: ['https://imgs.search.brave.com'] },
+        );
       },
     );
 
@@ -330,6 +341,9 @@ export class BraveMcpServer {
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
+          'openai/widgetCSP': {
+            resource_domains: ['https://imgs.search.brave.com'],
+          },
           'openai/toolInvocation/invoking': 'Searching the web…',
           'openai/toolInvocation/invoked': 'Search complete.',
         },
