@@ -847,6 +847,8 @@ body::before {
   display: flex;
   flex-direction: column;
   height: 100%;
+  max-height: 480px;
+  /* Show ~5 results with scroll */
 }
 
 .local-split-view {
@@ -854,6 +856,8 @@ body::before {
   flex: 1;
   min-height: 0;
   gap: 0;
+  max-height: 420px;
+  /* Leave room for header */
 }
 
 /* Left panel: Business list */
