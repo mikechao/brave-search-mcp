@@ -3,6 +3,7 @@
  */
 import type { LocalBusinessItem } from './types';
 import { ChevronDown, ChevronUp, Clock, Mail, MapPin, Phone, Star } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
 
 interface LocalBusinessCardProps {
     item: LocalBusinessItem;
@@ -141,7 +142,9 @@ export function LocalBusinessCard({
                     {item.description && (
                         <div className="local-detail-section">
                             <div className="local-detail-label">About</div>
-                            <p className="local-description">{item.description}</p>
+                            <div className="local-description">
+                                <ReactMarkdown>{item.description}</ReactMarkdown>
+                            </div>
                         </div>
                     )}
                 </div>

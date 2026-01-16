@@ -1106,10 +1106,46 @@ body::before {
 .local-description {
   font-size: 12px;
   color: var(--bg-ink);
-  line-height: 1.5;
-  margin: 0;
-  max-height: 120px;
+  line-height: 1.6;
+  max-height: 200px;
   overflow-y: auto;
+}
+
+.local-description p {
+  margin: 0 0 8px 0;
+}
+
+.local-description p:last-child {
+  margin-bottom: 0;
+}
+
+.local-description h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 12px 0 6px 0;
+  color: var(--accent);
+}
+
+.local-description h3:first-child {
+  margin-top: 0;
+}
+
+.local-description ul {
+  margin: 4px 0 8px 0;
+  padding-left: 16px;
+}
+
+.local-description li {
+  margin-bottom: 4px;
+}
+
+.local-description strong {
+  font-weight: 600;
+  color: var(--bg-ink);
+}
+
+.local-description em {
+  font-style: italic;
 }
 
 /* Map Markers */
