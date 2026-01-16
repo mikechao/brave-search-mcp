@@ -121,7 +121,7 @@ export default function LocalChatGPTMode() {
                                 item={item}
                                 index={index}
                                 isSelected={selectedIndex === index}
-                                onSelect={() => setSelectedIndex(index)}
+                                onSelect={() => setSelectedIndex(prev => prev === index ? null : index)}
                                 onOpenLink={handleOpenLink}
                             />
                         ))}

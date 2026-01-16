@@ -23,6 +23,7 @@ const localBusinessSchema = z.object({
   reviewCount: z.number().optional(),
   cuisine: z.array(z.string()).optional(),
   todayHours: z.string().optional(),
+  weeklyHours: z.string().optional(),
   description: z.string().optional(),
 });
 
@@ -153,6 +154,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       reviewCount?: number;
       cuisine?: string[];
       todayHours?: string;
+      weeklyHours?: string;
       description?: string;
     }> = [];
 
@@ -161,6 +163,16 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       const todayHours = poi.opening_hours?.current_day
         ?.map(d => `${d.opens} - ${d.closes}`)
         .join(', ');
+
+      // Format weekly hours
+      const weeklyHours = poi.opening_hours?.days
+        ?.map((daySlot, idx) => {
+          const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+          const times = daySlot.map(d => `${d.opens}-${d.closes}`).join(', ');
+          return times ? `${dayNames[idx]}: ${times}` : null;
+        })
+        .filter(Boolean)
+        .join('\n');
 
       localItems.push({
         id: (poi as any).id,
@@ -174,6 +186,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         reviewCount: poi.rating?.reviewCount,
         cuisine: poi.serves_cuisine,
         todayHours,
+        weeklyHours,
         description: desc?.description,
       });
     }

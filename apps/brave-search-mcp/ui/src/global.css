@@ -897,8 +897,7 @@ body::before {
 /* Business Card */
 .local-card {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  flex-direction: column;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -995,15 +994,34 @@ body::before {
   margin-top: 2px;
 }
 
+.local-card-phone {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
 .local-card-hours {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
   color: var(--muted);
+}
+
+.local-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
 }
 
 .local-card-actions {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  align-items: center;
 }
 
 .local-action-btn {
@@ -1024,6 +1042,74 @@ body::before {
   background: var(--accent);
   color: white;
   border-color: var(--accent);
+}
+
+.local-expand-icon {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* Expanded Details */
+.local-card-details {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.local-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.local-detail-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.local-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.local-detail-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.local-weekly-hours {
+  font-size: 11px;
+  color: var(--bg-ink);
+  line-height: 1.5;
+  margin: 0;
+  padding: 8px;
+  background: var(--bg-muted);
+  border-radius: 6px;
+  white-space: pre-wrap;
+  font-family: inherit;
+}
+
+.local-description {
+  font-size: 12px;
+  color: var(--bg-ink);
+  line-height: 1.5;
+  margin: 0;
+  max-height: 120px;
+  overflow-y: auto;
 }
 
 /* Map Markers */

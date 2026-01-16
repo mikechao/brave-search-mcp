@@ -14,6 +14,7 @@ export interface LocalBusinessItem {
     reviewCount?: number;
     cuisine?: string[];
     todayHours?: string;
+    weeklyHours?: string;
     description?: string;
 }
 
