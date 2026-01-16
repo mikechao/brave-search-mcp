@@ -6,7 +6,7 @@ import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@model
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
 import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
-import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
+import { BraveLocalSearchTool, localSearchOutputSchema } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool, newsSearchOutputSchema } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool, videoSearchOutputSchema } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool, webSearchOutputSchema } from './tools/BraveWebSearchTool.js';
@@ -46,7 +46,7 @@ export class BraveMcpServer {
     // Enable structured content when UI mode is enabled
     this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch, this.isUI);
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch, this.isUI);
-    this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool);
+    this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool, this.isUI);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch, this.isUI);
     this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch, this.isUI);
     this.setupTools();
@@ -59,21 +59,15 @@ export class BraveMcpServer {
       this.setupDualResourceNewsTools();
       this.setupDualResourceVideoTools();
       this.setupDualResourceWebTools();
+      this.setupDualResourceLocalTools();
     }
     else {
       this.setupImageSearchTool();
       this.setupNewsSearchTool();
       this.setupVideoSearchTool();
       this.setupWebSearchTool();
+      this.setupLocalSearchTool();
     }
-    this.server.registerTool(
-      this.localSearchTool.name,
-      {
-        description: this.localSearchTool.description,
-        inputSchema: this.localSearchTool.inputSchema,
-      },
-      this.localSearchTool.execute.bind(this.localSearchTool),
-    );
   }
 
   /**
@@ -352,6 +346,68 @@ export class BraveMcpServer {
         inputSchema: this.webSearchTool.inputSchema,
       },
       this.webSearchTool.execute.bind(this.webSearchTool),
+    );
+  }
+
+  /**
+   * Dual-Resource Strategy for Local Search: Register both MCP-APP and ChatGPT resources
+   */
+  private setupDualResourceLocalTools(): void {
+    const mcpAppResourceUri = 'ui://brave-local-search/mcp-app.html';
+    const chatgptResourceUri = 'ui://brave-local-search/chatgpt-widget.html';
+
+    // Register MCP-APP resource (ext-apps format)
+    registerAppResource(
+      this.server,
+      mcpAppResourceUri,
+      mcpAppResourceUri,
+      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Local Search UI (MCP-APP)' },
+      async (): Promise<ReadResourceResult> => {
+        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'local-mcp-app.html');
+      },
+    );
+
+    // Register ChatGPT resource (skybridge format)
+    this.server.registerResource(
+      'brave-local-search-chatgpt',
+      chatgptResourceUri,
+      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Local Search Widget (ChatGPT)' },
+      async (): Promise<ReadResourceResult> => {
+        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'local-chatgpt-app.html');
+      },
+    );
+
+    // Register tool with BOTH metadata pointers
+    registerAppTool(
+      this.server,
+      this.localSearchTool.name,
+      {
+        title: 'Brave Local Search',
+        description: this.localSearchTool.description,
+        inputSchema: this.localSearchTool.inputSchema.shape,
+        outputSchema: localSearchOutputSchema.shape,
+        _meta: {
+          'ui': { resourceUri: mcpAppResourceUri },
+          'openai/outputTemplate': chatgptResourceUri,
+          'openai/toolInvocation/invoking': 'Searching local businesses…',
+          'openai/toolInvocation/invoked': 'Places found.',
+          'openai/widgetCSP': {
+            resource_domains: ['tile.openstreetmap.org', 'a.tile.openstreetmap.org', 'b.tile.openstreetmap.org', 'c.tile.openstreetmap.org', 'cdnjs.cloudflare.com'],
+          },
+        },
+      },
+      this.localSearchTool.execute.bind(this.localSearchTool),
+    );
+  }
+
+  private setupLocalSearchTool(): void {
+    this.server.registerTool(
+      this.localSearchTool.name,
+      {
+        description: this.localSearchTool.description,
+        inputSchema: this.localSearchTool.inputSchema,
+      },
+      this.localSearchTool.execute.bind(this.localSearchTool),
     );
   }
 
