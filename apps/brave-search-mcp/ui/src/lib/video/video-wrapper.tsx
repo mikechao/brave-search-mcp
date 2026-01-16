@@ -5,6 +5,7 @@
 import { lazy, StrictMode, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../global.css';
+import './video.css';
 
 // Dynamic imports - only load the mode we actually need
 const VideoMcpAppMode = lazy(() => import('./video-mcp-mode.tsx'));

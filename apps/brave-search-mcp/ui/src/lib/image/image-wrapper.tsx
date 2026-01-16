@@ -5,6 +5,7 @@
 import { lazy, StrictMode, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../global.css';
+import './image.css';
 
 // Dynamic imports - only load the mode we actually need
 const ImageMcpAppMode = lazy(() => import('./image-mcp-mode.tsx'));

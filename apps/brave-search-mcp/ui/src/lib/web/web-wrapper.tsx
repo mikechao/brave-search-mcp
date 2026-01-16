@@ -5,6 +5,7 @@
 import { lazy, StrictMode, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../global.css';
+import './web.css';
 
 // Dynamic imports - only load the mode we actually need
 const WebMcpAppMode = lazy(() => import('./web-mcp-mode.tsx'));

@@ -1,0 +1,14 @@
+/* ========================================
+   Image Search Widget Styles
+   ======================================== */
+
+/* Image widget uses the shared .grid, .card, .thumb, .overlay styles from global.css */
+/* Plus carousel styles */
+
+.carousel-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0 48px;
+    overflow: hidden;
+}
