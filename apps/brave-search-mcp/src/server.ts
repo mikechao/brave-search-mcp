@@ -377,7 +377,18 @@ export class BraveMcpServer {
       mcpAppResourceUri,
       { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Local Search UI (MCP-APP)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'src/lib/local/mcp-app.html');
+        return this.loadUIBundle(
+          mcpAppResourceUri,
+          RESOURCE_MIME_TYPE,
+          'src/lib/local/mcp-app.html',
+          {
+            resourceDomains: [
+              'https://a.tile.openstreetmap.org',
+              'https://b.tile.openstreetmap.org',
+              'https://c.tile.openstreetmap.org',
+            ],
+          },
+        );
       },
     );
 
