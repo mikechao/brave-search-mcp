@@ -386,6 +386,9 @@ export class BraveMcpServer {
               'https://a.tile.openstreetmap.org',
               'https://b.tile.openstreetmap.org',
               'https://c.tile.openstreetmap.org',
+              'https://cdnjs.cloudflare.com',
+              'https://fonts.googleapis.com',
+              'https://fonts.gstatic.com',
             ],
           },
         );

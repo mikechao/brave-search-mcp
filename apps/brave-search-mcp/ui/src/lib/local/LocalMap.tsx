@@ -47,6 +47,34 @@ function MapBoundsUpdater({ items }: MapBoundsUpdaterProps) {
     return null;
 }
 
+/**
+ * Fix for Leaflet not rendering properly in dynamically-sized iframes.
+ * Invalidates map size after mount and periodically to ensure tiles load.
+ */
+function MapResizeHandler() {
+    const map = useMap();
+
+    useEffect(() => {
+        // Invalidate size immediately and after a short delay
+        const timeouts = [0, 100, 300, 500, 1000].map(delay =>
+            setTimeout(() => {
+                map.invalidateSize();
+            }, delay),
+        );
+
+        // Also listen for window resize
+        const handleResize = () => map.invalidateSize();
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            timeouts.forEach(clearTimeout);
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [map]);
+
+    return null;
+}
+
 interface LocalMapProps {
     items: LocalBusinessItem[];
     selectedIndex: number | null;
@@ -94,6 +122,7 @@ export function LocalMap({ items, selectedIndex, onSelectIndex }: LocalMapProps)
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <MapBoundsUpdater items={items} />
+            <MapResizeHandler />
 
             {items.map((item, index) => {
                 if (!item.coordinates)
