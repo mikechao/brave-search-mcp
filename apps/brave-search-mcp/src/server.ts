@@ -84,7 +84,12 @@ export class BraveMcpServer {
       mcpAppResourceUri,
       { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Image Search UI (MCP-APP)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'src/lib/image/mcp-app.html');
+        return this.loadUIBundle(
+          mcpAppResourceUri,
+          RESOURCE_MIME_TYPE,
+          'src/lib/image/mcp-app.html',
+          { resourceDomains: ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+        );
       },
     );
 
@@ -132,7 +137,12 @@ export class BraveMcpServer {
       mcpAppResourceUri,
       { mimeType: RESOURCE_MIME_TYPE, description: 'Brave News Search UI (MCP-APP)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'src/lib/news/mcp-app.html');
+        return this.loadUIBundle(
+          mcpAppResourceUri,
+          RESOURCE_MIME_TYPE,
+          'src/lib/news/mcp-app.html',
+          { resourceDomains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+        );
       },
     );
 
@@ -247,7 +257,12 @@ export class BraveMcpServer {
       mcpAppResourceUri,
       { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Video Search UI (MCP-APP)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(mcpAppResourceUri, RESOURCE_MIME_TYPE, 'src/lib/video/mcp-app.html');
+        return this.loadUIBundle(
+          mcpAppResourceUri,
+          RESOURCE_MIME_TYPE,
+          'src/lib/video/mcp-app.html',
+          { resourceDomains: ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+        );
       },
     );
 
@@ -314,7 +329,7 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/web/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com'] },
+          { resourceDomains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
         );
       },
     );
