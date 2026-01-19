@@ -4,7 +4,7 @@
 import type { WidgetProps } from '../../widget-props';
 import type { LocalSearchData } from './types';
 import { useRef, useState } from 'react';
-import { FullscreenButton } from './FullscreenButton';
+import { FullscreenButton } from '../shared/FullscreenButton';
 import { LocalBusinessCard } from './LocalBusinessCard';
 import { LocalMap } from './LocalMap';
 

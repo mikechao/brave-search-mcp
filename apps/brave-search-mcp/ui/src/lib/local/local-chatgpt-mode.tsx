@@ -4,7 +4,7 @@
  */
 import type { LocalSearchData } from './types';
 import { useEffect, useRef, useState } from 'react';
-import { FullscreenButton } from './FullscreenButton';
+import { FullscreenButton } from '../shared/FullscreenButton';
 import { LocalBusinessCard } from './LocalBusinessCard';
 import { LocalMap } from './LocalMap';
 

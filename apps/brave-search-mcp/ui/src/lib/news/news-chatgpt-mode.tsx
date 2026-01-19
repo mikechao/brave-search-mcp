@@ -13,12 +13,18 @@ import NewsSearchApp from './NewsSearchApp';
  */
 export default function NewsChatGPTMode() {
   const [data, setData] = useState<NewsSearchData | null>(null);
+  const [displayMode, setDisplayMode] = useState<'inline' | 'fullscreen' | 'pip'>('inline');
 
   useEffect(() => {
     const check = () => {
       const output = window.openai?.toolOutput;
       if (output) {
         setData(output as unknown as NewsSearchData);
+      }
+      // Update display mode from openai runtime
+      const mode = window.openai?.displayMode;
+      if (mode === 'inline' || mode === 'fullscreen' || mode === 'pip') {
+        setDisplayMode(mode);
       }
     };
     check();
@@ -38,6 +44,12 @@ export default function NewsChatGPTMode() {
     }
   };
 
+  const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
+    if (window.openai?.requestDisplayMode) {
+      await window.openai.requestDisplayMode({ mode });
+    }
+  };
+
   const noop = async () => ({ isError: false });
   const noopLog = async () => { };
 
@@ -50,7 +62,10 @@ export default function NewsChatGPTMode() {
     sendMessage: noop as any,
     openLink: handleOpenLink,
     sendLog: noopLog as any,
+    displayMode,
+    requestDisplayMode: handleRequestDisplayMode,
   };
 
   return <NewsSearchApp {...props} />;
 }
+
