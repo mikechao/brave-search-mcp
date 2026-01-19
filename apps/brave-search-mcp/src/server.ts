@@ -261,7 +261,10 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/video/mcp-app.html',
-          { resourceDomains: ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          {
+            resourceDomains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'],
+            frameDomains: ['https://www.youtube.com', 'https://player.vimeo.com'],
+          },
         );
       },
     );
