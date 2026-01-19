@@ -180,7 +180,7 @@ export class BraveMcpServer {
    * Load the UI bundle HTML from disk
    * @param resourceUri - The URI of the resource
    * @param mimeType - The MIME type of the resource
-   * @param bundleName - The HTML file to load (defaults to mcp-app.html)
+   * @param bundlePath - The HTML file path to load (e.g., 'src/lib/image/mcp-app.html')
    */
   private async loadUIBundle(
     resourceUri: string,

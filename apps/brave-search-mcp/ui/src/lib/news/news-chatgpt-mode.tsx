@@ -12,45 +12,45 @@ import NewsSearchApp from './NewsSearchApp';
  * Polls for toolOutput from ChatGPT's window.openai
  */
 export default function NewsChatGPTMode() {
-    const [data, setData] = useState<NewsSearchData | null>(null);
+  const [data, setData] = useState<NewsSearchData | null>(null);
 
-    useEffect(() => {
-        const check = () => {
-            const output = window.openai?.toolOutput;
-            if (output) {
-                setData(output as unknown as NewsSearchData);
-            }
-        };
-        check();
-        const interval = setInterval(check, 200);
-        return () => clearInterval(interval);
-    }, []);
-
-    const handleOpenLink = async ({ url }: { url: string }) => {
-        try {
-            if (window.openai?.openExternal) {
-                window.openai.openExternal({ href: url });
-            }
-            return { isError: false };
-        }
-        catch {
-            return { isError: true };
-        }
+  useEffect(() => {
+    const check = () => {
+      const output = window.openai?.toolOutput;
+      if (output) {
+        setData(output as unknown as NewsSearchData);
+      }
     };
+    check();
+    const interval = setInterval(check, 200);
+    return () => clearInterval(interval);
+  }, []);
 
-    const noop = async () => ({ isError: false });
-    const noopLog = async () => { };
+  const handleOpenLink = async ({ url }: { url: string }) => {
+    try {
+      if (window.openai?.openExternal) {
+        window.openai.openExternal({ href: url });
+      }
+      return { isError: false };
+    }
+    catch {
+      return { isError: true };
+    }
+  };
 
-    const props: WidgetProps = {
-        toolInputs: null,
-        toolInputsPartial: null,
-        toolResult: data ? { structuredContent: data } as any : null,
-        hostContext: null,
-        callServerTool: noop as any,
-        sendMessage: noop as any,
-        openLink: handleOpenLink,
-        sendLog: noopLog as any,
-    };
+  const noop = async () => ({ isError: false });
+  const noopLog = async () => { };
 
-    return <NewsSearchApp {...props} />;
+  const props: WidgetProps = {
+    toolInputs: null,
+    toolInputsPartial: null,
+    toolResult: data ? { structuredContent: data } as any : null,
+    hostContext: null,
+    callServerTool: noop as any,
+    sendMessage: noop as any,
+    openLink: handleOpenLink,
+    sendLog: noopLog as any,
+  };
+
+  return <NewsSearchApp {...props} />;
 }

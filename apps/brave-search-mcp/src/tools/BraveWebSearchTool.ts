@@ -137,10 +137,10 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
         age: webResult.age,
         thumbnail: webResult.thumbnail
           ? {
-            src: webResult.thumbnail.src,
-            height: webResult.thumbnail.height,
-            width: webResult.thumbnail.width,
-          }
+              src: webResult.thumbnail.src,
+              height: webResult.thumbnail.height,
+              width: webResult.thumbnail.width,
+            }
           : undefined,
       });
     }

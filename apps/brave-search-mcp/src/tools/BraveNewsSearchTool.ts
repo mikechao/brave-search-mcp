@@ -142,10 +142,10 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
         breaking: result.breaking ?? false,
         thumbnail: result.thumbnail
           ? {
-            src: result.thumbnail.src,
-            height: result.thumbnail.height,
-            width: result.thumbnail.width,
-          }
+              src: result.thumbnail.src,
+              height: result.thumbnail.height,
+              width: result.thumbnail.width,
+            }
           : undefined,
         favicon: result.meta_url?.favicon,
       });
@@ -153,9 +153,12 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
 
     // Sort by pageAge (most recent first)
     newsItems.sort((a, b) => {
-      if (!a.pageAge && !b.pageAge) return 0;
-      if (!a.pageAge) return 1; // Items without pageAge go to the end
-      if (!b.pageAge) return -1;
+      if (!a.pageAge && !b.pageAge)
+        return 0;
+      if (!a.pageAge)
+        return 1; // Items without pageAge go to the end
+      if (!b.pageAge)
+        return -1;
       return new Date(b.pageAge).getTime() - new Date(a.pageAge).getTime();
     });
 
@@ -181,4 +184,3 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
     return result;
   }
 }
-

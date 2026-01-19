@@ -6,9 +6,9 @@
 /* Plus carousel styles */
 
 .carousel-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 8px 0 48px;
-    overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0 48px;
+  overflow: hidden;
 }

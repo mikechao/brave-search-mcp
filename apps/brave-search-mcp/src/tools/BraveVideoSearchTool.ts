@@ -57,8 +57,8 @@ export type BraveVideoSearchStructuredContent = z.infer<typeof videoSearchOutput
  */
 function extractYouTubeId(url: string): string | null {
   const patterns = [
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
-    /youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/,
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/,
+    /youtube\.com\/shorts\/([\w-]{11})/,
   ];
   for (const pattern of patterns) {
     const match = url.match(pattern);
@@ -173,10 +173,10 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
         description: video.description,
         thumbnail: video.thumbnail
           ? {
-            src: video.thumbnail.src,
-            height: video.thumbnail.height,
-            width: video.thumbnail.width,
-          }
+              src: video.thumbnail.src,
+              height: video.thumbnail.height,
+              width: video.thumbnail.width,
+            }
           : undefined,
         duration: video.video.duration ?? '',
         views: String(video.video.views ?? ''),

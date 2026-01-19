@@ -7,9 +7,9 @@ export function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDesc: Lo
     const coordsText = coords ? `Coordinates: ${coords[0]}, ${coords[1]}\n` : '';
     return `Name: ${poi.title}\n`
       + `${poi.serves_cuisine ? `Cuisine: ${poi.serves_cuisine.join(', ')}\n` : ''}`
-      + `Address: ${poi.postal_address.displayAddress}\n`
-      + coordsText
-      + `Phone: ${poi.contact?.telephone || 'No phone number found'}\n`
+      + `Address: ${poi.postal_address.displayAddress}\n${
+        coordsText
+      }Phone: ${poi.contact?.telephone || 'No phone number found'}\n`
       + `Email: ${poi.contact?.email || 'No email found'}\n`
       + `Price Range: ${poi.price_range || 'No price range found'}\n`
       + `Ratings: ${poi.rating?.ratingValue || 'N/A'} (${poi.rating?.reviewCount}) reviews\n`
@@ -30,10 +30,10 @@ export function formatVideoResults(results: VideoResult[]) {
       + `${('requires_subscription' in video.video)
         ? (video.video.requires_subscription ? 'Requires subscription\n' : 'No subscription\n')
         : ''} `
-      + `${('tags' in video.video && video.video.tags)
-        ? (`Tags: ${video.video.tags.join(', ')}`)
-        : ''} `
-      ;
+        + `${('tags' in video.video && video.video.tags)
+          ? (`Tags: ${video.video.tags.join(', ')}`)
+          : ''} `
+    ;
   }).join('\n---\n');
 }
 

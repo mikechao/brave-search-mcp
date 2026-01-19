@@ -3,24 +3,24 @@
  */
 
 export interface VideoItem {
-    title: string;
-    url: string;
-    description: string;
-    thumbnail?: { src: string; height?: number; width?: number };
-    duration: string;
-    views: string;
-    creator: string;
-    age: string;
-    tags?: string[];
-    requiresSubscription?: boolean;
-    favicon?: string;
-    embedId?: string;
-    embedType?: 'youtube' | 'vimeo';
+  title: string;
+  url: string;
+  description: string;
+  thumbnail?: { src: string; height?: number; width?: number };
+  duration: string;
+  views: string;
+  creator: string;
+  age: string;
+  tags?: string[];
+  requiresSubscription?: boolean;
+  favicon?: string;
+  embedId?: string;
+  embedType?: 'youtube' | 'vimeo';
 }
 
 export interface VideoSearchData {
-    query: string;
-    count: number;
-    items: VideoItem[];
-    error?: string;
+  query: string;
+  count: number;
+  items: VideoItem[];
+  error?: string;
 }

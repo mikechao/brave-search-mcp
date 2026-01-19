@@ -14,51 +14,51 @@ const LocalChatGPTMode = lazy(() => import('./local-chatgpt-mode.tsx'));
 type RuntimeMode = 'detecting' | 'chatgpt' | 'mcp-app';
 
 function LocalAppWrapper() {
-    const [mode, setMode] = useState<RuntimeMode>('detecting');
+  const [mode, setMode] = useState<RuntimeMode>('detecting');
 
-    useEffect(() => {
-        const checkIntervals = [0, 50, 100, 200, 500];
-        let attempt = 0;
-        let timer: ReturnType<typeof setTimeout>;
+  useEffect(() => {
+    const checkIntervals = [0, 50, 100, 200, 500];
+    let attempt = 0;
+    let timer: ReturnType<typeof setTimeout>;
 
-        const checkRuntime = () => {
-            if (typeof window.openai !== 'undefined') {
-                console.log('[Brave Local Widget] Detected ChatGPT runtime');
-                setMode('chatgpt');
-                return;
-            }
+    const checkRuntime = () => {
+      if (typeof window.openai !== 'undefined') {
+        console.log('[Brave Local Widget] Detected ChatGPT runtime');
+        setMode('chatgpt');
+        return;
+      }
 
-            attempt++;
-            if (attempt < checkIntervals.length) {
-                timer = setTimeout(checkRuntime, checkIntervals[attempt]);
-            }
-            else {
-                console.log('[Brave Local Widget] Using MCP-APP runtime');
-                setMode('mcp-app');
-            }
-        };
+      attempt++;
+      if (attempt < checkIntervals.length) {
+        timer = setTimeout(checkRuntime, checkIntervals[attempt]);
+      }
+      else {
+        console.log('[Brave Local Widget] Using MCP-APP runtime');
+        setMode('mcp-app');
+      }
+    };
 
-        checkRuntime();
+    checkRuntime();
 
-        return () => {
-            if (timer)
-                clearTimeout(timer);
-        };
-    }, []);
+    return () => {
+      if (timer)
+        clearTimeout(timer);
+    };
+  }, []);
 
-    if (mode === 'detecting') {
-        return <div className="loading">Detecting runtime...</div>;
-    }
+  if (mode === 'detecting') {
+    return <div className="loading">Detecting runtime...</div>;
+  }
 
-    return (
-        <Suspense fallback={<div className="loading">Loading...</div>}>
-            {mode === 'chatgpt' ? <LocalChatGPTMode /> : <LocalMcpAppMode />}
-        </Suspense>
-    );
+  return (
+    <Suspense fallback={<div className="loading">Loading...</div>}>
+      {mode === 'chatgpt' ? <LocalChatGPTMode /> : <LocalMcpAppMode />}
+    </Suspense>
+  );
 }
 
 createRoot(document.getElementById('root')!).render(
-    <StrictMode>
-        <LocalAppWrapper />
-    </StrictMode>,
+  <StrictMode>
+    <LocalAppWrapper />
+  </StrictMode>,
 );
