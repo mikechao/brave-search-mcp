@@ -101,16 +101,19 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
       height?: number;
     }> = [];
     for (const result of imageResults.results) {
-      const width = result.properties?.width ?? result.thumbnail?.width;
-      const height = result.properties?.height ?? result.thumbnail?.height;
+      // Use thumbnail.src (proxied through imgs.search.brave.com) for CSP compatibility
+      const thumbnailSrc = result.thumbnail?.src;
+      if (!thumbnailSrc)
+        continue; // Skip results without thumbnails
+
       imageItems.push({
         title: result.title,
         pageUrl: result.url,
-        imageUrl: result.properties.url,
+        imageUrl: thumbnailSrc,
         source: result.source,
         confidence: result.confidence,
-        width,
-        height,
+        width: result.thumbnail?.width,
+        height: result.thumbnail?.height,
       });
     }
     const combinedText = imageItems

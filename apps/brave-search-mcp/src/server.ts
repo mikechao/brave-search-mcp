@@ -88,7 +88,7 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/image/mcp-app.html',
-          { resourceDomains: ['https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          { resourceDomains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
         );
       },
     );
