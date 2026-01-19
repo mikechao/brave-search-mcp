@@ -1,138 +1,69 @@
-import type { ImageSearchData } from './types';
 /**
  * Image Search - ChatGPT mode wrapper
- * Uses window.openai runtime - COMPLETELY STANDALONE
+ * Uses window.openai runtime
  */
-import type { ImageSlideData } from '@/components/ui/carousel';
+import type { WidgetProps } from '../../widget-props';
+import type { ImageSearchData } from './types';
 import { useEffect, useState } from 'react';
-import Carousel from '@/components/ui/carousel';
-import { FullscreenButton } from '../shared/FullscreenButton';
+import ImageSearchApp from './ImageSearchApp';
 
 export default function ImageChatGPTMode() {
-  const [data, setData] = useState<ImageSearchData | undefined>(
-    window.openai?.toolOutput as ImageSearchData | undefined,
-  );
+  const [data, setData] = useState<ImageSearchData | null>(null);
   const [displayMode, setDisplayMode] = useState<'inline' | 'fullscreen' | 'pip'>('inline');
 
   useEffect(() => {
-    const currentData = window.openai?.toolOutput as ImageSearchData | undefined;
-    if (currentData) {
-      setData(currentData);
-    }
-
-    const interval = setInterval(() => {
-      const newData = window.openai?.toolOutput as ImageSearchData | undefined;
-      if (newData) {
-        setData(newData);
-        clearInterval(interval);
+    const check = () => {
+      const output = window.openai?.toolOutput;
+      if (output) {
+        setData(output as unknown as ImageSearchData);
       }
-
       // Update display mode from openai runtime
       const mode = window.openai?.displayMode;
       if (mode === 'inline' || mode === 'fullscreen' || mode === 'pip') {
         setDisplayMode(mode);
       }
-    }, 100);
-
+    };
+    check();
+    const interval = setInterval(check, 200);
     return () => clearInterval(interval);
   }, []);
 
-  const items = data?.items ?? [];
-  const error = data?.error;
-  const hasData = Boolean(data);
-
-  const safeAreaInsets = window.openai?.safeAreaInsets;
-  const containerStyle = {
-    paddingTop: safeAreaInsets?.top,
-    paddingRight: safeAreaInsets?.right,
-    paddingBottom: safeAreaInsets?.bottom,
-    paddingLeft: safeAreaInsets?.left,
-  };
-
-  const slides: ImageSlideData[] = items.map(item => ({
-    title: item.title,
-    src: item.imageUrl,
-    source: item.source,
-    pageUrl: item.pageUrl,
-  }));
-
-  const handleOpenLink = async (slide: ImageSlideData) => {
+  const handleOpenLink = async ({ url }: { url: string }) => {
     try {
       if (window.openai?.openExternal) {
-        await window.openai.openExternal({ href: slide.pageUrl });
+        await window.openai.openExternal({ href: url });
       }
       else {
-        window.open(slide.pageUrl, '_blank');
+        window.open(url, '_blank');
       }
+      return { isError: false };
     }
-    catch (e) {
-      console.error('Open link failed:', e instanceof Error ? e.message : String(e));
+    catch {
+      return { isError: true };
     }
   };
 
-  const handleFullscreenToggle = async () => {
+  const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
     if (window.openai?.requestDisplayMode) {
-      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
-      await window.openai.requestDisplayMode({ mode: nextMode });
+      await window.openai.requestDisplayMode({ mode });
     }
   };
 
-  return (
-    <main className="app image-app" style={containerStyle} data-display-mode={displayMode}>
-      <header className="header">
-        <div className="brand">
-          <span className="brand-mark">Brave</span>
-          <span className="brand-sub">Image Search</span>
-        </div>
-        <div className="meta">
-          <div className="term">
-            {hasData ? data?.searchTerm : 'Run brave_image_search to see results'}
-          </div>
-          <div className="count">
-            {hasData ? `${data?.count ?? 0} results` : 'Awaiting tool output'}
-          </div>
-        </div>
-        {window.openai?.requestDisplayMode && (
-          <FullscreenButton
-            onRequestFullscreen={handleFullscreenToggle}
-            displayMode={displayMode}
-          />
-        )}
-      </header>
+  const noop = async () => ({ isError: false });
+  const noopLog = async () => { };
 
-      {error && (
-        <div className="error-banner">
-          <strong>Error:</strong>
-          {' '}
-          {error}
-        </div>
-      )}
+  const props: WidgetProps = {
+    toolInputs: null,
+    toolInputsPartial: null,
+    toolResult: data ? { structuredContent: data } as any : null,
+    hostContext: null,
+    callServerTool: noop as any,
+    sendMessage: noop as any,
+    openLink: handleOpenLink,
+    sendLog: noopLog as any,
+    displayMode,
+    requestDisplayMode: handleRequestDisplayMode,
+  };
 
-      {!hasData && (
-        <section className="empty-state">
-          <h2>Ready for images</h2>
-          <p>
-            Call
-            {' '}
-            <code>brave_image_search</code>
-            {' '}
-            with a search term to see the carousel.
-          </p>
-        </section>
-      )}
-
-      {hasData && items.length === 0 && !error && (
-        <section className="empty-state">
-          <h2>No results</h2>
-          <p>Try a broader query or adjust the count.</p>
-        </section>
-      )}
-
-      {slides.length > 0 && (
-        <section className="carousel-container">
-          <Carousel slides={slides} onOpenLink={handleOpenLink} />
-        </section>
-      )}
-    </main>
-  );
+  return <ImageSearchApp {...props} />;
 }

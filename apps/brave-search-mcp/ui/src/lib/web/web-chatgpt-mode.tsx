@@ -2,10 +2,10 @@
  * Web Search - ChatGPT mode wrapper
  * Uses window.openai runtime
  */
+import type { WidgetProps } from '../../widget-props';
 import type { WebSearchData } from './types';
 import { useEffect, useState } from 'react';
-import { FullscreenButton } from '../shared/FullscreenButton';
-import { WebResultCard } from './WebResultCard';
+import WebSearchApp from './WebSearchApp';
 
 export default function WebChatGPTMode() {
   const [data, setData] = useState<WebSearchData | null>(null);
@@ -28,7 +28,7 @@ export default function WebChatGPTMode() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleOpenLink = async (url: string) => {
+  const handleOpenLink = async ({ url }: { url: string }) => {
     try {
       if (window.openai?.openExternal) {
         window.openai.openExternal({ href: url });
@@ -36,95 +36,35 @@ export default function WebChatGPTMode() {
       else {
         window.open(url, '_blank');
       }
+      return { isError: false };
     }
     catch {
-      console.error('Open link failed');
+      return { isError: true };
     }
   };
 
-  const handleFullscreenToggle = async () => {
+  const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
     if (window.openai?.requestDisplayMode) {
-      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
-      await window.openai.requestDisplayMode({ mode: nextMode });
+      await window.openai.requestDisplayMode({ mode });
     }
   };
 
-  const items = data?.items ?? [];
-  const error = data?.error;
-  const hasData = Boolean(data);
+  const noop = async () => ({ isError: false });
+  const noopLog = async () => { };
 
-  const safeAreaInsets = window.openai?.safeAreaInsets;
-  const containerStyle = {
-    paddingTop: safeAreaInsets?.top,
-    paddingRight: safeAreaInsets?.right,
-    paddingBottom: safeAreaInsets?.bottom,
-    paddingLeft: safeAreaInsets?.left,
+  const props: WidgetProps = {
+    toolInputs: null,
+    toolInputsPartial: null,
+    toolResult: data ? { structuredContent: data } as any : null,
+    hostContext: null,
+    callServerTool: noop as any,
+    sendMessage: noop as any,
+    openLink: handleOpenLink,
+    sendLog: noopLog as any,
+    displayMode,
+    requestDisplayMode: handleRequestDisplayMode,
   };
 
-  return (
-    <main className="app web-app" style={containerStyle} data-display-mode={displayMode}>
-      <header className="header">
-        <div className="brand">
-          <span className="brand-mark">Brave</span>
-          <span className="brand-sub">Web Search</span>
-        </div>
-        <div className="meta">
-          <div className="term">
-            {hasData ? data?.query : 'Run brave_web_search to see results'}
-          </div>
-          <div className="count">
-            {hasData ? `${data?.count ?? 0} RESULTS` : 'Awaiting tool output'}
-          </div>
-        </div>
-        {window.openai?.requestDisplayMode && (
-          <FullscreenButton
-            onRequestFullscreen={handleFullscreenToggle}
-            displayMode={displayMode}
-          />
-        )}
-      </header>
-
-      {error && (
-        <div className="error-banner">
-          <strong>Error:</strong>
-          {' '}
-          {error}
-        </div>
-      )}
-
-      {!hasData && (
-        <section className="empty-state">
-          <h2>Ready to search</h2>
-          <p>
-            Call
-            {' '}
-            <code>brave_web_search</code>
-            {' '}
-            with a search term to see the results.
-          </p>
-        </section>
-      )}
-
-      {hasData && items.length === 0 && !error && (
-        <section className="empty-state">
-          <h2>No results</h2>
-          <p>Try a different query or adjust the parameters.</p>
-        </section>
-      )}
-
-      {items.length > 0 && (
-        <section className="web-results-list">
-          {items.map((item, index) => (
-            <WebResultCard
-              key={item.url}
-              item={item}
-              index={index}
-              onOpenLink={handleOpenLink}
-            />
-          ))}
-        </section>
-      )}
-    </main>
-  );
+  return <WebSearchApp {...props} />;
 }
 

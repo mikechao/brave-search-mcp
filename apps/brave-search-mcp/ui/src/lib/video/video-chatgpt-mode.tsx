@@ -2,15 +2,13 @@
  * Video Search - ChatGPT mode wrapper
  * Uses window.openai runtime
  */
-import type { VideoItem, VideoSearchData } from './types';
+import type { WidgetProps } from '../../widget-props';
+import type { VideoSearchData } from './types';
 import { useEffect, useState } from 'react';
-import { FullscreenButton } from '../shared/FullscreenButton';
-import { VideoCard } from './VideoCard';
-import { VideoEmbedModal } from './VideoEmbedModal';
+import VideoSearchApp from './VideoSearchApp';
 
 export default function VideoChatGPTMode() {
   const [data, setData] = useState<VideoSearchData | null>(null);
-  const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
   const [displayMode, setDisplayMode] = useState<'inline' | 'fullscreen' | 'pip'>('inline');
 
   useEffect(() => {
@@ -30,7 +28,7 @@ export default function VideoChatGPTMode() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleOpenLink = async (url: string) => {
+  const handleOpenLink = async ({ url }: { url: string }) => {
     try {
       if (window.openai?.openExternal) {
         window.openai.openExternal({ href: url });
@@ -38,108 +36,35 @@ export default function VideoChatGPTMode() {
       else {
         window.open(url, '_blank');
       }
+      return { isError: false };
     }
     catch {
-      console.error('Open link failed');
+      return { isError: true };
     }
   };
 
-  const handlePlay = (video: VideoItem) => {
-    setActiveVideo(video);
-  };
-
-  const handleCloseModal = () => {
-    setActiveVideo(null);
-  };
-
-  const handleFullscreenToggle = async () => {
+  const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
     if (window.openai?.requestDisplayMode) {
-      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
-      await window.openai.requestDisplayMode({ mode: nextMode });
+      await window.openai.requestDisplayMode({ mode });
     }
   };
 
-  const items = data?.items ?? [];
-  const error = data?.error;
-  const hasData = Boolean(data);
+  const noop = async () => ({ isError: false });
+  const noopLog = async () => { };
 
-  const safeAreaInsets = window.openai?.safeAreaInsets;
-  const containerStyle = {
-    paddingTop: safeAreaInsets?.top,
-    paddingRight: safeAreaInsets?.right,
-    paddingBottom: safeAreaInsets?.bottom,
-    paddingLeft: safeAreaInsets?.left,
+  const props: WidgetProps = {
+    toolInputs: null,
+    toolInputsPartial: null,
+    toolResult: data ? { structuredContent: data } as any : null,
+    hostContext: null,
+    callServerTool: noop as any,
+    sendMessage: noop as any,
+    openLink: handleOpenLink,
+    sendLog: noopLog as any,
+    displayMode,
+    requestDisplayMode: handleRequestDisplayMode,
   };
 
-  return (
-    <main className="app video-app" style={containerStyle} data-display-mode={displayMode}>
-      <header className="header">
-        <div className="brand">
-          <span className="brand-mark">Brave</span>
-          <span className="brand-sub">Video Search</span>
-        </div>
-        <div className="meta">
-          <div className="term">
-            {hasData ? data?.query : 'Run brave_video_search to see results'}
-          </div>
-          <div className="count">
-            {hasData ? `${data?.count ?? 0} VIDEOS` : 'Awaiting tool output'}
-          </div>
-        </div>
-        {window.openai?.requestDisplayMode && (
-          <FullscreenButton
-            onRequestFullscreen={handleFullscreenToggle}
-            displayMode={displayMode}
-          />
-        )}
-      </header>
-
-      {error && (
-        <div className="error-banner">
-          <strong>Error:</strong>
-          {' '}
-          {error}
-        </div>
-      )}
-
-      {!hasData && (
-        <section className="empty-state">
-          <h2>Ready for videos</h2>
-          <p>
-            Call
-            {' '}
-            <code>brave_video_search</code>
-            {' '}
-            with a search term to see the results.
-          </p>
-        </section>
-      )}
-
-      {hasData && items.length === 0 && !error && (
-        <section className="empty-state">
-          <h2>No results</h2>
-          <p>Try a broader query or adjust the count.</p>
-        </section>
-      )}
-
-      {items.length > 0 && (
-        <section className="video-grid">
-          {items.map((item, index) => (
-            <VideoCard
-              key={item.url}
-              item={item}
-              index={index}
-              onPlay={handlePlay}
-              onOpenLink={handleOpenLink}
-            />
-          ))}
-        </section>
-      )}
-
-      {activeVideo && (
-        <VideoEmbedModal video={activeVideo} onClose={handleCloseModal} />
-      )}
-    </main>
-  );
+  return <VideoSearchApp {...props} />;
 }
 
