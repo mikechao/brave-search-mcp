@@ -3,6 +3,7 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { WebSearchData } from './types';
+import { FullscreenButton } from '../shared/FullscreenButton';
 import { WebResultCard } from './WebResultCard';
 
 export default function WebSearchApp({
@@ -10,6 +11,8 @@ export default function WebSearchApp({
   hostContext,
   openLink,
   sendLog,
+  displayMode,
+  requestDisplayMode,
 }: WidgetProps) {
   const data = toolResult?.structuredContent as WebSearchData | undefined;
   const items = data?.items ?? [];
@@ -39,8 +42,15 @@ export default function WebSearchApp({
     }
   };
 
+  const handleFullscreenToggle = () => {
+    if (requestDisplayMode) {
+      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
+      requestDisplayMode(nextMode);
+    }
+  };
+
   return (
-    <main className="app" style={containerStyle}>
+    <main className="app web-app" style={containerStyle} data-display-mode={displayMode}>
       <header className="header">
         <div className="brand">
           <span className="brand-mark">Brave</span>
@@ -54,6 +64,12 @@ export default function WebSearchApp({
             {hasData ? `${data?.count ?? 0} RESULTS` : 'Awaiting tool output'}
           </div>
         </div>
+        {requestDisplayMode && (
+          <FullscreenButton
+            onRequestFullscreen={handleFullscreenToggle}
+            displayMode={displayMode}
+          />
+        )}
       </header>
 
       {error && (

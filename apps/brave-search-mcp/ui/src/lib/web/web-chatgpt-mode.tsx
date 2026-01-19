@@ -4,16 +4,23 @@
  */
 import type { WebSearchData } from './types';
 import { useEffect, useState } from 'react';
+import { FullscreenButton } from '../shared/FullscreenButton';
 import { WebResultCard } from './WebResultCard';
 
 export default function WebChatGPTMode() {
   const [data, setData] = useState<WebSearchData | null>(null);
+  const [displayMode, setDisplayMode] = useState<'inline' | 'fullscreen' | 'pip'>('inline');
 
   useEffect(() => {
     const check = () => {
       const output = window.openai?.toolOutput;
       if (output) {
         setData(output as unknown as WebSearchData);
+      }
+      // Update display mode from openai runtime
+      const mode = window.openai?.displayMode;
+      if (mode === 'inline' || mode === 'fullscreen' || mode === 'pip') {
+        setDisplayMode(mode);
       }
     };
     check();
@@ -35,6 +42,13 @@ export default function WebChatGPTMode() {
     }
   };
 
+  const handleFullscreenToggle = async () => {
+    if (window.openai?.requestDisplayMode) {
+      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
+      await window.openai.requestDisplayMode({ mode: nextMode });
+    }
+  };
+
   const items = data?.items ?? [];
   const error = data?.error;
   const hasData = Boolean(data);
@@ -48,7 +62,7 @@ export default function WebChatGPTMode() {
   };
 
   return (
-    <main className="app" style={containerStyle}>
+    <main className="app web-app" style={containerStyle} data-display-mode={displayMode}>
       <header className="header">
         <div className="brand">
           <span className="brand-mark">Brave</span>
@@ -62,6 +76,12 @@ export default function WebChatGPTMode() {
             {hasData ? `${data?.count ?? 0} RESULTS` : 'Awaiting tool output'}
           </div>
         </div>
+        {window.openai?.requestDisplayMode && (
+          <FullscreenButton
+            onRequestFullscreen={handleFullscreenToggle}
+            displayMode={displayMode}
+          />
+        )}
       </header>
 
       {error && (
@@ -107,3 +127,4 @@ export default function WebChatGPTMode() {
     </main>
   );
 }
+

@@ -61,6 +61,12 @@ export default function WebMcpAppMode() {
     params => app!.sendLog(params),
     [app],
   );
+  const requestDisplayMode = useCallback(
+    async (mode: 'inline' | 'fullscreen' | 'pip') => {
+      await app!.requestDisplayMode({ mode });
+    },
+    [app],
+  );
 
   if (error) {
     return (
@@ -82,6 +88,8 @@ export default function WebMcpAppMode() {
     sendMessage,
     openLink,
     sendLog,
+    displayMode: hostContext?.displayMode,
+    requestDisplayMode,
   };
 
   return <WebSearchApp {...props} />;
