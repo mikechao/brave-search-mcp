@@ -73,6 +73,12 @@ export default function LocalMcpAppMode() {
     params => app!.sendLog(params),
     [app],
   );
+  const requestDisplayMode = useCallback(
+    async (mode: 'inline' | 'fullscreen' | 'pip') => {
+      await app!.requestDisplayMode({ mode });
+    },
+    [app],
+  );
 
   if (error) {
     return (
@@ -94,6 +100,8 @@ export default function LocalMcpAppMode() {
     sendMessage,
     openLink,
     sendLog,
+    displayMode: hostContext?.displayMode,
+    requestDisplayMode,
   };
 
   return <LocalSearchApp {...props} />;

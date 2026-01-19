@@ -4,6 +4,7 @@
 import type { WidgetProps } from '../../widget-props';
 import type { LocalSearchData } from './types';
 import { useRef, useState } from 'react';
+import { FullscreenButton } from './FullscreenButton';
 import { LocalBusinessCard } from './LocalBusinessCard';
 import { LocalMap } from './LocalMap';
 
@@ -12,6 +13,8 @@ export default function LocalSearchApp({
   hostContext,
   openLink,
   sendLog,
+  displayMode,
+  requestDisplayMode,
 }: WidgetProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -56,8 +59,15 @@ export default function LocalSearchApp({
     }
   };
 
+  const handleFullscreenToggle = () => {
+    if (requestDisplayMode) {
+      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
+      requestDisplayMode(nextMode);
+    }
+  };
+
   return (
-    <main className="app local-app" style={containerStyle}>
+    <main className="app local-app" style={containerStyle} data-display-mode={displayMode}>
       <header className="header">
         <div className="brand">
           <span className="brand-mark">Brave</span>
@@ -71,6 +81,12 @@ export default function LocalSearchApp({
             {hasData ? `${data?.count ?? 0} PLACES` : 'Awaiting tool output'}
           </div>
         </div>
+        {requestDisplayMode && (
+          <FullscreenButton
+            onRequestFullscreen={handleFullscreenToggle}
+            displayMode={displayMode}
+          />
+        )}
       </header>
 
       {error && (
@@ -129,6 +145,7 @@ export default function LocalSearchApp({
               items={items}
               selectedIndex={selectedIndex}
               onSelectIndex={handleSelectFromMap}
+              displayMode={displayMode}
             />
           </div>
         </div>

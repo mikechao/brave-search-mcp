@@ -30,6 +30,7 @@ interface OpenAIWidgetRuntime {
   sendFollowUpMessage?: (message: string) => Promise<void>;
   openExternal?: (options: { href: string }) => Promise<void>;
   notifyIntrinsicHeight?: (height: number) => void;
+  requestDisplayMode?: (options: { mode: 'inline' | 'fullscreen' | 'pip' }) => Promise<void>;
 }
 
 declare global {

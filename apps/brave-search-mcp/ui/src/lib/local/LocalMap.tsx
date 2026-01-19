@@ -51,7 +51,7 @@ function MapBoundsUpdater({ items }: MapBoundsUpdaterProps) {
  * Fix for Leaflet not rendering properly in dynamically-sized iframes.
  * Invalidates map size after mount and periodically to ensure tiles load.
  */
-function MapResizeHandler() {
+function MapResizeHandler({ displayMode }: { displayMode?: string }) {
   const map = useMap();
 
   useEffect(() => {
@@ -72,6 +72,19 @@ function MapResizeHandler() {
     };
   }, [map]);
 
+  // Invalidate size when display mode changes (e.g., fullscreen toggle)
+  useEffect(() => {
+    if (displayMode) {
+      // Delay to allow CSS transition to complete
+      const timeouts = [0, 100, 300, 500].map(delay =>
+        setTimeout(() => {
+          map.invalidateSize();
+        }, delay),
+      );
+      return () => timeouts.forEach(clearTimeout);
+    }
+  }, [displayMode, map]);
+
   return null;
 }
 
@@ -79,9 +92,10 @@ interface LocalMapProps {
   items: LocalBusinessItem[];
   selectedIndex: number | null;
   onSelectIndex: (index: number) => void;
+  displayMode?: string;
 }
 
-export function LocalMap({ items, selectedIndex, onSelectIndex }: LocalMapProps) {
+export function LocalMap({ items, selectedIndex, onSelectIndex, displayMode }: LocalMapProps) {
   const mapRef = useRef<L.Map | null>(null);
 
   // Calculate center and bounds
@@ -122,7 +136,7 @@ export function LocalMap({ items, selectedIndex, onSelectIndex }: LocalMapProps)
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       <MapBoundsUpdater items={items} />
-      <MapResizeHandler />
+      <MapResizeHandler displayMode={displayMode} />
 
       {items.map((item, index) => {
         if (!item.coordinates)

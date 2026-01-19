@@ -4,12 +4,14 @@
  */
 import type { LocalSearchData } from './types';
 import { useEffect, useRef, useState } from 'react';
+import { FullscreenButton } from './FullscreenButton';
 import { LocalBusinessCard } from './LocalBusinessCard';
 import { LocalMap } from './LocalMap';
 
 export default function LocalChatGPTMode() {
   const [data, setData] = useState<LocalSearchData | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [displayMode, setDisplayMode] = useState<'inline' | 'fullscreen' | 'pip'>('inline');
   const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -17,6 +19,11 @@ export default function LocalChatGPTMode() {
       const output = window.openai?.toolOutput;
       if (output) {
         setData(output as unknown as LocalSearchData);
+      }
+      // Update display mode from openai runtime
+      const mode = window.openai?.displayMode;
+      if (mode === 'inline' || mode === 'fullscreen' || mode === 'pip') {
+        setDisplayMode(mode);
       }
     };
     check();
@@ -35,6 +42,13 @@ export default function LocalChatGPTMode() {
     }
     catch {
       console.error('Open link failed');
+    }
+  };
+
+  const handleFullscreenToggle = async () => {
+    if (window.openai?.requestDisplayMode) {
+      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
+      await window.openai.requestDisplayMode({ mode: nextMode });
     }
   };
 
@@ -62,7 +76,7 @@ export default function LocalChatGPTMode() {
   };
 
   return (
-    <main className="app local-app" style={containerStyle}>
+    <main className="app local-app" style={containerStyle} data-display-mode={displayMode}>
       <header className="header">
         <div className="brand">
           <span className="brand-mark">Brave</span>
@@ -76,6 +90,12 @@ export default function LocalChatGPTMode() {
             {hasData ? `${data?.count ?? 0} PLACES` : 'Awaiting tool output'}
           </div>
         </div>
+        {window.openai?.requestDisplayMode && (
+          <FullscreenButton
+            onRequestFullscreen={handleFullscreenToggle}
+            displayMode={displayMode}
+          />
+        )}
       </header>
 
       {error && (
@@ -131,6 +151,7 @@ export default function LocalChatGPTMode() {
               items={items}
               selectedIndex={selectedIndex}
               onSelectIndex={handleSelectFromMap}
+              displayMode={displayMode}
             />
           </div>
         </div>

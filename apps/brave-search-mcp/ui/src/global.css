@@ -99,12 +99,15 @@ body::before {
 }
 
 .header {
-  display: grid;
-  grid-template-columns: minmax(200px, 1fr) auto;
+  display: flex;
+  align-items: center;
   gap: 16px;
-  align-items: baseline;
   border-bottom: 1px solid var(--grid-line-strong);
   padding-bottom: 16px;
+}
+
+.header .meta {
+  margin-left: auto;
 }
 
 .brand {
@@ -316,8 +319,7 @@ body::before {
 /* Responsive header */
 @media (max-width: 720px) {
   .header {
-    grid-template-columns: 1fr;
-    text-align: left;
+    flex-wrap: wrap;
   }
 
   .meta {
