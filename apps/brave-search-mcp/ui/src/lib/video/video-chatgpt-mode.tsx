@@ -4,18 +4,25 @@
  */
 import type { VideoItem, VideoSearchData } from './types';
 import { useEffect, useState } from 'react';
+import { FullscreenButton } from '../shared/FullscreenButton';
 import { VideoCard } from './VideoCard';
 import { VideoEmbedModal } from './VideoEmbedModal';
 
 export default function VideoChatGPTMode() {
   const [data, setData] = useState<VideoSearchData | null>(null);
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
+  const [displayMode, setDisplayMode] = useState<'inline' | 'fullscreen' | 'pip'>('inline');
 
   useEffect(() => {
     const check = () => {
       const output = window.openai?.toolOutput;
       if (output) {
         setData(output as unknown as VideoSearchData);
+      }
+      // Update display mode from openai runtime
+      const mode = window.openai?.displayMode;
+      if (mode === 'inline' || mode === 'fullscreen' || mode === 'pip') {
+        setDisplayMode(mode);
       }
     };
     check();
@@ -45,6 +52,13 @@ export default function VideoChatGPTMode() {
     setActiveVideo(null);
   };
 
+  const handleFullscreenToggle = async () => {
+    if (window.openai?.requestDisplayMode) {
+      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
+      await window.openai.requestDisplayMode({ mode: nextMode });
+    }
+  };
+
   const items = data?.items ?? [];
   const error = data?.error;
   const hasData = Boolean(data);
@@ -58,7 +72,7 @@ export default function VideoChatGPTMode() {
   };
 
   return (
-    <main className="app" style={containerStyle}>
+    <main className="app video-app" style={containerStyle} data-display-mode={displayMode}>
       <header className="header">
         <div className="brand">
           <span className="brand-mark">Brave</span>
@@ -72,6 +86,12 @@ export default function VideoChatGPTMode() {
             {hasData ? `${data?.count ?? 0} VIDEOS` : 'Awaiting tool output'}
           </div>
         </div>
+        {window.openai?.requestDisplayMode && (
+          <FullscreenButton
+            onRequestFullscreen={handleFullscreenToggle}
+            displayMode={displayMode}
+          />
+        )}
       </header>
 
       {error && (
@@ -122,3 +142,4 @@ export default function VideoChatGPTMode() {
     </main>
   );
 }
+

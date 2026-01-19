@@ -4,6 +4,7 @@
 import type { WidgetProps } from '../../widget-props';
 import type { VideoItem, VideoSearchData } from './types';
 import { useState } from 'react';
+import { FullscreenButton } from '../shared/FullscreenButton';
 import { VideoCard } from './VideoCard';
 import { VideoEmbedModal } from './VideoEmbedModal';
 
@@ -12,6 +13,8 @@ export default function VideoSearchApp({
   hostContext,
   openLink,
   sendLog,
+  displayMode,
+  requestDisplayMode,
 }: WidgetProps) {
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
 
@@ -51,8 +54,15 @@ export default function VideoSearchApp({
     setActiveVideo(null);
   };
 
+  const handleFullscreenToggle = () => {
+    if (requestDisplayMode) {
+      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
+      requestDisplayMode(nextMode);
+    }
+  };
+
   return (
-    <main className="app" style={containerStyle}>
+    <main className="app video-app" style={containerStyle} data-display-mode={displayMode}>
       <header className="header">
         <div className="brand">
           <span className="brand-mark">Brave</span>
@@ -66,6 +76,12 @@ export default function VideoSearchApp({
             {hasData ? `${data?.count ?? 0} VIDEOS` : 'Awaiting tool output'}
           </div>
         </div>
+        {requestDisplayMode && (
+          <FullscreenButton
+            onRequestFullscreen={handleFullscreenToggle}
+            displayMode={displayMode}
+          />
+        )}
       </header>
 
       {error && (

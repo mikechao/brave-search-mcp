@@ -2,6 +2,34 @@
    Video Search Widget Styles
    ======================================== */
 
+/* Fullscreen button */
+.fullscreen-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.fullscreen-btn:hover {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+/* Fullscreen mode - remove height constraints */
+.video-app[data-display-mode="fullscreen"] .video-grid {
+  max-height: none;
+  height: calc(100vh - 100px);
+}
+
 .video-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -9,6 +37,7 @@
   padding: 16px;
   overflow-y: auto;
   flex: 1;
+  max-height: 70vh;
 }
 
 .video-card {
