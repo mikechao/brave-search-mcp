@@ -1,49 +1,61 @@
 /**
  * Image Search - MCP-APP mode wrapper
- * Uses ext-apps SDK hooks
+ * Uses ext-apps SDK with manual App creation to disable autoResize
+ * (Carousels don't work well with auto-resize causing container dimension changes)
  */
-import type { App, McpUiHostContext } from '@modelcontextprotocol/ext-apps';
+import type { McpUiHostContext } from '@modelcontextprotocol/ext-apps';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { WidgetProps } from '../../widget-props';
-import { useApp } from '@modelcontextprotocol/ext-apps/react';
+import { App, PostMessageTransport } from '@modelcontextprotocol/ext-apps';
 import { useCallback, useEffect, useState } from 'react';
 import ImageSearchApp from './ImageSearchApp';
 
 const APP_INFO = { name: 'Brave Image Search', version: '1.0.0' };
 
 export default function ImageMcpAppMode() {
+    const [app, setApp] = useState<App | null>(null);
+    const [error, setError] = useState<Error | null>(null);
     const [toolInputs, setToolInputs] = useState<Record<string, unknown> | null>(null);
     const [toolInputsPartial, setToolInputsPartial] = useState<Record<string, unknown> | null>(null);
     const [toolResult, setToolResult] = useState<CallToolResult | null>(null);
     const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
 
-    const { app, error } = useApp({
-        appInfo: APP_INFO,
-        capabilities: {},
-        onAppCreated: (appInstance) => {
-            appInstance.ontoolinput = (params) => {
-                setToolInputs(params.arguments as Record<string, unknown>);
-                setToolInputsPartial(null);
-            };
-            appInstance.ontoolinputpartial = (params) => {
-                setToolInputsPartial(params.arguments as Record<string, unknown>);
-            };
-            appInstance.ontoolresult = (params) => {
-                setToolResult(params as CallToolResult);
-            };
-            appInstance.onhostcontextchanged = (params) => {
-                setHostContext(prev => ({ ...prev, ...params }));
-            };
-        },
-    });
-
     useEffect(() => {
-        if (app) {
-            const ctx = app.getHostContext();
-            if (ctx)
-                setHostContext(ctx);
-        }
-    }, [app]);
+        // Create App manually with autoResize disabled
+        const appInstance = new App(APP_INFO, {}, { autoResize: false });
+
+        // Register handlers before connection
+        appInstance.ontoolinput = (params) => {
+            setToolInputs(params.arguments as Record<string, unknown>);
+            setToolInputsPartial(null);
+        };
+        appInstance.ontoolinputpartial = (params) => {
+            setToolInputsPartial(params.arguments as Record<string, unknown>);
+        };
+        appInstance.ontoolresult = (params) => {
+            setToolResult(params as CallToolResult);
+        };
+        appInstance.onhostcontextchanged = (params) => {
+            setHostContext(prev => ({ ...prev, ...params }));
+        };
+
+        // Connect to host
+        const transport = new PostMessageTransport(window.parent);
+        appInstance.connect(transport)
+            .then(() => {
+                setApp(appInstance);
+                const ctx = appInstance.getHostContext();
+                if (ctx)
+                    setHostContext(ctx);
+            })
+            .catch((err) => {
+                setError(err instanceof Error ? err : new Error(String(err)));
+            });
+
+        return () => {
+            appInstance.close();
+        };
+    }, []);
 
     const callServerTool = useCallback<App['callServerTool']>(
         (params, options) => app!.callServerTool(params, options),
