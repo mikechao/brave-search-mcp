@@ -40,6 +40,7 @@ export default function ImageMcpAppMode() {
     };
 
     // Connect to host
+    // @ts-expect-error - PostMessageTransport constructor signature mismatch in types
     const transport = new PostMessageTransport(window.parent);
     appInstance.connect(transport)
       .then(() => {
@@ -73,6 +74,12 @@ export default function ImageMcpAppMode() {
     params => app!.sendLog(params),
     [app],
   );
+  const requestDisplayMode = useCallback(
+    async (mode: 'inline' | 'fullscreen' | 'pip') => {
+      await app!.requestDisplayMode({ mode });
+    },
+    [app],
+  );
 
   if (error) {
     return (
@@ -94,6 +101,8 @@ export default function ImageMcpAppMode() {
     sendMessage,
     openLink,
     sendLog,
+    displayMode: hostContext?.displayMode,
+    requestDisplayMode,
   };
 
   return <ImageSearchApp {...props} />;

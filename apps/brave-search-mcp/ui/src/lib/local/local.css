@@ -10,28 +10,6 @@
   /* Show ~5 results with scroll */
 }
 
-/* Fullscreen button */
-.fullscreen-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  background: var(--bg-muted);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--muted);
-  cursor: pointer;
-  transition: all 0.15s ease;
-  flex-shrink: 0;
-}
-
-.fullscreen-btn:hover {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
-
 .local-split-view {
   display: flex;
   flex: 1;

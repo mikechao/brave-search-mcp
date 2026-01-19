@@ -6,11 +6,13 @@ import type { ImageSearchData } from './types';
 import type { ImageSlideData } from '@/components/ui/carousel';
 import { useEffect, useState } from 'react';
 import Carousel from '@/components/ui/carousel';
+import { FullscreenButton } from '../shared/FullscreenButton';
 
 export default function ImageChatGPTMode() {
   const [data, setData] = useState<ImageSearchData | undefined>(
     window.openai?.toolOutput as ImageSearchData | undefined,
   );
+  const [displayMode, setDisplayMode] = useState<'inline' | 'fullscreen' | 'pip'>('inline');
 
   useEffect(() => {
     const currentData = window.openai?.toolOutput as ImageSearchData | undefined;
@@ -23,6 +25,12 @@ export default function ImageChatGPTMode() {
       if (newData) {
         setData(newData);
         clearInterval(interval);
+      }
+
+      // Update display mode from openai runtime
+      const mode = window.openai?.displayMode;
+      if (mode === 'inline' || mode === 'fullscreen' || mode === 'pip') {
+        setDisplayMode(mode);
       }
     }, 100);
 
@@ -62,8 +70,15 @@ export default function ImageChatGPTMode() {
     }
   };
 
+  const handleFullscreenToggle = async () => {
+    if (window.openai?.requestDisplayMode) {
+      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
+      await window.openai.requestDisplayMode({ mode: nextMode });
+    }
+  };
+
   return (
-    <main className="app" style={containerStyle}>
+    <main className="app image-app" style={containerStyle} data-display-mode={displayMode}>
       <header className="header">
         <div className="brand">
           <span className="brand-mark">Brave</span>
@@ -77,6 +92,12 @@ export default function ImageChatGPTMode() {
             {hasData ? `${data?.count ?? 0} results` : 'Awaiting tool output'}
           </div>
         </div>
+        {window.openai?.requestDisplayMode && (
+          <FullscreenButton
+            onRequestFullscreen={handleFullscreenToggle}
+            displayMode={displayMode}
+          />
+        )}
       </header>
 
       {error && (

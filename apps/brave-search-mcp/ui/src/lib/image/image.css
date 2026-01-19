@@ -5,6 +5,12 @@
 /* Image widget uses the shared .grid, .card, .thumb, .overlay styles from global.css */
 /* Plus carousel styles */
 
+/* Fullscreen mode - remove height constraints */
+.image-app[data-display-mode="fullscreen"] .carousel-container {
+  max-height: none;
+  height: calc(100vh - 100px);
+}
+
 .carousel-container {
   display: flex;
   justify-content: center;
