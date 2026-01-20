@@ -4,19 +4,19 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { VideoSearchData } from './types';
-import { useDisplayMode, useOpenExternal, useToolOutput } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useToolOutput } from '../../hooks/useOpenAiGlobal';
 import VideoSearchApp from './VideoSearchApp';
 
 export default function VideoChatGPTMode() {
   // Use reactive hooks instead of manual polling
   const toolOutput = useToolOutput() as VideoSearchData | null;
   const displayMode = useDisplayMode();
-  const openExternal = useOpenExternal();
 
   const handleOpenLink = async ({ url }: { url: string }) => {
+    // Access directly from window.openai since functions are set at init, not via events
     try {
-      if (openExternal) {
-        openExternal({ href: url });
+      if (window.openai?.openExternal) {
+        window.openai.openExternal({ href: url });
       }
       return { isError: false };
     }
