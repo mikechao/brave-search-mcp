@@ -34,7 +34,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
   - Get images from the web relevant to the query
   - Inputs:
     - `query` (string): The term to search the internet for images of
-    - `count` (number, optional): The number of images to return (max 20, default 5)
+    - `count` (number, optional): The number of images to return (max 50, default 10)
 
 - **brave_news_search**
   - Searches the web for news
