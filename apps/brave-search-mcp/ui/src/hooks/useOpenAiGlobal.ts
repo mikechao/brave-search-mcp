@@ -7,11 +7,11 @@
  * This hook listens for host `openai:set_globals` events and lets React
  * components subscribe to a single global value reactively.
  */
-import { useSyncExternalStore } from 'react';
+import { useEffect, useState } from 'react';
 
 const SET_GLOBALS_EVENT_TYPE = 'openai:set_globals';
 
-interface SetGlobalsEvent extends Event {
+interface SetGlobalsEvent extends CustomEvent {
     detail: {
         globals: Partial<OpenAiGlobals>;
     };
@@ -48,33 +48,45 @@ export interface OpenAiGlobals {
 
 /**
  * Subscribe to a specific window.openai global value reactively.
- * Re-renders only when that specific key changes.
+ * Uses useState + useEffect with event listener instead of useSyncExternalStore
+ * to avoid issues with StrictMode double-invocation.
  */
 export function useOpenAiGlobal<K extends keyof OpenAiGlobals>(
     key: K
 ): OpenAiGlobals[K] | undefined {
-    return useSyncExternalStore(
-        (onChange) => {
-            const handleSetGlobal = (event: Event) => {
-                const setGlobalsEvent = event as SetGlobalsEvent;
-                const value = setGlobalsEvent.detail?.globals?.[key];
-                if (value === undefined) {
-                    return;
-                }
-                onChange();
-            };
-
-            window.addEventListener(SET_GLOBALS_EVENT_TYPE, handleSetGlobal, {
-                passive: true,
-            });
-
-            return () => {
-                window.removeEventListener(SET_GLOBALS_EVENT_TYPE, handleSetGlobal);
-            };
-        },
-        // Cast to avoid type conflict with openai.d.ts OpenAIWidgetRuntime
+    // Initialize with current value
+    const [value, setValue] = useState<OpenAiGlobals[K] | undefined>(
         () => (window.openai as OpenAiGlobals | undefined)?.[key]
     );
+
+    useEffect(() => {
+        // Update state when event fires
+        const handleSetGlobal = (event: Event) => {
+            const customEvent = event as SetGlobalsEvent;
+            // Only update if this specific key was included in the update
+            if (customEvent.detail?.globals && key in customEvent.detail.globals) {
+                const newValue = (window.openai as OpenAiGlobals | undefined)?.[key];
+                setValue(newValue);
+            }
+        };
+
+        // Listen for global updates from host
+        window.addEventListener(SET_GLOBALS_EVENT_TYPE, handleSetGlobal, {
+            passive: true,
+        });
+
+        // Also check initial value in case it was set before mount
+        const initialValue = (window.openai as OpenAiGlobals | undefined)?.[key];
+        if (initialValue !== undefined) {
+            setValue(initialValue);
+        }
+
+        return () => {
+            window.removeEventListener(SET_GLOBALS_EVENT_TYPE, handleSetGlobal);
+        };
+    }, [key]);
+
+    return value;
 }
 
 // Convenience hooks for common use cases

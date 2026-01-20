@@ -4,7 +4,7 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { LocalSearchData } from './types';
-import { useDisplayMode, useOpenExternal, useRequestDisplayMode, useToolOutput } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useOpenExternal, useToolOutput } from '../../hooks/useOpenAiGlobal';
 import LocalSearchApp from './LocalSearchApp';
 
 export default function LocalChatGPTMode() {
@@ -12,7 +12,6 @@ export default function LocalChatGPTMode() {
   const toolOutput = useToolOutput() as LocalSearchData | null;
   const displayMode = useDisplayMode();
   const openExternal = useOpenExternal();
-  const requestDisplayMode = useRequestDisplayMode();
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     try {
@@ -27,8 +26,9 @@ export default function LocalChatGPTMode() {
   };
 
   const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
-    if (requestDisplayMode) {
-      await requestDisplayMode({ mode });
+    // Access directly from window.openai since functions are set at init, not via events
+    if (window.openai?.requestDisplayMode) {
+      await window.openai.requestDisplayMode({ mode });
     }
   };
 
