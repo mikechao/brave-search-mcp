@@ -2,7 +2,7 @@
  * Image Search - ChatGPT mode wrapper
  * Uses custom useOpenAiGlobal hook for reactive updates
  */
-import type { WidgetProps } from '../../widget-props';
+import type { SaveImageParams, WidgetProps } from '../../widget-props';
 import type { ImageSearchData } from './types';
 import { useDisplayMode, useToolOutput } from '../../hooks/useOpenAiGlobal';
 import ImageSearchApp from './ImageSearchApp';
@@ -32,6 +32,38 @@ export default function ImageChatGPTMode() {
     }
   };
 
+  const handleSaveImage = async (params: SaveImageParams) => {
+    // Check if upload API is available
+    if (!window.openai?.uploadFile || !window.openai?.setWidgetState) {
+      throw new Error('Save to context not supported');
+    }
+
+    // 1. Fetch image as blob
+    const response = await fetch(params.imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status}`);
+    }
+    const blob = await response.blob();
+    const file = new File([blob], 'image.jpg', { type: blob.type || 'image/jpeg' });
+
+    // 2. Upload to ChatGPT
+    const uploadResult = await window.openai.uploadFile(file);
+
+    // 3. Store in widget state so model can see the image
+    const currentIds = (window.openai.widgetState as { imageIds?: string[] } | null)?.imageIds ?? [];
+    window.openai.setWidgetState({
+      imageIds: [...currentIds, uploadResult.fileId],
+      savedImageTitle: params.title,
+    });
+
+    // 4. Send a follow-up message to trigger the model to see and describe the saved image
+    if (window.openai.sendFollowUpMessage) {
+      await window.openai.sendFollowUpMessage({
+        prompt: `I just saved this image to my context: "${params.title}". Please describe what you see in the image.`,
+      });
+    }
+  };
+
   const noop = async () => ({ isError: false });
   const noopLog = async () => { };
 
@@ -46,6 +78,7 @@ export default function ImageChatGPTMode() {
     sendLog: noopLog as any,
     displayMode: displayMode ?? 'inline',
     requestDisplayMode: handleRequestDisplayMode,
+    onSaveImage: handleSaveImage,
   };
 
   return <ImageSearchApp {...props} />;

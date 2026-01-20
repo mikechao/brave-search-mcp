@@ -5,12 +5,29 @@
  */
 import type { McpUiHostContext } from '@modelcontextprotocol/ext-apps';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { WidgetProps } from '../../widget-props';
+import type { SaveImageParams, WidgetProps } from '../../widget-props';
 import { App, PostMessageTransport } from '@modelcontextprotocol/ext-apps';
 import { useCallback, useEffect, useState } from 'react';
 import ImageSearchApp from './ImageSearchApp';
 
 const APP_INFO = { name: 'Brave Image Search', version: '1.0.0' };
+
+/**
+ * Convert a Blob to base64 data URL (without prefix)
+ */
+async function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      // Remove the "data:mime/type;base64," prefix
+      const base64 = dataUrl.split(',')[1];
+      resolve(base64);
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 export default function ImageMcpAppMode() {
   const [app, setApp] = useState<App | null>(null);
@@ -81,6 +98,31 @@ export default function ImageMcpAppMode() {
     [app],
   );
 
+  const handleSaveImage = useCallback(async (params: SaveImageParams) => {
+    if (!app) {
+      throw new Error('App not connected');
+    }
+
+    // 1. Fetch image as blob
+    const response = await fetch(params.imageUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.status}`);
+    }
+    const blob = await response.blob();
+
+    // 2. Convert to base64
+    const base64 = await blobToBase64(blob);
+    const mimeType = blob.type || 'image/jpeg';
+
+    // 3. Update model context with the image
+    await app.updateModelContext({
+      content: [
+        { type: 'text', text: `User saved image: ${params.title}` },
+        { type: 'image', data: base64, mimeType },
+      ],
+    });
+  }, [app]);
+
   if (error) {
     return (
       <div className="error">
@@ -103,6 +145,7 @@ export default function ImageMcpAppMode() {
     sendLog,
     displayMode: hostContext?.displayMode,
     requestDisplayMode,
+    onSaveImage: handleSaveImage,
   };
 
   return <ImageSearchApp {...props} />;

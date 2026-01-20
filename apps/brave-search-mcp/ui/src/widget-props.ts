@@ -6,6 +6,11 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 export type DisplayMode = 'inline' | 'fullscreen' | 'pip';
 
+export interface SaveImageParams {
+  imageUrl: string;
+  title: string;
+}
+
 export interface WidgetProps<TToolInput = Record<string, unknown>> {
   toolInputs: TToolInput | null;
   toolInputsPartial: TToolInput | null;
@@ -17,4 +22,6 @@ export interface WidgetProps<TToolInput = Record<string, unknown>> {
   sendLog: App['sendLog'];
   displayMode?: DisplayMode;
   requestDisplayMode?: (mode: DisplayMode) => Promise<void>;
+  /** Save an image to model context (for follow-up conversations) */
+  onSaveImage?: (params: SaveImageParams) => Promise<void>;
 }
