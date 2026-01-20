@@ -2,19 +2,95 @@
    Image Search Widget Styles
    ======================================== */
 
-/* Image widget uses the shared .grid, .card, .thumb, .overlay styles from global.css */
-/* Plus carousel styles */
+/* Image grid - responsive thumbnail layout */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 12px 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
 
 /* Fullscreen mode - remove height constraints */
-.image-app[data-display-mode='fullscreen'] .carousel-container {
+.image-app[data-display-mode='fullscreen'] .image-grid {
   max-height: none;
   height: calc(100vh - 100px);
 }
 
-.carousel-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 8px 0 48px;
+/* Individual thumbnail card */
+.image-thumbnail {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
   overflow: hidden;
+  cursor: pointer;
+  background: var(--card-bg, #1a1a2e);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.image-thumbnail:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.image-thumbnail:focus {
+  outline: 2px solid var(--accent, #4f8cff);
+  outline-offset: 2px;
+}
+
+/* Thumbnail image */
+.image-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* Hover overlay with title */
+.image-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+  padding: 24px 8px 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.image-thumbnail:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-overlay-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: #fff;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.image-overlay-source {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  .image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    max-height: 350px;
+  }
 }

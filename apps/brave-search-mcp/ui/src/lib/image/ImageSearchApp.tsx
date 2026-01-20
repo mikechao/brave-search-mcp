@@ -1,10 +1,8 @@
 /**
- * Brave Image Search UI - using Aceternity Carousel
+ * Brave Image Search UI - Thumbnail Grid Layout
  */
 import type { WidgetProps } from '../../widget-props';
-import type { ImageSearchData } from './types';
-import type { ImageSlideData } from '@/components/ui/carousel';
-import Carousel from '@/components/ui/carousel';
+import type { ImageItem, ImageSearchData } from './types';
 import { FullscreenButton } from '../shared/FullscreenButton';
 
 export default function ImageSearchApp({
@@ -28,19 +26,11 @@ export default function ImageSearchApp({
     paddingLeft: safeAreaInsets?.left,
   };
 
-  // Convert ImageItem[] to ImageSlideData[] for carousel
-  const slides: ImageSlideData[] = items.map(item => ({
-    title: item.title,
-    src: item.imageUrl,
-    source: item.source,
-    pageUrl: item.pageUrl,
-  }));
-
-  const handleOpenLink = async (slide: ImageSlideData) => {
+  const handleOpenLink = async (item: ImageItem) => {
     try {
-      const { isError } = await openLink({ url: slide.pageUrl });
+      const { isError } = await openLink({ url: item.pageUrl });
       if (isError) {
-        await sendLog({ level: 'warning', data: `Open link rejected: ${slide.pageUrl}` });
+        await sendLog({ level: 'warning', data: `Open link rejected: ${item.pageUrl}` });
       }
     }
     catch (e) {
@@ -97,7 +87,7 @@ export default function ImageSearchApp({
             {' '}
             <code>brave_image_search</code>
             {' '}
-            with a search term to see the carousel.
+            with a search term to see results.
           </p>
         </section>
       )}
@@ -109,9 +99,26 @@ export default function ImageSearchApp({
         </section>
       )}
 
-      {slides.length > 0 && (
-        <section className="carousel-container">
-          <Carousel slides={slides} onOpenLink={handleOpenLink} />
+      {items.length > 0 && (
+        <section className="image-grid">
+          {items.map((item, index) => (
+            <button
+              key={`${item.pageUrl}-${index}`}
+              className="image-thumbnail"
+              onClick={() => handleOpenLink(item)}
+              type="button"
+            >
+              <img
+                src={item.imageUrl}
+                alt={item.title}
+                loading="lazy"
+              />
+              <div className="image-overlay">
+                <div className="image-overlay-title">{item.title}</div>
+                <div className="image-overlay-source">{item.source}</div>
+              </div>
+            </button>
+          ))}
         </section>
       )}
     </main>
