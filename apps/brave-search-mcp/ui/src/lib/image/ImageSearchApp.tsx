@@ -4,8 +4,8 @@
 import type { WidgetProps } from '../../widget-props';
 import type { ImageSearchData } from './types';
 import type { ImageSlideData } from '@/components/ui/carousel';
-import { FullscreenButton } from '../shared/FullscreenButton';
 import Carousel from '@/components/ui/carousel';
+import { FullscreenButton } from '../shared/FullscreenButton';
 
 export default function ImageSearchApp({
   toolResult,

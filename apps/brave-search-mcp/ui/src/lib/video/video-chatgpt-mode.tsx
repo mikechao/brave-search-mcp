@@ -9,7 +9,7 @@ import VideoSearchApp from './VideoSearchApp';
 
 export default function VideoChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const toolOutput = useToolOutput() as VideoSearchData | null;
+  const toolOutput = useToolOutput() as unknown as VideoSearchData | null;
   const displayMode = useDisplayMode();
 
   const handleOpenLink = async ({ url }: { url: string }) => {
@@ -50,5 +50,3 @@ export default function VideoChatGPTMode() {
 
   return <VideoSearchApp {...props} />;
 }
-
-

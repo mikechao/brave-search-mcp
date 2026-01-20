@@ -6,7 +6,7 @@
 /* Plus carousel styles */
 
 /* Fullscreen mode - remove height constraints */
-.image-app[data-display-mode="fullscreen"] .carousel-container {
+.image-app[data-display-mode='fullscreen'] .carousel-container {
   max-height: none;
   height: calc(100vh - 100px);
 }

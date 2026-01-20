@@ -3,7 +3,7 @@
    ======================================== */
 
 /* Fullscreen mode - remove height constraints */
-.web-app[data-display-mode="fullscreen"] .web-results-list {
+.web-app[data-display-mode='fullscreen'] .web-results-list {
   max-height: none;
   height: calc(100vh - 100px);
 }

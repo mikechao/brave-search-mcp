@@ -20,12 +20,12 @@
 }
 
 /* Fullscreen mode - remove height constraints */
-.local-app[data-display-mode="fullscreen"] {
+.local-app[data-display-mode='fullscreen'] {
   max-height: none;
   height: 100vh;
 }
 
-.local-app[data-display-mode="fullscreen"] .local-split-view {
+.local-app[data-display-mode='fullscreen'] .local-split-view {
   max-height: none;
   flex: 1;
 }

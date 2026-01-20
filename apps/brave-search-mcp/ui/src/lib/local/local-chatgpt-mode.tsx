@@ -9,7 +9,7 @@ import LocalSearchApp from './LocalSearchApp';
 
 export default function LocalChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const toolOutput = useToolOutput() as LocalSearchData | null;
+  const toolOutput = useToolOutput() as unknown as LocalSearchData | null;
   const displayMode = useDisplayMode();
 
   const handleOpenLink = async ({ url }: { url: string }) => {
@@ -50,4 +50,3 @@ export default function LocalChatGPTMode() {
 
   return <LocalSearchApp {...props} />;
 }
-

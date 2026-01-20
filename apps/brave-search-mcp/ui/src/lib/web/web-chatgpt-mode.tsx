@@ -9,7 +9,7 @@ import WebSearchApp from './WebSearchApp';
 
 export default function WebChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const toolOutput = useToolOutput() as WebSearchData | null;
+  const toolOutput = useToolOutput() as unknown as WebSearchData | null;
   const displayMode = useDisplayMode();
 
   const handleOpenLink = async ({ url }: { url: string }) => {
@@ -50,5 +50,3 @@ export default function WebChatGPTMode() {
 
   return <WebSearchApp {...props} />;
 }
-
-

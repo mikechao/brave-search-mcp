@@ -3,7 +3,7 @@
    ======================================== */
 
 /* Fullscreen mode - remove height constraints */
-.video-app[data-display-mode="fullscreen"] .video-grid {
+.video-app[data-display-mode='fullscreen'] .video-grid {
   max-height: none;
   height: calc(100vh - 100px);
 }

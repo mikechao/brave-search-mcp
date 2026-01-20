@@ -9,7 +9,7 @@ import ImageSearchApp from './ImageSearchApp';
 
 export default function ImageChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const toolOutput = useToolOutput() as ImageSearchData | null;
+  const toolOutput = useToolOutput() as unknown as ImageSearchData | null;
   const displayMode = useDisplayMode();
 
   const handleOpenLink = async ({ url }: { url: string }) => {
@@ -50,4 +50,3 @@ export default function ImageChatGPTMode() {
 
   return <ImageSearchApp {...props} />;
 }
-

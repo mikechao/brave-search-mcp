@@ -3,7 +3,7 @@
    ===================== */
 
 /* Fullscreen mode - remove height constraints */
-.news-app[data-display-mode="fullscreen"] .news-list {
+.news-app[data-display-mode='fullscreen'] .news-list {
   max-height: none;
   height: calc(100vh - 100px);
 }

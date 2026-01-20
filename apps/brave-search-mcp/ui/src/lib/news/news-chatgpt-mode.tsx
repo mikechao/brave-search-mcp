@@ -12,7 +12,7 @@ import NewsSearchApp from './NewsSearchApp';
  */
 export default function NewsChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const toolOutput = useToolOutput() as NewsSearchData | null;
+  const toolOutput = useToolOutput() as unknown as NewsSearchData | null;
   const displayMode = useDisplayMode();
 
   const handleOpenLink = async ({ url }: { url: string }) => {
@@ -53,5 +53,3 @@ export default function NewsChatGPTMode() {
 
   return <NewsSearchApp {...props} />;
 }
-
-
