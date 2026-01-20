@@ -1,40 +1,23 @@
 /**
  * Video Search - ChatGPT mode wrapper
- * Uses window.openai runtime
+ * Uses custom useOpenAiGlobal hook for reactive updates
  */
 import type { WidgetProps } from '../../widget-props';
 import type { VideoSearchData } from './types';
-import { useEffect, useState } from 'react';
+import { useDisplayMode, useOpenExternal, useRequestDisplayMode, useToolOutput } from '../../hooks/useOpenAiGlobal';
 import VideoSearchApp from './VideoSearchApp';
 
 export default function VideoChatGPTMode() {
-  const [data, setData] = useState<VideoSearchData | null>(null);
-  const [displayMode, setDisplayMode] = useState<'inline' | 'fullscreen' | 'pip'>('inline');
-
-  useEffect(() => {
-    const check = () => {
-      const output = window.openai?.toolOutput;
-      if (output) {
-        setData(output as unknown as VideoSearchData);
-      }
-      // Update display mode from openai runtime
-      const mode = window.openai?.displayMode;
-      if (mode === 'inline' || mode === 'fullscreen' || mode === 'pip') {
-        setDisplayMode(mode);
-      }
-    };
-    check();
-    const interval = setInterval(check, 200);
-    return () => clearInterval(interval);
-  }, []);
+  // Use reactive hooks instead of manual polling
+  const toolOutput = useToolOutput() as VideoSearchData | null;
+  const displayMode = useDisplayMode();
+  const openExternal = useOpenExternal();
+  const requestDisplayMode = useRequestDisplayMode();
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     try {
-      if (window.openai?.openExternal) {
-        window.openai.openExternal({ href: url });
-      }
-      else {
-        window.open(url, '_blank');
+      if (openExternal) {
+        openExternal({ href: url });
       }
       return { isError: false };
     }
@@ -44,8 +27,8 @@ export default function VideoChatGPTMode() {
   };
 
   const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
-    if (window.openai?.requestDisplayMode) {
-      await window.openai.requestDisplayMode({ mode });
+    if (requestDisplayMode) {
+      await requestDisplayMode({ mode });
     }
   };
 
@@ -55,16 +38,17 @@ export default function VideoChatGPTMode() {
   const props: WidgetProps = {
     toolInputs: null,
     toolInputsPartial: null,
-    toolResult: data ? { structuredContent: data } as any : null,
+    toolResult: toolOutput ? { structuredContent: toolOutput } as any : null,
     hostContext: null,
     callServerTool: noop as any,
     sendMessage: noop as any,
     openLink: handleOpenLink,
     sendLog: noopLog as any,
-    displayMode,
+    displayMode: displayMode ?? 'inline',
     requestDisplayMode: handleRequestDisplayMode,
   };
 
   return <VideoSearchApp {...props} />;
 }
+
 

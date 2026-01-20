@@ -1,41 +1,26 @@
 /**
  * News Search - ChatGPT mode
- * Uses window.openai for ChatGPT Apps SDK (skybridge)
+ * Uses custom useOpenAiGlobal hook for reactive updates
  */
 import type { WidgetProps } from '../../widget-props';
 import type { NewsSearchData } from './types';
-import { useEffect, useState } from 'react';
+import { useDisplayMode, useOpenExternal, useRequestDisplayMode, useToolOutput } from '../../hooks/useOpenAiGlobal';
 import NewsSearchApp from './NewsSearchApp';
 
 /**
- * ChatGPT mode wrapper
- * Polls for toolOutput from ChatGPT's window.openai
+ * ChatGPT mode wrapper using reactive hooks
  */
 export default function NewsChatGPTMode() {
-  const [data, setData] = useState<NewsSearchData | null>(null);
-  const [displayMode, setDisplayMode] = useState<'inline' | 'fullscreen' | 'pip'>('inline');
-
-  useEffect(() => {
-    const check = () => {
-      const output = window.openai?.toolOutput;
-      if (output) {
-        setData(output as unknown as NewsSearchData);
-      }
-      // Update display mode from openai runtime
-      const mode = window.openai?.displayMode;
-      if (mode === 'inline' || mode === 'fullscreen' || mode === 'pip') {
-        setDisplayMode(mode);
-      }
-    };
-    check();
-    const interval = setInterval(check, 200);
-    return () => clearInterval(interval);
-  }, []);
+  // Use reactive hooks instead of manual polling
+  const toolOutput = useToolOutput() as NewsSearchData | null;
+  const displayMode = useDisplayMode();
+  const openExternal = useOpenExternal();
+  const requestDisplayMode = useRequestDisplayMode();
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     try {
-      if (window.openai?.openExternal) {
-        window.openai.openExternal({ href: url });
+      if (openExternal) {
+        openExternal({ href: url });
       }
       return { isError: false };
     }
@@ -45,8 +30,8 @@ export default function NewsChatGPTMode() {
   };
 
   const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
-    if (window.openai?.requestDisplayMode) {
-      await window.openai.requestDisplayMode({ mode });
+    if (requestDisplayMode) {
+      await requestDisplayMode({ mode });
     }
   };
 
@@ -56,16 +41,17 @@ export default function NewsChatGPTMode() {
   const props: WidgetProps = {
     toolInputs: null,
     toolInputsPartial: null,
-    toolResult: data ? { structuredContent: data } as any : null,
+    toolResult: toolOutput ? { structuredContent: toolOutput } as any : null,
     hostContext: null,
     callServerTool: noop as any,
     sendMessage: noop as any,
     openLink: handleOpenLink,
     sendLog: noopLog as any,
-    displayMode,
+    displayMode: displayMode ?? 'inline',
     requestDisplayMode: handleRequestDisplayMode,
   };
 
   return <NewsSearchApp {...props} />;
 }
+
 
