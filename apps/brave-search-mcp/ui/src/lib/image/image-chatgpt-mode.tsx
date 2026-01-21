@@ -49,17 +49,24 @@ export default function ImageChatGPTMode() {
     // 2. Upload to ChatGPT
     const uploadResult = await window.openai.uploadFile(file);
 
-    // 3. Store in widget state so model can see the image
-    const currentIds = (window.openai.widgetState as { imageIds?: string[] } | null)?.imageIds ?? [];
+    // 3. Store in widget state using StructuredWidgetState format
+    const currentState = window.openai.widgetState as {
+      modelContent?: Record<string, unknown>;
+      privateContent?: Record<string, unknown>;
+      imageIds?: string[];
+    } | null;
+    const currentIds = currentState?.imageIds ?? [];
+
     window.openai.setWidgetState({
+      modelContent: { savedImageTitle: params.title },
+      privateContent: {},
       imageIds: [...currentIds, uploadResult.fileId],
-      savedImageTitle: params.title,
     });
 
     // 4. Send a follow-up message to trigger the model to see and describe the saved image
     if (window.openai.sendFollowUpMessage) {
       await window.openai.sendFollowUpMessage({
-        prompt: `I just saved this image to my context: "${params.title}". Please describe what you see in the image.`,
+        prompt: `I just saved this image to my context: "${params.title}". With file id: ${uploadResult.fileId}. Please describe what you see in the image.`,
       });
     }
   };
