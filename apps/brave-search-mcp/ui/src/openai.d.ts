@@ -58,7 +58,7 @@ interface OpenAIWidgetState {
   /** Content visible to the model */
   modelContent?: Record<string, unknown>;
   /** Content NOT visible to the model */
-  privateContent?: Record<string, unknown>;
+  privateContent?: Record<string, unknown> | null;
   /** Image IDs for follow-up turns */
   imageIds?: string[];
   [key: string]: unknown;
