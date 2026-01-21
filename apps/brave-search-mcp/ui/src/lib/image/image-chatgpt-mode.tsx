@@ -56,10 +56,14 @@ export default function ImageChatGPTMode() {
       imageIds: [uploadResult.fileId],
     });
 
-    // 4. Send a follow-up message to trigger the model to see and describe the saved image
+    // 4. Wait for state to flush before triggering model turn
+    // Host state persistence is async, so we wait a frame to avoid race conditions
+    await new Promise(resolve => requestAnimationFrame(resolve));
+
+    // 5. Send a follow-up message to trigger the model to see and describe the saved image
     if (window.openai.sendFollowUpMessage) {
       await window.openai.sendFollowUpMessage({
-        prompt: `I saved an image titled "${params.title}". Please describe what you see.`,
+        prompt: `Please describe what you see.`,
       });
     }
   };
