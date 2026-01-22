@@ -105,6 +105,7 @@ export class BraveMcpServer {
           'src/lib/image/chatgpt-app.html',
           undefined,
           { resource_domains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          'mc-brave-search-mcp',
         );
       },
     );
@@ -164,6 +165,7 @@ export class BraveMcpServer {
           'src/lib/news/chatgpt-app.html',
           undefined,
           { resource_domains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          'mc-brave-search-mcp',
         );
       },
     );
@@ -195,6 +197,7 @@ export class BraveMcpServer {
    * @param bundlePath - The HTML file path to load (e.g., 'src/lib/image/mcp-app.html')
    * @param csp - MCP-APP CSP config (ext-apps format)
    * @param openaiWidgetCSP - OpenAI/ChatGPT widget CSP config
+   * @param openaiWidgetDomain - OpenAI/ChatGPT widget domain (subdomain for hosting)
    */
   private async loadUIBundle(
     resourceUri: string,
@@ -202,6 +205,7 @@ export class BraveMcpServer {
     bundlePath: string,
     csp?: { connectDomains?: string[]; resourceDomains?: string[]; frameDomains?: string[]; baseUriDomains?: string[] },
     openaiWidgetCSP?: { connect_domains?: string[]; resource_domains?: string[]; redirect_domains?: string[]; frame_domains?: string[] },
+    openaiWidgetDomain?: string,
   ): Promise<ReadResourceResult> {
     const uiPath = path.join(DIST_DIR, 'ui', bundlePath);
     try {
@@ -213,6 +217,9 @@ export class BraveMcpServer {
       }
       if (openaiWidgetCSP) {
         metaObj['openai/widgetCSP'] = openaiWidgetCSP;
+      }
+      if (openaiWidgetDomain) {
+        metaObj['openai/widgetDomain'] = openaiWidgetDomain;
       }
       return {
         contents: [
@@ -303,6 +310,7 @@ export class BraveMcpServer {
             resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com'],
             frame_domains: ['https://www.youtube.com', 'https://youtube.com', 'https://player.vimeo.com', 'https://vimeo.com'],
           },
+          'mc-brave-search-mcp',
         );
       },
     );
@@ -373,6 +381,7 @@ export class BraveMcpServer {
           'src/lib/web/chatgpt-app.html',
           undefined,
           { resource_domains: ['https://imgs.search.brave.com'] },
+          'mc-brave-search-mcp',
         );
       },
     );
@@ -452,6 +461,7 @@ export class BraveMcpServer {
           'src/lib/local/chatgpt-app.html',
           undefined,
           { resource_domains: ['https://tile.openstreetmap.org', 'https://a.tile.openstreetmap.org', 'https://b.tile.openstreetmap.org', 'https://c.tile.openstreetmap.org', 'https://cdnjs.cloudflare.com'] },
+          'mc-brave-search-mcp',
         );
       },
     );
