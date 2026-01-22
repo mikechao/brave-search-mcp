@@ -1,10 +1,11 @@
 /**
- * News Search - MCP-APP mode wrapper
+ * News Search - MCP-APP mode wrapper with pagination support
  * Uses ext-apps SDK with manual App creation to disable autoResize
  */
 import type { McpUiHostContext } from '@modelcontextprotocol/ext-apps';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { WidgetProps } from '../../widget-props';
+import type { NewsSearchAppProps } from './NewsSearchApp';
+import type { NewsSearchData } from './types';
 import { App, PostMessageTransport } from '@modelcontextprotocol/ext-apps';
 import { useCallback, useEffect, useState } from 'react';
 import NewsSearchApp from './NewsSearchApp';
@@ -18,6 +19,7 @@ export default function NewsMcpAppMode() {
   const [toolInputsPartial, setToolInputsPartial] = useState<Record<string, unknown> | null>(null);
   const [toolResult, setToolResult] = useState<CallToolResult | null>(null);
   const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Create App manually with autoResize disabled
@@ -79,6 +81,39 @@ export default function NewsMcpAppMode() {
     [app],
   );
 
+  // Pagination handler - calls the news search tool with new offset
+  const handleLoadPage = useCallback(async (offset: number) => {
+    if (!app || !toolResult)
+      return;
+
+    const data = toolResult.structuredContent as NewsSearchData | undefined;
+    if (!data)
+      return;
+
+    setIsLoading(true);
+    try {
+      const result = await app.callServerTool({
+        name: 'brave_news_search',
+        arguments: {
+          query: data.query,
+          count: data.count || 10,
+          offset,
+        },
+      });
+
+      // Update results with the new page
+      if (result && !result.isError) {
+        setToolResult(result as CallToolResult);
+      }
+    }
+    catch (err) {
+      console.error('Failed to load page:', err);
+    }
+    finally {
+      setIsLoading(false);
+    }
+  }, [app, toolResult]);
+
   if (error) {
     return (
       <div className="error">
@@ -90,7 +125,7 @@ export default function NewsMcpAppMode() {
   if (!app)
     return <div className="loading">Connecting...</div>;
 
-  const props: WidgetProps = {
+  const props: NewsSearchAppProps = {
     toolInputs,
     toolInputsPartial,
     toolResult,
@@ -101,6 +136,8 @@ export default function NewsMcpAppMode() {
     sendLog,
     displayMode: hostContext?.displayMode,
     requestDisplayMode,
+    onLoadPage: handleLoadPage,
+    isLoading,
   };
 
   return <NewsSearchApp {...props} />;

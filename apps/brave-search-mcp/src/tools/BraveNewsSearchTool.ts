@@ -42,6 +42,7 @@ const newsItemSchema = z.object({
 export const newsSearchOutputSchema = z.object({
   query: z.string(),
   count: z.number(),
+  offset: z.number().optional(),
   items: z.array(newsItemSchema),
   error: z.string().optional(),
 });
@@ -111,6 +112,7 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
       if (this.isUI) {
         result.structuredContent = {
           query,
+          offset,
           count: 0,
           items: [],
         };
@@ -178,6 +180,7 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
     if (this.isUI) {
       result.structuredContent = {
         query,
+        offset,
         count: newsItems.length,
         items: newsItems,
       };

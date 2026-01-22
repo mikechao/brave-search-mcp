@@ -182,6 +182,7 @@ export class BraveMcpServer {
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
+          'openai/widgetAccessible': true,
           'openai/toolInvocation/invoking': 'Searching for news…',
           'openai/toolInvocation/invoked': 'News articles found.',
         },

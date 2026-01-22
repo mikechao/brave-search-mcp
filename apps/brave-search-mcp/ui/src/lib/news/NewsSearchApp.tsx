@@ -1,10 +1,18 @@
 /**
- * NewsSearchApp - Main news search widget component
+ * NewsSearchApp - Main news search widget component with pagination
  */
 import type { WidgetProps } from '../../widget-props';
 import type { NewsSearchData } from './types';
+import { useState } from 'react';
 import { FullscreenButton } from '../shared/FullscreenButton';
 import { NewsCard } from './NewsCard';
+
+export interface NewsSearchAppProps extends WidgetProps {
+  /** Callback to load a different page of results */
+  onLoadPage?: (offset: number) => Promise<void>;
+  /** Whether a page load is in progress */
+  isLoading?: boolean;
+}
 
 export default function NewsSearchApp({
   toolResult,
@@ -13,11 +21,23 @@ export default function NewsSearchApp({
   sendLog,
   displayMode,
   requestDisplayMode,
-}: WidgetProps) {
+  onLoadPage,
+  isLoading: externalIsLoading,
+}: NewsSearchAppProps) {
+  const [internalLoading, setInternalLoading] = useState(false);
+  const isLoading = externalIsLoading ?? internalLoading;
+
   const data = toolResult?.structuredContent as NewsSearchData | undefined;
   const items = data?.items ?? [];
   const error = data?.error;
   const hasData = Boolean(data);
+  const currentOffset = data?.offset ?? 0;
+
+  // Pagination logic - Brave News API has max offset of 9
+  const MAX_OFFSET = 9;
+  const hasPrevious = currentOffset > 0;
+  const hasNext = currentOffset < MAX_OFFSET && items.length > 0;
+  const canPaginate = Boolean(onLoadPage) && hasData && !error;
 
   const safeAreaInsets = hostContext?.safeAreaInsets;
   const containerStyle = {
@@ -49,6 +69,32 @@ export default function NewsSearchApp({
     }
   };
 
+  const handlePrevious = async () => {
+    if (!onLoadPage || isLoading || !hasPrevious)
+      return;
+    setInternalLoading(true);
+    try {
+      await onLoadPage(currentOffset - 1);
+    }
+    finally {
+      setInternalLoading(false);
+    }
+  };
+
+  const handleNext = async () => {
+    if (!onLoadPage || isLoading || !hasNext)
+      return;
+    setInternalLoading(true);
+    try {
+      await onLoadPage(currentOffset + 1);
+    }
+    finally {
+      setInternalLoading(false);
+    }
+  };
+
+  const pageNumber = currentOffset + 1;
+
   return (
     <main className="app news-app" style={containerStyle} data-display-mode={displayMode}>
       <header className="header">
@@ -61,7 +107,8 @@ export default function NewsSearchApp({
             {hasData ? data?.query : 'Run brave_news_search to see results'}
           </div>
           <div className="count">
-            {hasData ? `${data?.count ?? 0} articles` : 'Awaiting tool output'}
+            {hasData ? `${items.length} articles` : 'Awaiting tool output'}
+            {hasData && canPaginate && ` · Page ${pageNumber}`}
           </div>
         </div>
         {requestDisplayMode && (
@@ -111,6 +158,32 @@ export default function NewsSearchApp({
             />
           ))}
         </section>
+      )}
+
+      {canPaginate && items.length > 0 && (
+        <nav className="pagination">
+          <button
+            type="button"
+            className="pagination-btn"
+            onClick={handlePrevious}
+            disabled={!hasPrevious || isLoading}
+            aria-label="Previous page"
+          >
+            ← Previous
+          </button>
+          <span className="pagination-info">
+            {isLoading ? 'Loading...' : `Page ${pageNumber}`}
+          </span>
+          <button
+            type="button"
+            className="pagination-btn"
+            onClick={handleNext}
+            disabled={!hasNext || isLoading}
+            aria-label="Next page"
+          >
+            Next →
+          </button>
+        </nav>
       )}
     </main>
   );

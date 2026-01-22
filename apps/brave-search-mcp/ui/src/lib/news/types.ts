@@ -20,6 +20,7 @@ export interface NewsItem {
 export interface NewsSearchData {
   query: string;
   count: number;
+  offset?: number;
   items: NewsItem[];
   error?: string;
 }
