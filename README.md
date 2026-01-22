@@ -41,6 +41,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
   - Inputs:
     - `query` (string): The term to search the internet for news articles, trending topics, or recent events
     - `count` (number, optional): The number of results to return (max 20, default 10)
+    - `offset` (number, optional, default 0): The zero-based offset for pagination (max 9)
     - `freshness` (enum, optional): Filters search results by when they were discovered
       - The following values are supported
         - pd: Discovered within the last 24 hours.
@@ -62,6 +63,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
   - Inputs:
     - `query`: (string): The term to search for videos
     - `count`: (number, optional): The number of videos to return (max 20, default 10)
+    - `offset` (number, optional, default 0): The zero-based offset for pagination (max 9)
     - `freshness` (enum, optional): Filters search results by when they were discovered
       - The following values are supported
         - pd: Discovered within the last 24 hours.

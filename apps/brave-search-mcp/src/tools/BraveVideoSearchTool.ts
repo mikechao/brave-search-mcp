@@ -7,6 +7,7 @@ import { BaseTool } from './BaseTool.js';
 const videoSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for videos of'),
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
+  offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
   freshness: z.union([
     z.enum(['pd', 'pw', 'pm', 'py']),
     z.string().regex(/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/, 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD'),
@@ -121,9 +122,10 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
   }
 
   public async executeCore(input: z.infer<typeof videoSearchInputSchema>) {
-    const { query, count, freshness } = input;
+    const { query, count, offset, freshness } = input;
     const videoSearchResults = await this.braveSearch.videoSearch(query, {
       count,
+      offset,
       safesearch: SafeSearchLevel.Strict,
       ...(freshness ? { freshness } : {}),
     });
@@ -173,10 +175,10 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
         description: video.description,
         thumbnail: video.thumbnail
           ? {
-              src: video.thumbnail.src,
-              height: video.thumbnail.height,
-              width: video.thumbnail.width,
-            }
+            src: video.thumbnail.src,
+            height: video.thumbnail.height,
+            width: video.thumbnail.width,
+          }
           : undefined,
         duration: video.video.duration ?? '',
         views: String(video.video.views ?? ''),

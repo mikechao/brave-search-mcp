@@ -6,6 +6,7 @@ import { BaseTool } from './BaseTool.js';
 const newsSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for news articles, trending topics, or recent events'),
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
+  offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
   freshness: z.union([
     z.enum(['pd', 'pw', 'pm', 'py']),
     z.string().regex(/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/, 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD'),
@@ -94,9 +95,10 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
   }
 
   public async executeCore(input: z.infer<typeof newsSearchInputSchema>) {
-    const { query, count, freshness } = input;
+    const { query, count, offset, freshness } = input;
     const newsResult = await this.braveSearch.newsSearch(query, {
       count,
+      offset,
       ...(freshness ? { freshness } : {}),
     });
     if (!newsResult.results || newsResult.results.length === 0) {
@@ -142,10 +144,10 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
         breaking: result.breaking ?? false,
         thumbnail: result.thumbnail
           ? {
-              src: result.thumbnail.src,
-              height: result.thumbnail.height,
-              width: result.thumbnail.width,
-            }
+            src: result.thumbnail.src,
+            height: result.thumbnail.height,
+            width: result.thumbnail.width,
+          }
           : undefined,
         favicon: result.meta_url?.favicon,
       });
