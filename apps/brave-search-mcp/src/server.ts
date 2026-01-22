@@ -99,7 +99,13 @@ export class BraveMcpServer {
       chatgptResourceUri,
       { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Image Search Widget (ChatGPT)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'src/lib/image/chatgpt-app.html');
+        return this.loadUIBundle(
+          chatgptResourceUri,
+          CHATGPT_MIME_TYPE,
+          'src/lib/image/chatgpt-app.html',
+          undefined,
+          { resource_domains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+        );
       },
     );
 
@@ -152,7 +158,13 @@ export class BraveMcpServer {
       chatgptResourceUri,
       { mimeType: CHATGPT_MIME_TYPE, description: 'Brave News Search Widget (ChatGPT)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'src/lib/news/chatgpt-app.html');
+        return this.loadUIBundle(
+          chatgptResourceUri,
+          CHATGPT_MIME_TYPE,
+          'src/lib/news/chatgpt-app.html',
+          undefined,
+          { resource_domains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+        );
       },
     );
 
@@ -181,27 +193,34 @@ export class BraveMcpServer {
    * @param resourceUri - The URI of the resource
    * @param mimeType - The MIME type of the resource
    * @param bundlePath - The HTML file path to load (e.g., 'src/lib/image/mcp-app.html')
+   * @param csp - MCP-APP CSP config (ext-apps format)
+   * @param openaiWidgetCSP - OpenAI/ChatGPT widget CSP config
    */
   private async loadUIBundle(
     resourceUri: string,
     mimeType: string,
     bundlePath: string,
     csp?: { connectDomains?: string[]; resourceDomains?: string[]; frameDomains?: string[]; baseUriDomains?: string[] },
+    openaiWidgetCSP?: { connect_domains?: string[]; resource_domains?: string[]; redirect_domains?: string[]; frame_domains?: string[] },
   ): Promise<ReadResourceResult> {
     const uiPath = path.join(DIST_DIR, 'ui', bundlePath);
     try {
       const html = await fs.readFile(uiPath, 'utf-8');
+      // Build _meta object conditionally
+      const metaObj: Record<string, unknown> = {};
+      if (csp) {
+        metaObj.ui = { csp };
+      }
+      if (openaiWidgetCSP) {
+        metaObj['openai/widgetCSP'] = openaiWidgetCSP;
+      }
       return {
         contents: [
           {
             uri: resourceUri,
             mimeType,
             text: html,
-            ...(csp && {
-              _meta: {
-                ui: { csp },
-              },
-            }),
+            ...(Object.keys(metaObj).length > 0 && { _meta: metaObj }),
           },
         ],
       };
@@ -275,7 +294,16 @@ export class BraveMcpServer {
       chatgptResourceUri,
       { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Video Search Widget (ChatGPT)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'src/lib/video/chatgpt-app.html');
+        return this.loadUIBundle(
+          chatgptResourceUri,
+          CHATGPT_MIME_TYPE,
+          'src/lib/video/chatgpt-app.html',
+          undefined,
+          {
+            resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com'],
+            frame_domains: ['https://www.youtube.com', 'https://youtube.com', 'https://player.vimeo.com', 'https://vimeo.com'],
+          },
+        );
       },
     );
 
@@ -293,10 +321,6 @@ export class BraveMcpServer {
           'openai/outputTemplate': chatgptResourceUri,
           'openai/toolInvocation/invoking': 'Searching for videos…',
           'openai/toolInvocation/invoked': 'Videos found.',
-          'openai/widgetCSP': {
-            frame_domains: ['www.youtube.com', 'youtube.com', 'player.vimeo.com', 'vimeo.com'],
-            resource_domains: ['imgs.search.brave.com', 'i.ytimg.com'],
-          },
         },
       },
       this.videoSearchTool.execute.bind(this.videoSearchTool),
@@ -343,7 +367,13 @@ export class BraveMcpServer {
       chatgptResourceUri,
       { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Web Search Widget (ChatGPT)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'src/lib/web/chatgpt-app.html');
+        return this.loadUIBundle(
+          chatgptResourceUri,
+          CHATGPT_MIME_TYPE,
+          'src/lib/web/chatgpt-app.html',
+          undefined,
+          { resource_domains: ['https://imgs.search.brave.com'] },
+        );
       },
     );
 
@@ -359,9 +389,6 @@ export class BraveMcpServer {
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
-          'openai/widgetCSP': {
-            resource_domains: ['https://imgs.search.brave.com'],
-          },
           'openai/toolInvocation/invoking': 'Searching the web…',
           'openai/toolInvocation/invoked': 'Search complete.',
         },
@@ -419,7 +446,13 @@ export class BraveMcpServer {
       chatgptResourceUri,
       { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Local Search Widget (ChatGPT)' },
       async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(chatgptResourceUri, CHATGPT_MIME_TYPE, 'src/lib/local/chatgpt-app.html');
+        return this.loadUIBundle(
+          chatgptResourceUri,
+          CHATGPT_MIME_TYPE,
+          'src/lib/local/chatgpt-app.html',
+          undefined,
+          { resource_domains: ['https://tile.openstreetmap.org', 'https://a.tile.openstreetmap.org', 'https://b.tile.openstreetmap.org', 'https://c.tile.openstreetmap.org', 'https://cdnjs.cloudflare.com'] },
+        );
       },
     );
 
@@ -437,9 +470,6 @@ export class BraveMcpServer {
           'openai/outputTemplate': chatgptResourceUri,
           'openai/toolInvocation/invoking': 'Searching local businesses…',
           'openai/toolInvocation/invoked': 'Places found.',
-          'openai/widgetCSP': {
-            resource_domains: ['tile.openstreetmap.org', 'a.tile.openstreetmap.org', 'b.tile.openstreetmap.org', 'c.tile.openstreetmap.org', 'cdnjs.cloudflare.com'],
-          },
         },
       },
       this.localSearchTool.execute.bind(this.localSearchTool),
