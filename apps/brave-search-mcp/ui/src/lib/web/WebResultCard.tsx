@@ -1,23 +1,32 @@
 /**
- * WebResultCard - Individual search result in classic Google-style layout
+ * WebResultCard - Individual search result in classic Google-style layout with context selection
  */
 import type { WebResultItem } from './types';
-import { Globe } from 'lucide-react';
+import { Check, Globe, Plus } from 'lucide-react';
 
 interface WebResultCardProps {
   item: WebResultItem;
   index: number;
   onOpenLink: (url: string) => void;
+  isInContext?: boolean;
+  onToggleContext?: (item: WebResultItem) => void;
 }
 
-export function WebResultCard({ item, index, onOpenLink }: WebResultCardProps) {
+export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleContext }: WebResultCardProps) {
   const handleClick = () => {
     onOpenLink(item.url);
   };
 
+  const handleContextToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleContext) {
+      onToggleContext(item);
+    }
+  };
+
   return (
     <button
-      className="web-result"
+      className={`web-result ${isInContext ? 'web-result--in-context' : ''}`}
       onClick={handleClick}
       style={{ animationDelay: `${index * 40}ms` }}
     >
@@ -50,6 +59,19 @@ export function WebResultCard({ item, index, onOpenLink }: WebResultCardProps) {
 
       {/* Description */}
       <p className="web-result-description">{item.description}</p>
+
+      {/* Context toggle button */}
+      {onToggleContext && (
+        <button
+          type="button"
+          className={`context-btn ${isInContext ? 'context-btn--active' : ''}`}
+          onClick={handleContextToggle}
+          aria-label={isInContext ? 'Remove from context' : 'Add to context'}
+          title={isInContext ? 'In context' : 'Add to context'}
+        >
+          {isInContext ? <Check size={16} /> : <Plus size={16} />}
+        </button>
+      )}
     </button>
   );
 }

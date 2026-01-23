@@ -15,6 +15,14 @@ export interface WebResultItem {
 export interface WebSearchData {
   query: string;
   count: number;
+  offset?: number;
   items: WebResultItem[];
   error?: string;
+}
+
+export interface ContextResult {
+  title: string;
+  url: string;
+  description: string;
+  domain: string;
 }

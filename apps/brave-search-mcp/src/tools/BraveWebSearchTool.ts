@@ -7,7 +7,7 @@ import { BaseTool } from './BaseTool.js';
 const webSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for'),
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
-  offset: z.number().min(0).default(0).optional().describe('The offset for pagination, minimum 0'),
+  offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
   freshness: z.union([
     z.enum(['pd', 'pw', 'pm', 'py']),
     z.string().regex(/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/, 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD'),
@@ -41,6 +41,7 @@ const webResultSchema = z.object({
 export const webSearchOutputSchema = z.object({
   query: z.string(),
   count: z.number(),
+  offset: z.number().optional(),
   items: z.array(webResultSchema),
   error: z.string().optional(),
 });
@@ -73,17 +74,19 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
       const result: {
         content: Array<{ type: 'text'; text: string }>;
         isError: true;
-        structuredContent?: BraveWebSearchStructuredContent;
+        _meta?: { structuredContent: BraveWebSearchStructuredContent };
       } = {
         content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
         isError: true,
       };
       if (this.isUI) {
-        result.structuredContent = {
-          query: input.query,
-          count: 0,
-          items: [],
-          error: message,
+        result._meta = {
+          structuredContent: {
+            query: input.query,
+            count: 0,
+            items: [],
+            error: message,
+          },
         };
       }
       return result;
@@ -104,13 +107,16 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
       const text = `No results found for "${query}"`;
       const result = { content: [{ type: 'text' as const, text }] } as {
         content: Array<{ type: 'text'; text: string }>;
-        structuredContent?: BraveWebSearchStructuredContent;
+        _meta?: { structuredContent: BraveWebSearchStructuredContent };
       };
       if (this.isUI) {
-        result.structuredContent = {
-          query,
-          count: 0,
-          items: [],
+        result._meta = {
+          structuredContent: {
+            query,
+            offset,
+            count: 0,
+            items: [],
+          },
         };
       }
       return result;
@@ -145,22 +151,35 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
       });
     }
 
-    const combinedText = webItems
-      .map((item, index) => (
-        `${index + 1}: Title: ${item.title}\nURL: ${item.url}\nDescription: ${item.description}`
-      ))
-      .join('\n\n');
+    // In UI mode, return minimal text - widget controls model context
+    // In non-UI mode, return full result details for the model
+    const contentText = this.isUI
+      ? `Found ${webItems.length} web results for "${query}". `
+      + 'IMPORTANT: You CANNOT see the result titles, URLs, or descriptions. '
+      + 'The user sees a widget with the results, but you have NO information about them. '
+      + 'Do NOT claim to see details or describe what the results are about. '
+      + 'Simply tell the user the results are displayed in the widget and wait for them to share details. '
+      + 'Tell the user to click the + icon on any result to add it to the conversation, '
+      + 'then you will be able to see and discuss that result.'
+      : webItems
+          .map((item, index) => (
+            `${index + 1}: Title: ${item.title}\nURL: ${item.url}\nDescription: ${item.description}`
+          ))
+          .join('\n\n');
 
-    const result = { content: [{ type: 'text' as const, text: combinedText }] } as {
+    const result = { content: [{ type: 'text' as const, text: contentText }] } as {
       content: Array<{ type: 'text'; text: string }>;
-      structuredContent?: BraveWebSearchStructuredContent;
+      _meta?: { structuredContent: BraveWebSearchStructuredContent };
     };
 
     if (this.isUI) {
-      result.structuredContent = {
-        query,
-        count: webItems.length,
-        items: webItems,
+      result._meta = {
+        structuredContent: {
+          query,
+          offset,
+          count: webItems.length,
+          items: webItems,
+        },
       };
     }
 

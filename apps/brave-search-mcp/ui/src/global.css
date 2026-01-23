@@ -353,3 +353,112 @@ body::before {
     font-size: 18px;
   }
 }
+
+/* =====================
+   Shared Pagination Controls
+   ===================== */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  padding: 12px 0;
+}
+
+.pagination-btn {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--bg-ink);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 13px;
+  color: var(--muted);
+  min-width: 80px;
+  text-align: center;
+}
+
+/* =====================
+   Shared Context Selection
+   ===================== */
+.context-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  align-self: center;
+}
+
+.context-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(var(--accent-rgb, 99, 102, 241), 0.1);
+}
+
+.context-btn--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+.context-btn--active:hover {
+  background: var(--accent);
+  opacity: 0.9;
+}
+
+/* =====================
+   Shared Header Actions
+   ===================== */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.add-all-btn {
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-all-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.add-all-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

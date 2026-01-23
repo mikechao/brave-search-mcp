@@ -9,7 +9,7 @@ import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImag
 import { BraveLocalSearchTool, localSearchOutputSchema } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool, videoSearchOutputSchema } from './tools/BraveVideoSearchTool.js';
-import { BraveWebSearchTool, webSearchOutputSchema } from './tools/BraveWebSearchTool.js';
+import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
@@ -394,10 +394,10 @@ export class BraveMcpServer {
         title: 'Brave Web Search',
         description: this.webSearchTool.description,
         inputSchema: this.webSearchTool.inputSchema.shape,
-        outputSchema: webSearchOutputSchema.shape,
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
+          'openai/widgetAccessible': true,
           'openai/toolInvocation/invoking': 'Searching the web…',
           'openai/toolInvocation/invoked': 'Search complete.',
         },

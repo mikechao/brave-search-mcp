@@ -100,7 +100,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       const webResult = await this.webSearchTool.executeCore({ query, count, offset: 0 });
 
       // If UI mode, add fallback flag
-      if (this.isUI && webResult.structuredContent) {
+      if (this.isUI && webResult._meta?.structuredContent) {
         return {
           ...webResult,
           structuredContent: {

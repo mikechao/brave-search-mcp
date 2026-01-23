@@ -150,10 +150,10 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
         breaking: result.breaking ?? false,
         thumbnail: result.thumbnail
           ? {
-            src: result.thumbnail.src,
-            height: result.thumbnail.height,
-            width: result.thumbnail.width,
-          }
+              src: result.thumbnail.src,
+              height: result.thumbnail.height,
+              width: result.thumbnail.width,
+            }
           : undefined,
         favicon: result.meta_url?.favicon,
       });
@@ -181,10 +181,10 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
       + 'Tell the user to click the + icon on any article to add it to the conversation, '
       + 'then you will be able to see and discuss that article.'
       : newsItems
-        .map((item, index) => (
-          `${index + 1}: Title: ${item.title}\nURL: ${item.url}\nAge: ${item.age}\nDescription: ${item.description}`
-        ))
-        .join('\n\n');
+          .map((item, index) => (
+            `${index + 1}: Title: ${item.title}\nURL: ${item.url}\nAge: ${item.age}\nDescription: ${item.description}`
+          ))
+          .join('\n\n');
 
     const result = { content: [{ type: 'text' as const, text: contentText }] } as {
       content: Array<{ type: 'text'; text: string }>;
