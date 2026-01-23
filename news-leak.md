@@ -50,4 +50,14 @@ Confirmed via debug output in the ChatGPT widget:
 - **Output**: Received minimal text: `"Found 10 news articles..."`
 - **Metadata**: Received full structured content in `_meta`.
 - **Widget**: Rendering correctly with data from metadata.
-- **Model Context**: Model does not reference specific articles until added by user.
+
+**User Testing (2026-01-23):**
+- When asked to "list the articles", model initially attempted to guess/hallucinate article titles.
+- When explicitly asked "do you have the articles in your context?", model confirmed it does **NOT** have them.
+- ✅ **Context leakage is fixed.** Model only sees summary text, not article details.
+
+## All Code Paths Now Use `_meta`
+All three handlers in `BraveNewsSearchTool.ts` now consistently use `_meta.structuredContent`:
+1. **Success path** (normal results)
+2. **No results path** (empty search)
+3. **Error path** (API failures)

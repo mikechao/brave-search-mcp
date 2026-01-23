@@ -76,18 +76,20 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
       const result: {
         content: Array<{ type: 'text'; text: string }>;
         isError: true;
-        structuredContent?: BraveNewsSearchStructuredContent;
+        _meta?: { structuredContent: BraveNewsSearchStructuredContent };
       } = {
         content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
         isError: true,
       };
 
       if (this.isUI) {
-        result.structuredContent = {
-          query: input.query,
-          count: 0,
-          items: [],
-          error: message,
+        result._meta = {
+          structuredContent: {
+            query: input.query,
+            count: 0,
+            items: [],
+            error: message,
+          },
         };
       }
 
@@ -107,14 +109,16 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
       const text = `No news results found for "${query}"`;
       const result = { content: [{ type: 'text' as const, text }] } as {
         content: Array<{ type: 'text'; text: string }>;
-        structuredContent?: BraveNewsSearchStructuredContent;
+        _meta?: { structuredContent: BraveNewsSearchStructuredContent };
       };
       if (this.isUI) {
-        result.structuredContent = {
-          query,
-          offset,
-          count: 0,
-          items: [],
+        result._meta = {
+          structuredContent: {
+            query,
+            offset,
+            count: 0,
+            items: [],
+          },
         };
       }
       return result;
