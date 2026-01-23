@@ -61,3 +61,22 @@ All three handlers in `BraveNewsSearchTool.ts` now consistently use `_meta.struc
 1. **Success path** (normal results)
 2. **No results path** (empty search)
 3. **Error path** (API failures)
+
+## Prompt Engineering Fix (2026-01-23)
+The model was hallucinating article summaries despite not having access. Fixed by updating the tool response text to be explicit:
+
+```
+Found X news articles for "query".
+IMPORTANT: You CANNOT see the article titles, sources, or content.
+The user sees a widget with the articles, but you have NO information about them.
+Do NOT claim to see headlines or describe what the articles are about.
+Simply tell the user the articles are displayed in the widget and wait for them to share details.
+```
+
+**Result:** Model now correctly responds with:
+- "I can't see the headlines or details yet"
+- "Click the '+' icon on any article to add it to the conversation"
+- "Once you do that, I can summarize/explain/compare..."
+
+Example response:
+> "I've pulled up recent news articles about orange cats and they're now displayed for you in the news widget above. I can't see the article titles or contents yet. If you click the '+' icon on any article that looks interesting, it'll add that article into our conversation. Once you do that, I can summarize the article, explain why it's getting attention, or help you dig into any details."

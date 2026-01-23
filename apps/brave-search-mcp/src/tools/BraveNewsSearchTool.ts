@@ -150,10 +150,10 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
         breaking: result.breaking ?? false,
         thumbnail: result.thumbnail
           ? {
-              src: result.thumbnail.src,
-              height: result.thumbnail.height,
-              width: result.thumbnail.width,
-            }
+            src: result.thumbnail.src,
+            height: result.thumbnail.height,
+            width: result.thumbnail.width,
+          }
           : undefined,
         favicon: result.meta_url?.favicon,
       });
@@ -173,12 +173,18 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
     // In UI mode, return minimal text - widget controls model context
     // In non-UI mode, return full article details for the model
     const contentText = this.isUI
-      ? `Found ${newsItems.length} news articles for "${query}". The user will use the widget to add articles to the context.`
+      ? `Found ${newsItems.length} news articles for "${query}". `
+      + 'IMPORTANT: You CANNOT see the article titles, sources, or content. '
+      + 'The user sees a widget with the articles, but you have NO information about them. '
+      + 'Do NOT claim to see headlines or describe what the articles are about. '
+      + 'Simply tell the user the articles are displayed in the widget and wait for them to share details.'
+      + 'Tell the user to click the + icon on any article to add it to the conversation, '
+      + 'then you will be able to see and discuss that article.'
       : newsItems
-          .map((item, index) => (
-            `${index + 1}: Title: ${item.title}\nURL: ${item.url}\nAge: ${item.age}\nDescription: ${item.description}`
-          ))
-          .join('\n\n');
+        .map((item, index) => (
+          `${index + 1}: Title: ${item.title}\nURL: ${item.url}\nAge: ${item.age}\nDescription: ${item.description}`
+        ))
+        .join('\n\n');
 
     const result = { content: [{ type: 'text' as const, text: contentText }] } as {
       content: Array<{ type: 'text'; text: string }>;
