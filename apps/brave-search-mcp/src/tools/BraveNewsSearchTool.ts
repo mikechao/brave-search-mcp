@@ -146,10 +146,10 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
         breaking: result.breaking ?? false,
         thumbnail: result.thumbnail
           ? {
-            src: result.thumbnail.src,
-            height: result.thumbnail.height,
-            width: result.thumbnail.width,
-          }
+              src: result.thumbnail.src,
+              height: result.thumbnail.height,
+              width: result.thumbnail.width,
+            }
           : undefined,
         favicon: result.meta_url?.favicon,
       });
@@ -166,23 +166,29 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
       return new Date(b.pageAge).getTime() - new Date(a.pageAge).getTime();
     });
 
-    const combinedText = newsItems
-      .map((item, index) => (
-        `${index + 1}: Title: ${item.title}\nURL: ${item.url}\nAge: ${item.age}\nDescription: ${item.description}`
-      ))
-      .join('\n\n');
+    // In UI mode, return minimal text - widget controls model context
+    // In non-UI mode, return full article details for the model
+    const contentText = this.isUI
+      ? `Found ${newsItems.length} news articles for "${query}". The user will use the widget to add articles to the context.`
+      : newsItems
+          .map((item, index) => (
+            `${index + 1}: Title: ${item.title}\nURL: ${item.url}\nAge: ${item.age}\nDescription: ${item.description}`
+          ))
+          .join('\n\n');
 
-    const result = { content: [{ type: 'text' as const, text: combinedText }] } as {
+    const result = { content: [{ type: 'text' as const, text: contentText }] } as {
       content: Array<{ type: 'text'; text: string }>;
-      structuredContent?: BraveNewsSearchStructuredContent;
+      _meta?: { structuredContent: BraveNewsSearchStructuredContent };
     };
 
     if (this.isUI) {
-      result.structuredContent = {
-        query,
-        offset,
-        count: newsItems.length,
-        items: newsItems,
+      result._meta = {
+        structuredContent: {
+          query,
+          offset,
+          count: newsItems.length,
+          items: newsItems,
+        },
       };
     }
 

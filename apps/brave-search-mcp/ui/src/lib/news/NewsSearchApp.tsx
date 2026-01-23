@@ -1,8 +1,8 @@
 /**
- * NewsSearchApp - Main news search widget component with pagination
+ * NewsSearchApp - Main news search widget component with pagination and context selection
  */
 import type { WidgetProps } from '../../widget-props';
-import type { NewsSearchData } from './types';
+import type { ContextArticle, NewsItem, NewsSearchData } from './types';
 import { useState } from 'react';
 import { FullscreenButton } from '../shared/FullscreenButton';
 import { NewsCard } from './NewsCard';
@@ -12,6 +12,10 @@ export interface NewsSearchAppProps extends WidgetProps {
   onLoadPage?: (offset: number) => Promise<void>;
   /** Whether a page load is in progress */
   isLoading?: boolean;
+  /** Articles currently in context */
+  contextArticles?: ContextArticle[];
+  /** Callback when user adds/removes article from context */
+  onContextChange?: (articles: ContextArticle[]) => void;
 }
 
 export default function NewsSearchApp({
@@ -23,11 +27,16 @@ export default function NewsSearchApp({
   requestDisplayMode,
   onLoadPage,
   isLoading: externalIsLoading,
+  contextArticles = [],
+  onContextChange,
 }: NewsSearchAppProps) {
   const [internalLoading, setInternalLoading] = useState(false);
   const isLoading = externalIsLoading ?? internalLoading;
 
-  const data = toolResult?.structuredContent as NewsSearchData | undefined;
+  // Access structured content from _meta (new location) or top-level (legacy)
+  const rawData = toolResult as any;
+  const data = (rawData?._meta?.structuredContent ?? rawData?.structuredContent) as NewsSearchData | undefined;
+
   const items = data?.items ?? [];
   const error = data?.error;
   const hasData = Boolean(data);
@@ -38,6 +47,11 @@ export default function NewsSearchApp({
   const hasPrevious = currentOffset > 0;
   const hasNext = currentOffset < MAX_OFFSET && items.length > 0;
   const canPaginate = Boolean(onLoadPage) && hasData && !error;
+
+  // Context selection helpers
+  const contextUrls = new Set(contextArticles.map(a => a.url));
+  const isInContext = (url: string) => contextUrls.has(url);
+  const hasContextSupport = Boolean(onContextChange);
 
   const safeAreaInsets = hostContext?.safeAreaInsets;
   const containerStyle = {
@@ -93,6 +107,43 @@ export default function NewsSearchApp({
     }
   };
 
+  const handleToggleContext = (item: NewsItem) => {
+    if (!onContextChange)
+      return;
+
+    const article: ContextArticle = {
+      title: item.title,
+      source: item.source,
+      age: item.age,
+      url: item.url,
+    };
+
+    if (isInContext(item.url)) {
+      // Remove from context
+      onContextChange(contextArticles.filter(a => a.url !== item.url));
+    }
+    else {
+      // Add to context
+      onContextChange([...contextArticles, article]);
+    }
+  };
+
+  const handleAddAllToContext = () => {
+    if (!onContextChange)
+      return;
+
+    const newArticles: ContextArticle[] = items
+      .filter(item => !isInContext(item.url))
+      .map(item => ({
+        title: item.title,
+        source: item.source,
+        age: item.age,
+        url: item.url,
+      }));
+
+    onContextChange([...contextArticles, ...newArticles]);
+  };
+
   const pageNumber = currentOffset + 1;
 
   return (
@@ -109,14 +160,27 @@ export default function NewsSearchApp({
           <div className="count">
             {hasData ? `${items.length} articles` : 'Awaiting tool output'}
             {hasData && canPaginate && ` · Page ${pageNumber}`}
+            {hasContextSupport && contextArticles.length > 0 && ` · ${contextArticles.length} in context`}
           </div>
         </div>
-        {requestDisplayMode && (
-          <FullscreenButton
-            onRequestFullscreen={handleFullscreenToggle}
-            displayMode={displayMode}
-          />
-        )}
+        <div className="header-actions">
+          {hasContextSupport && items.length > 0 && (
+            <button
+              type="button"
+              className="add-all-btn"
+              onClick={handleAddAllToContext}
+              disabled={items.every(item => isInContext(item.url))}
+            >
+              Add All
+            </button>
+          )}
+          {requestDisplayMode && (
+            <FullscreenButton
+              onRequestFullscreen={handleFullscreenToggle}
+              displayMode={displayMode}
+            />
+          )}
+        </div>
       </header>
 
       {error && (
@@ -155,6 +219,8 @@ export default function NewsSearchApp({
               item={item}
               index={index}
               onOpenLink={handleOpenLink}
+              isInContext={isInContext(item.url)}
+              onToggleContext={hasContextSupport ? handleToggleContext : undefined}
             />
           ))}
         </section>

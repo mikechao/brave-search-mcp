@@ -175,10 +175,10 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
         description: video.description,
         thumbnail: video.thumbnail
           ? {
-            src: video.thumbnail.src,
-            height: video.thumbnail.height,
-            width: video.thumbnail.width,
-          }
+              src: video.thumbnail.src,
+              height: video.thumbnail.height,
+              width: video.thumbnail.width,
+            }
           : undefined,
         duration: video.video.duration ?? '',
         views: String(video.video.views ?? ''),

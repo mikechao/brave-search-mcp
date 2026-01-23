@@ -24,3 +24,10 @@ export interface NewsSearchData {
   items: NewsItem[];
   error?: string;
 }
+
+export interface ContextArticle {
+  title: string;
+  source: string;
+  age: string;
+  url: string;
+}

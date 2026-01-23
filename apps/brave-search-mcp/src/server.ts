@@ -7,7 +7,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
 import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
 import { BraveLocalSearchTool, localSearchOutputSchema } from './tools/BraveLocalSearchTool.js';
-import { BraveNewsSearchTool, newsSearchOutputSchema } from './tools/BraveNewsSearchTool.js';
+import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool, videoSearchOutputSchema } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool, webSearchOutputSchema } from './tools/BraveWebSearchTool.js';
 
@@ -178,7 +178,6 @@ export class BraveMcpServer {
         title: 'Brave News Search',
         description: this.newsSearchTool.description,
         inputSchema: this.newsSearchTool.inputSchema.shape,
-        outputSchema: newsSearchOutputSchema.shape,
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,

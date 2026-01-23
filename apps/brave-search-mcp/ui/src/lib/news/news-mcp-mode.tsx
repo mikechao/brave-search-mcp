@@ -1,109 +1,92 @@
 /**
- * News Search - MCP-APP mode wrapper with pagination support
- * Uses ext-apps SDK with manual App creation to disable autoResize
+ * News Search - MCP App mode with pagination and context selection support
  */
-import type { McpUiHostContext } from '@modelcontextprotocol/ext-apps';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { NewsSearchAppProps } from './NewsSearchApp';
-import type { NewsSearchData } from './types';
+import type { ContextArticle, NewsSearchData } from './types';
 import { App, PostMessageTransport } from '@modelcontextprotocol/ext-apps';
 import { useCallback, useEffect, useState } from 'react';
 import NewsSearchApp from './NewsSearchApp';
 
-const APP_INFO = { name: 'Brave News Search', version: '1.0.0' };
-
+/**
+ * MCP App mode wrapper
+ */
 export default function NewsMcpAppMode() {
   const [app, setApp] = useState<App | null>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const [toolInputs, setToolInputs] = useState<Record<string, unknown> | null>(null);
-  const [toolInputsPartial, setToolInputsPartial] = useState<Record<string, unknown> | null>(null);
-  const [toolResult, setToolResult] = useState<CallToolResult | null>(null);
-  const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
+  const [toolResult, setToolResult] = useState<{ structuredContent?: NewsSearchData } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [contextArticles, setContextArticles] = useState<ContextArticle[]>([]);
 
+  // Initialize App SDK
   useEffect(() => {
-    // Create App manually with autoResize disabled
-    const appInstance = new App(APP_INFO, {}, { autoResize: false });
+    // If not in iframe, don't initialize (dev mode)
+    if (window === window.parent)
+      return;
 
-    // Register handlers before connection
-    appInstance.ontoolinput = (params) => {
-      setToolInputs(params.arguments as Record<string, unknown>);
-      setToolInputsPartial(null);
-    };
-    appInstance.ontoolinputpartial = (params) => {
-      setToolInputsPartial(params.arguments as Record<string, unknown>);
-    };
-    appInstance.ontoolresult = (params) => {
-      setToolResult(params as CallToolResult);
-    };
-    appInstance.onhostcontextchanged = (params) => {
-      setHostContext(prev => ({ ...prev, ...params }));
-    };
+    const mcpApp = new App(
+      { name: 'Brave News Search', version: '1.0.0' },
+      {
+        tools: {
+          // We don't expose any client-side tools
+        },
+      },
+    );
 
-    // Connect to host
-    const transport = new PostMessageTransport(window.parent);
-    appInstance.connect(transport)
+    // Initial connection
+    mcpApp.connect(new PostMessageTransport(window.parent, window.parent))
       .then(() => {
-        setApp(appInstance);
-        const ctx = appInstance.getHostContext();
-        if (ctx)
-          setHostContext(ctx);
+        setApp(mcpApp);
+
+        // Setup notification handlers
+        mcpApp.ontoolresult = (params) => {
+          // Update local state when tool completes
+          const result = params as any;
+          const content = result?._meta?.structuredContent ?? result?.structuredContent;
+          if (content) {
+            setToolResult({ structuredContent: content });
+          }
+        };
       })
-      .catch((err) => {
-        setError(err instanceof Error ? err : new Error(String(err)));
-      });
+      .catch(err => console.error('Failed to connect to host:', err));
 
     return () => {
-      appInstance.close();
+      // Cleanup if needed
     };
   }, []);
 
-  const callServerTool = useCallback<App['callServerTool']>(
-    (params, options) => app!.callServerTool(params, options),
-    [app],
-  );
-  const sendMessage = useCallback<App['sendMessage']>(
-    (params, options) => app!.sendMessage(params, options),
-    [app],
-  );
-  const openLink = useCallback<App['openLink']>(
-    (params, options) => app!.openLink(params, options),
-    [app],
-  );
-  const sendLog = useCallback<App['sendLog']>(
-    params => app!.sendLog(params),
-    [app],
-  );
-  const requestDisplayMode = useCallback(
-    async (mode: 'inline' | 'fullscreen' | 'pip') => {
-      await app!.requestDisplayMode({ mode });
-    },
-    [app],
-  );
+  const handleOpenLink = async ({ url }: { url: string }) => {
+    if (app) {
+      return app.openLink({ url });
+    }
+    return window.open(url, '_blank') ? { isError: false } : { isError: true };
+  };
 
-  // Pagination handler - calls the news search tool with new offset
+  const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
+    if (app) {
+      await app.requestDisplayMode({ mode });
+    }
+  };
+
+  // Pagination handler using app.callServerTool
   const handleLoadPage = useCallback(async (offset: number) => {
-    if (!app || !toolResult)
-      return;
-
-    const data = toolResult.structuredContent as NewsSearchData | undefined;
-    if (!data)
+    if (!toolResult?.structuredContent || !app)
       return;
 
     setIsLoading(true);
     try {
+      // Call the server tool to get the next page
       const result = await app.callServerTool({
         name: 'brave_news_search',
         arguments: {
-          query: data.query,
-          count: data.count || 10,
+          query: toolResult.structuredContent.query,
+          count: toolResult.structuredContent.count || 10,
           offset,
         },
       });
 
-      // Update results with the new page
-      if (result && !result.isError) {
-        setToolResult(result as CallToolResult);
+      const extendedResult = result as any;
+      const content = extendedResult?._meta?.structuredContent ?? extendedResult?.structuredContent;
+      if (content) {
+        setToolResult({ structuredContent: content });
       }
     }
     catch (err) {
@@ -114,30 +97,40 @@ export default function NewsMcpAppMode() {
     }
   }, [app, toolResult]);
 
-  if (error) {
-    return (
-      <div className="error">
-        Error:
-        {error.message}
-      </div>
-    );
-  }
-  if (!app)
-    return <div className="loading">Connecting...</div>;
+  // Context selection handler using app.updateModelContext
+  const handleContextChange = useCallback((articles: ContextArticle[]) => {
+    setContextArticles(articles);
+
+    if (app) {
+      // Format context for the model
+      const contentText = articles.length > 0
+        ? articles.map((a, idx) => (
+            `${idx + 1}: Title: ${a.title}\nURL: ${a.url}\nAge: ${a.age}\nSource: ${a.source}`
+          )).join('\n\n')
+        : 'No articles selected.';
+
+      // Send update to host without triggering follow-up
+      app.updateModelContext({
+        content: [{ type: 'text', text: contentText }],
+      }).catch(err => console.error('Failed to update model context:', err));
+    }
+  }, [app]);
 
   const props: NewsSearchAppProps = {
-    toolInputs,
-    toolInputsPartial,
-    toolResult,
-    hostContext,
-    callServerTool,
-    sendMessage,
-    openLink,
-    sendLog,
-    displayMode: hostContext?.displayMode,
-    requestDisplayMode,
-    onLoadPage: handleLoadPage,
+    toolInputs: null,
+    toolInputsPartial: null,
+    toolResult: toolResult as any,
+    hostContext: null,
+    callServerTool: app?.callServerTool.bind(app) as any,
+    sendMessage: app?.sendMessage.bind(app) as any,
+    openLink: handleOpenLink,
+    sendLog: app?.sendLog.bind(app) as any,
+    displayMode: 'inline', // We could sync this with host context if needed
+    requestDisplayMode: handleRequestDisplayMode,
+    onLoadPage: app ? handleLoadPage : undefined,
     isLoading,
+    contextArticles,
+    onContextChange: app ? handleContextChange : undefined,
   };
 
   return <NewsSearchApp {...props} />;

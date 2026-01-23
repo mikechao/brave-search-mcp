@@ -1,25 +1,33 @@
 /**
- * News Search - ChatGPT mode with pagination support
+ * News Search - ChatGPT mode with pagination and context selection support
  * Uses custom useOpenAiGlobal hook for reactive updates
  */
 import type { NewsSearchAppProps } from './NewsSearchApp';
-import type { NewsSearchData } from './types';
+import type { ContextArticle, NewsSearchData } from './types';
 import { useCallback, useState } from 'react';
-import { useDisplayMode, useToolOutput } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import NewsSearchApp from './NewsSearchApp';
 
 /**
- * ChatGPT mode wrapper using reactive hooks
+ * ChatGPT mode wrapper with context selection support
  */
 export default function NewsChatGPTMode() {
   // Use reactive hooks instead of manual polling
   const [toolOutput, setToolOutput] = useState<NewsSearchData | null>(null);
-  const initialToolOutput = useToolOutput() as unknown as NewsSearchData | null;
+
+  // Access tool output (content) and metadata (_meta) separately
+  const rawOutput = useToolOutput() as any;
+  const rawMetadata = useToolResponseMetadata() as any;
+
+  // Prefer metadata (where structuredContent lives now), fallback to output (legacy)
+  const initialData = (rawMetadata?.structuredContent ?? rawOutput?.structuredContent) as NewsSearchData | null;
+
   const displayMode = useDisplayMode();
   const [isLoading, setIsLoading] = useState(false);
+  const [contextArticles, setContextArticles] = useState<ContextArticle[]>([]);
 
   // Use local state if we've loaded a new page, otherwise use initial
-  const currentData = toolOutput ?? initialToolOutput;
+  const currentData = toolOutput ?? initialData;
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
@@ -52,28 +60,12 @@ export default function NewsChatGPTMode() {
         query: currentData.query,
         count: currentData.count || 10,
         offset,
-      }) as { structuredContent?: NewsSearchData } | null;
+      }) as { structuredContent?: NewsSearchData; _meta?: { structuredContent?: NewsSearchData } } | null;
 
-      if (result?.structuredContent) {
+      const newData = result?._meta?.structuredContent ?? result?.structuredContent;
+      if (newData) {
         // Update local state with new results
-        setToolOutput(result.structuredContent);
-
-        // Expose new results to the model via widgetState
-        if (window.openai?.setWidgetState) {
-          window.openai.setWidgetState({
-            modelContent: {
-              query: result.structuredContent.query,
-              offset: result.structuredContent.offset,
-              articles: result.structuredContent.items.map((item, idx) => ({
-                index: idx + 1,
-                title: item.title,
-                source: item.source,
-                age: item.age,
-                url: item.url,
-              })),
-            },
-          });
-        }
+        setToolOutput(newData);
       }
     }
     catch (err) {
@@ -83,6 +75,27 @@ export default function NewsChatGPTMode() {
       setIsLoading(false);
     }
   }, [currentData]);
+
+  // Context selection handler - updates widgetState for model access
+  const handleContextChange = useCallback((articles: ContextArticle[]) => {
+    setContextArticles(articles);
+
+    // Expose selected articles to the model via widgetState
+    if (window.openai?.setWidgetState) {
+      window.openai.setWidgetState({
+        modelContent: {
+          selectedArticles: articles.map((a, idx) => ({
+            index: idx + 1,
+            title: a.title,
+            source: a.source,
+            age: a.age,
+            url: a.url,
+          })),
+          count: articles.length,
+        },
+      });
+    }
+  }, []);
 
   const noop = async () => ({ isError: false });
   const noopLog = async () => { };
@@ -100,6 +113,8 @@ export default function NewsChatGPTMode() {
     requestDisplayMode: handleRequestDisplayMode,
     onLoadPage: window.openai?.callTool ? handleLoadPage : undefined,
     isLoading,
+    contextArticles,
+    onContextChange: window.openai?.setWidgetState ? handleContextChange : undefined,
   };
 
   return <NewsSearchApp {...props} />;
