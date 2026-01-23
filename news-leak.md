@@ -1,82 +1,161 @@
-# News Context Leakage Resolution
+# ChatGPT Widget Implementation Guide
 
-## Problem
-When using the News Search widget in ChatGPT, the model was automatically receiving the full list of news articles in its context, defeating the purpose of the "Selective Article Context" feature.
+This document captures lessons learned from implementing the News Search widget with pagination and selective article context. These patterns apply to all ChatGPT widgets in this project.
 
-**Root Cause**: The `structuredContent` field in the tool result (containing all articles) was being automatically ingested by the model because it was at the top level of the response.
+---
 
-## Investigation & Fixes
+## Overview
 
-### 1. Hiding Data from Model
-To prevent the model from seeing the data automatically, we moved the structured payload to the `_meta` field, which is designed to be "Hidden from the model" but "Delivered to the component".
+When building widgets that control what the model sees (selective context), you need to:
+1. Hide full data from the model's automatic ingestion
+2. Let the widget control when data is added to model context
+3. Support pagination via `callTool()` for loading more results
 
-**Change**:
-- Modified `BraveNewsSearchTool.ts` to return:
-  ```typescript
-  {
-    content: [{ type: 'text', text: "Summary text..." }],
-    _meta: {
-      structuredContent: { ... }
-    }
+---
+
+## Key Patterns
+
+### 1. Hiding Data from Model: Use `_meta`
+
+**Problem**: `structuredContent` at the top level is automatically ingested by the model.
+
+**Solution**: Move structured data to `_meta.structuredContent`:
+
+```typescript
+// In tool's executeCore method
+return {
+  content: [{ type: 'text', text: 'Summary text...' }],
+  _meta: {
+    structuredContent: { query, items, offset, count }
   }
-  ```
-
-### 2. Output Validation Error
-**Error**: "Tool brave_news_search has an output schema but no structured content was provided"
-**Cause**: The tool was registered with `outputSchema`. The Apps SDK (or host) validates that if `outputSchema` is present, the result MUST contain `structuredContent` matching it. Since we moved it to `_meta`, validation failed.
-**Fix**: Removed `outputSchema` from the tool registration in `server.ts`.
-
-### 3. Missing Data in Widget
-**Issue**: The widget appeared blank.
-**Cause**: The standard `useToolOutput()` hook in the ChatGPT Apps SDK returns `toolOutput` (which corresponds to the visible `content`/`structuredContent`). Since our `structuredContent` is in `_meta`, `useToolOutput()` returned only the text summary (or empty).
-**Discovery**: The `_meta` field is exposed separately via `toolResponseMetadata`.
-
-**Fix**:
-- Updated `news-chatgpt-mode.tsx` to use the `useToolResponseMetadata()` hook.
-- Data is now retrieved via `metadata?.structuredContent`.
-
-## Current Implementation
-
-### Server-Side
-- **Tool**: Returns `_meta.structuredContent` in UI mode.
-- **Registration**: No `outputSchema` validation.
-
-### Client-Side (Widget)
-- **Hook**: `useToolResponseMetadata()` used to access hidden data.
-- **Context Control**: Model only sees the text summary initially. Full article content is only added to context when the user explicitly interacts with the widget buttons (triggering `setWidgetState`).
-
-## Verification
-Confirmed via debug output in the ChatGPT widget:
-- **Output**: Received minimal text: `"Found 10 news articles..."`
-- **Metadata**: Received full structured content in `_meta`.
-- **Widget**: Rendering correctly with data from metadata.
-
-**User Testing (2026-01-23):**
-- When asked to "list the articles", model initially attempted to guess/hallucinate article titles.
-- When explicitly asked "do you have the articles in your context?", model confirmed it does **NOT** have them.
-- ✅ **Context leakage is fixed.** Model only sees summary text, not article details.
-
-## All Code Paths Now Use `_meta`
-All three handlers in `BraveNewsSearchTool.ts` now consistently use `_meta.structuredContent`:
-1. **Success path** (normal results)
-2. **No results path** (empty search)
-3. **Error path** (API failures)
-
-## Prompt Engineering Fix (2026-01-23)
-The model was hallucinating article summaries despite not having access. Fixed by updating the tool response text to be explicit:
-
-```
-Found X news articles for "query".
-IMPORTANT: You CANNOT see the article titles, sources, or content.
-The user sees a widget with the articles, but you have NO information about them.
-Do NOT claim to see headlines or describe what the articles are about.
-Simply tell the user the articles are displayed in the widget and wait for them to share details.
+};
 ```
 
-**Result:** Model now correctly responds with:
-- "I can't see the headlines or details yet"
-- "Click the '+' icon on any article to add it to the conversation"
-- "Once you do that, I can summarize/explain/compare..."
+### 2. Remove `outputSchema` When Using `_meta`
 
-Example response:
-> "I've pulled up recent news articles about orange cats and they're now displayed for you in the news widget above. I can't see the article titles or contents yet. If you click the '+' icon on any article that looks interesting, it'll add that article into our conversation. Once you do that, I can summarize the article, explain why it's getting attention, or help you dig into any details."
+**Problem**: If tool is registered with `outputSchema`, the SDK validates that top-level `structuredContent` exists and matches the schema.
+
+**Error**: `"Output validation error: Tool has an output schema but no structured content was provided"`
+
+**Solution**: Remove `outputSchema` from tool registration in `server.ts`:
+
+```typescript
+// Before (causes validation error)
+registerAppTool(server, 'brave_news_search', { 
+  outputSchema: newsSearchOutputSchema.shape,
+  ...
+});
+
+// After (works with _meta)
+registerAppTool(server, 'brave_news_search', { 
+  // No outputSchema  
+  ...
+});
+```
+
+### 3. Widget: Access `_meta` via `useToolResponseMetadata()`
+
+The standard `useToolOutput()` hook only returns visible content. For `_meta` data:
+
+```typescript
+import { useToolOutput, useToolResponseMetadata } from '@anthropic-ai/claude-apps-sdk';
+
+// Initial load
+const rawOutput = useToolOutput() as any;
+const rawMetadata = useToolResponseMetadata() as any;
+
+// Prefer metadata (where structuredContent lives now)
+const initialData = rawMetadata?.structuredContent ?? rawOutput?.structuredContent;
+```
+
+### 4. Pagination: `callTool()` Returns `meta` Not `_meta`
+
+**Critical Difference**: 
+- Initial load hooks provide `_meta` (with underscore)
+- `window.openai.callTool()` returns `meta` (lowercase, no underscore)
+
+```typescript
+const handleLoadPage = async (offset: number) => {
+  const result = await window.openai.callTool('tool_name', { query, offset });
+  
+  // Check both 'meta' (callTool) and '_meta' (fallback)
+  const newData = result?.meta?.structuredContent 
+               ?? result?._meta?.structuredContent 
+               ?? result?.structuredContent;
+               
+  if (newData) {
+    setToolOutput(newData);
+  }
+};
+```
+
+### 5. Prompt Engineering: Prevent Model Hallucination
+
+Even with hidden data, the model may try to guess/hallucinate content. Use explicit instructions:
+
+```typescript
+const contentText = this.isUI
+  ? `Found ${items.length} results for "${query}". `
+    + 'IMPORTANT: You CANNOT see the titles, sources, or content. '
+    + 'The user sees a widget with the results, but you have NO information about them. '
+    + 'Do NOT claim to see details or describe what the results are about. '
+    + 'Tell the user to click the + icon to add items to the conversation.'
+  : formatResultsForModel(items);  // Non-UI mode gets full text
+```
+
+### 6. Context Control: `setWidgetState()` for User-Selected Items
+
+When user clicks to add items to context:
+
+```typescript
+const handleContextChange = (articles: ContextArticle[]) => {
+  setContextArticles(articles);
+  
+  if (window.openai?.setWidgetState) {
+    window.openai.setWidgetState({
+      selectedArticles: articles.map(a => ({
+        title: a.title,
+        description: a.description,
+        url: a.url,
+        source: a.source,
+      })),
+    });
+  }
+};
+```
+
+---
+
+## Implementation Checklist for New Tools
+
+When adding selective context and pagination to other tools:
+
+- [ ] Move structured data to `_meta.structuredContent` in tool
+- [ ] Remove `outputSchema` from tool registration
+- [ ] Update widget to use `useToolResponseMetadata()` for initial data
+- [ ] In pagination handler, check `result.meta` (not `_meta`) from `callTool()`
+- [ ] Add explicit "you cannot see this content" text to tool response
+- [ ] Implement `setWidgetState()` for user context selection
+- [ ] Test all code paths: success, no results, error
+
+---
+
+## Files Modified for News Widget
+
+| File | Changes |
+|------|---------|
+| `src/tools/BraveNewsSearchTool.ts` | Return `_meta.structuredContent`, explicit text message |
+| `src/server.ts` | Remove `outputSchema` for news tool |
+| `ui/src/lib/news/news-chatgpt-mode.tsx` | Use `useToolResponseMetadata()`, handle `meta` from `callTool()` |
+| `ui/src/lib/news/NewsSearchApp.tsx` | Pagination UI, context selection buttons |
+
+---
+
+## Common Errors and Solutions
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `Output validation error: no structured content` | `outputSchema` set but `structuredContent` in `_meta` | Remove `outputSchema` from registration |
+| Widget shows blank | Using `useToolOutput()` for `_meta` data | Use `useToolResponseMetadata()` |
+| Pagination doesn't work | Checking `_meta` from `callTool()` | Check `meta` (lowercase) from `callTool()` |
+| Model claims to see content | Model hallucinating from context | Add explicit "you CANNOT see" instructions |

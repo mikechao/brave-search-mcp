@@ -60,9 +60,11 @@ export default function NewsChatGPTMode() {
         query: currentData.query,
         count: currentData.count || 10,
         offset,
-      }) as { structuredContent?: NewsSearchData; _meta?: { structuredContent?: NewsSearchData } } | null;
+      }) as { structuredContent?: NewsSearchData; _meta?: { structuredContent?: NewsSearchData }; meta?: { structuredContent?: NewsSearchData } } | null;
 
-      const newData = result?._meta?.structuredContent ?? result?.structuredContent;
+      // callTool returns metadata in 'meta' (not '_meta'), initial load uses hooks
+      const newData = result?.meta?.structuredContent ?? result?._meta?.structuredContent ?? result?.structuredContent;
+
       if (newData) {
         // Update local state with new results
         setToolOutput(newData);
