@@ -21,7 +21,19 @@ export interface LocalBusinessItem {
 export interface LocalSearchData {
   query: string;
   count: number;
+  offset?: number;
   items: LocalBusinessItem[];
   fallbackToWeb?: boolean;
   error?: string;
+}
+
+/**
+ * Context place for model access - subset of LocalBusinessItem
+ */
+export interface ContextPlace {
+  name: string;
+  address: string;
+  phone?: string;
+  rating?: number;
+  coordinates?: [number, number];
 }

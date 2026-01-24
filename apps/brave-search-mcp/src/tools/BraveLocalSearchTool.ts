@@ -31,6 +31,7 @@ const localBusinessSchema = z.object({
 export const localSearchOutputSchema = z.object({
   query: z.string(),
   count: z.number(),
+  offset: z.number().optional(),
   items: z.array(localBusinessSchema),
   fallbackToWeb: z.boolean().optional(),
   error: z.string().optional(),
@@ -70,17 +71,20 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       const result: {
         content: Array<{ type: 'text'; text: string }>;
         isError: true;
-        structuredContent?: BraveLocalSearchStructuredContent;
+        _meta?: { structuredContent: BraveLocalSearchStructuredContent };
       } = {
         content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
         isError: true,
       };
       if (this.isUI) {
-        result.structuredContent = {
-          query: input.query,
-          count: 0,
-          items: [],
-          error: message,
+        result._meta = {
+          structuredContent: {
+            query: input.query,
+            count: 0,
+            offset: input.offset ?? 0,
+            items: [],
+            error: message,
+          },
         };
       }
       return result;
@@ -105,11 +109,14 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       if (this.isUI && webResult._meta?.structuredContent) {
         return {
           ...webResult,
-          structuredContent: {
-            query,
-            count: 0,
-            items: [],
-            fallbackToWeb: true,
+          _meta: {
+            structuredContent: {
+              query,
+              count: 0,
+              offset: offset ?? 0,
+              items: [],
+              fallbackToWeb: true,
+            },
           },
         };
       }
@@ -199,32 +206,51 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       const text = `No local results found for "${query}"`;
       const result = { content: [{ type: 'text' as const, text }] } as {
         content: Array<{ type: 'text'; text: string }>;
-        structuredContent?: BraveLocalSearchStructuredContent;
+        _meta?: { structuredContent: BraveLocalSearchStructuredContent };
       };
       if (this.isUI) {
-        result.structuredContent = {
-          query,
-          count: 0,
-          items: [],
+        result._meta = {
+          structuredContent: {
+            query,
+            count: 0,
+            offset: offset ?? 0,
+            items: [],
+          },
         };
       }
       return result;
     }
 
+    // Generate combined text for non-UI mode
     const combinedText = texts
       .map((text, index) => `${index + 1}: ${text}`)
       .join('\n\n');
 
-    const result = { content: [{ type: 'text' as const, text: combinedText }] } as {
+    // In UI mode, return minimal text - widget controls model context
+    // In non-UI mode, return full place details for the model
+    const contentText = this.isUI
+      ? `Found ${localItems.length} local places for "${query}". `
+      + 'IMPORTANT: You CANNOT see the business names, addresses, or details. '
+      + 'The user sees a widget with places displayed on a map, but you have NO information about them. '
+      + 'Do NOT claim to see or describe any of the businesses. '
+      + 'Simply tell the user the places are displayed in the widget and wait for them to share details. '
+      + 'Tell the user to click the + icon on any place to add it to the conversation, '
+      + 'then you will be able to see and discuss that place.'
+      : combinedText;
+
+    const result = { content: [{ type: 'text' as const, text: contentText }] } as {
       content: Array<{ type: 'text'; text: string }>;
-      structuredContent?: BraveLocalSearchStructuredContent;
+      _meta?: { structuredContent: BraveLocalSearchStructuredContent };
     };
 
     if (this.isUI) {
-      result.structuredContent = {
-        query,
-        count: localItems.length,
-        items: localItems,
+      result._meta = {
+        structuredContent: {
+          query,
+          offset: offset ?? 0,
+          count: localItems.length,
+          items: localItems,
+        },
       };
     }
 

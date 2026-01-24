@@ -6,7 +6,7 @@ import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@model
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
 import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
-import { BraveLocalSearchTool, localSearchOutputSchema } from './tools/BraveLocalSearchTool.js';
+import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
@@ -196,7 +196,15 @@ export class BraveMcpServer {
    * @param mimeType - The MIME type of the resource
    * @param bundlePath - The HTML file path to load (e.g., 'src/lib/image/mcp-app.html')
    * @param csp - MCP-APP CSP config (ext-apps format)
+   * @param csp.connectDomains - Allowed connect-src domains
+   * @param csp.resourceDomains - Allowed resource domains (img-src, font-src, etc.)
+   * @param csp.frameDomains - Allowed frame-src domains
+   * @param csp.baseUriDomains - Allowed base-uri domains
    * @param openaiWidgetCSP - OpenAI/ChatGPT widget CSP config
+   * @param openaiWidgetCSP.connect_domains - Allowed connect-src domains
+   * @param openaiWidgetCSP.resource_domains - Allowed resource domains
+   * @param openaiWidgetCSP.redirect_domains - Allowed redirect domains
+   * @param openaiWidgetCSP.frame_domains - Allowed frame-src domains
    * @param openaiWidgetDomain - OpenAI/ChatGPT widget domain (subdomain for hosting)
    */
   private async loadUIBundle(
@@ -474,10 +482,10 @@ export class BraveMcpServer {
         title: 'Brave Local Search',
         description: this.localSearchTool.description,
         inputSchema: this.localSearchTool.inputSchema.shape,
-        outputSchema: localSearchOutputSchema.shape,
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
+          'openai/widgetAccessible': true,
           'openai/toolInvocation/invoking': 'Searching local businesses…',
           'openai/toolInvocation/invoked': 'Places found.',
         },

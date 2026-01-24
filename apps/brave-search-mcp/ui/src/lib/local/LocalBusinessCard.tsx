@@ -2,7 +2,7 @@
  * LocalBusinessCard - Business listing card component with expandable details
  */
 import type { LocalBusinessItem } from './types';
-import { ChevronDown, ChevronUp, Clock, Mail, MapPin, Phone, Star } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, Clock, Mail, MapPin, Phone, Plus, Star } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 interface LocalBusinessCardProps {
@@ -11,6 +11,8 @@ interface LocalBusinessCardProps {
   isSelected: boolean;
   onSelect: () => void;
   onOpenLink: (url: string) => void;
+  isInContext?: boolean;
+  onToggleContext?: (item: LocalBusinessItem) => void;
 }
 
 export function LocalBusinessCard({
@@ -19,6 +21,8 @@ export function LocalBusinessCard({
   isSelected,
   onSelect,
   onOpenLink,
+  isInContext,
+  onToggleContext,
 }: LocalBusinessCardProps) {
   const handleCall = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -42,9 +46,16 @@ export function LocalBusinessCard({
     }
   };
 
+  const handleContextToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleContext) {
+      onToggleContext(item);
+    }
+  };
+
   return (
     <div
-      className={`local-card ${isSelected ? 'local-card--selected' : ''}`}
+      className={`local-card ${isSelected ? 'local-card--selected' : ''} ${isInContext ? 'local-card--in-context' : ''}`}
       onClick={onSelect}
       style={{ animationDelay: `${index * 50}ms` }}
     >
@@ -116,6 +127,15 @@ export function LocalBusinessCard({
           {item.coordinates && (
             <button className="local-action-btn" onClick={handleDirections} title="Directions">
               <MapPin size={16} />
+            </button>
+          )}
+          {onToggleContext && (
+            <button
+              className={`local-action-btn local-context-btn ${isInContext ? 'local-context-btn--active' : ''}`}
+              onClick={handleContextToggle}
+              title={isInContext ? 'In context' : 'Add to context'}
+            >
+              {isInContext ? <Check size={16} /> : <Plus size={16} />}
             </button>
           )}
           <div className="local-expand-icon">
