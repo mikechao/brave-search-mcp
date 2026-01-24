@@ -169,29 +169,31 @@ export function SearchAppLayout({
       {hasData && !isEmpty && children}
 
       {pagination && hasData && !isEmpty && (
-        <nav className="pagination">
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={pagination.onPrevious}
-            disabled={!pagination.hasPrevious || pagination.isLoading}
-            aria-label="Previous page"
-          >
-            ← Previous
-          </button>
-          <span className="pagination-info">
-            {pagination.isLoading ? 'Loading...' : `Page ${pagination.pageNumber}`}
-          </span>
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={pagination.onNext}
-            disabled={!pagination.hasNext || pagination.isLoading}
-            aria-label="Next page"
-          >
-            Next →
-          </button>
-        </nav>
+        <footer className="app-footer">
+          <nav className="pagination" aria-label="Pagination">
+            <button
+              type="button"
+              className="pagination-btn"
+              onClick={pagination.onPrevious}
+              disabled={!pagination.hasPrevious || pagination.isLoading}
+              aria-label="Previous page"
+            >
+              ← Previous
+            </button>
+            <span className="pagination-info">
+              {pagination.isLoading ? 'Loading...' : `Page ${pagination.pageNumber}`}
+            </span>
+            <button
+              type="button"
+              className="pagination-btn"
+              onClick={pagination.onNext}
+              disabled={!pagination.hasNext || pagination.isLoading}
+              aria-label="Next page"
+            >
+              Next →
+            </button>
+          </nav>
+        </footer>
       )}
     </main>
   );

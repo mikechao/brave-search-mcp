@@ -435,9 +435,13 @@
     min-height: 300px;
   }
 
+  .app-footer {
+    padding: 2px 0;
+    min-height: 40px;
+  }
+
   .pagination {
-    padding: 10px;
-    gap: 8px;
+    gap: 6px;
   }
 
   .pagination-btn {
