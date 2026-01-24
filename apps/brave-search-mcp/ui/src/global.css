@@ -1,8 +1,10 @@
 @import 'tailwindcss';
+@import '@openai/apps-sdk-ui/css';
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 /* Tailwind v4 CSS-first configuration */
 @source "../**/*.{ts,tsx,html}";
+@source "../../node_modules/@openai/apps-sdk-ui";
 
 @theme {
   /* Font */
