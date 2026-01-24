@@ -4,7 +4,7 @@
 import type { WidgetProps } from '../../widget-props';
 import type { ContextResult, WebResultItem, WebSearchData } from './types';
 import { useState } from 'react';
-import { FullscreenButton } from '../shared/FullscreenButton';
+import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { WebResultCard } from './WebResultCard';
 
 export interface WebSearchAppProps extends WidgetProps {
@@ -53,14 +53,6 @@ export default function WebSearchApp({
   const isInContext = (url: string) => contextUrls.has(url);
   const hasContextSupport = Boolean(onContextChange);
 
-  const safeAreaInsets = hostContext?.safeAreaInsets;
-  const containerStyle = {
-    paddingTop: safeAreaInsets?.top,
-    paddingRight: safeAreaInsets?.right,
-    paddingBottom: safeAreaInsets?.bottom,
-    paddingLeft: safeAreaInsets?.left,
-  };
-
   const handleOpenLink = async (url: string) => {
     try {
       const { isError } = await openLink({ url });
@@ -73,13 +65,6 @@ export default function WebSearchApp({
         level: 'error',
         data: `Open link failed: ${e instanceof Error ? e.message : String(e)}`,
       });
-    }
-  };
-
-  const handleFullscreenToggle = () => {
-    if (requestDisplayMode) {
-      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
-      requestDisplayMode(nextMode);
     }
   };
 
@@ -147,110 +132,59 @@ export default function WebSearchApp({
   const pageNumber = currentOffset + 1;
 
   return (
-    <main className="app web-app" style={containerStyle} data-display-mode={displayMode}>
-      <header className="header">
-        <div className="brand">
-          <span className="brand-mark">Brave</span>
-          <span className="brand-sub">Web Search</span>
-        </div>
-        <div className="meta">
-          <div className="term">
-            {hasData ? data?.query : 'Run brave_web_search to see results'}
-          </div>
-          <div className="count">
-            {hasData ? `${items.length} results` : 'Awaiting tool output'}
-            {hasData && canPaginate && ` · Page ${pageNumber}`}
-            {hasContextSupport && contextResults.length > 0 && ` · ${contextResults.length} in context`}
-          </div>
-        </div>
-        <div className="header-actions">
-          {hasContextSupport && items.length > 0 && (
-            <button
-              type="button"
-              className="add-all-btn"
-              onClick={handleAddAllToContext}
-              disabled={items.every(item => isInContext(item.url))}
-            >
-              Add All
-            </button>
-          )}
-          {requestDisplayMode && (
-            <FullscreenButton
-              onRequestFullscreen={handleFullscreenToggle}
-              displayMode={displayMode}
-            />
-          )}
-        </div>
-      </header>
-
-      {error && (
-        <div className="error-banner">
-          <strong>Error:</strong>
+    <SearchAppLayout
+      variant="web"
+      brandSub="Web Search"
+      query={data?.query}
+      countLabel={`${items.length} results`}
+      error={error}
+      hasData={hasData}
+      isEmpty={items.length === 0}
+      emptyTitle="Ready to search"
+      emptyDescription={(
+        <>
+          Call
           {' '}
-          {error}
-        </div>
+          <code>brave_web_search</code>
+          {' '}
+          with a search term to see the results.
+        </>
       )}
-
-      {!hasData && (
-        <section className="empty-state">
-          <h2>Ready to search</h2>
-          <p>
-            Call
-            {' '}
-            <code>brave_web_search</code>
-            {' '}
-            with a search term to see the results.
-          </p>
-        </section>
-      )}
-
-      {hasData && items.length === 0 && !error && (
-        <section className="empty-state">
-          <h2>No results</h2>
-          <p>Try a different query or adjust the parameters.</p>
-        </section>
-      )}
-
-      {items.length > 0 && (
-        <section className="web-results-list">
-          {items.map((item, index) => (
-            <WebResultCard
-              key={item.url}
-              item={item}
-              index={index}
-              onOpenLink={handleOpenLink}
-              isInContext={isInContext(item.url)}
-              onToggleContext={hasContextSupport ? handleToggleContext : undefined}
-            />
-          ))}
-        </section>
-      )}
-
-      {canPaginate && items.length > 0 && (
-        <nav className="pagination">
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={handlePrevious}
-            disabled={!hasPrevious || isLoading}
-            aria-label="Previous page"
-          >
-            ← Previous
-          </button>
-          <span className="pagination-info">
-            {isLoading ? 'Loading...' : `Page ${pageNumber}`}
-          </span>
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={handleNext}
-            disabled={!hasNext || isLoading}
-            aria-label="Next page"
-          >
-            Next →
-          </button>
-        </nav>
-      )}
-    </main>
+      noResultsTitle="No results"
+      noResultsDescription="Try a different query or adjust the parameters."
+      hostContext={hostContext}
+      displayMode={displayMode}
+      requestDisplayMode={requestDisplayMode}
+      pagination={canPaginate
+        ? {
+            pageNumber,
+            hasPrevious,
+            hasNext,
+            isLoading,
+            onPrevious: handlePrevious,
+            onNext: handleNext,
+          }
+        : undefined}
+      context={hasContextSupport && items.length > 0
+        ? {
+            count: contextResults.length,
+            onAddAll: handleAddAllToContext,
+            addAllDisabled: items.every(item => isInContext(item.url)),
+          }
+        : undefined}
+    >
+      <section className="web-results-list">
+        {items.map((item, index) => (
+          <WebResultCard
+            key={item.url}
+            item={item}
+            index={index}
+            onOpenLink={handleOpenLink}
+            isInContext={isInContext(item.url)}
+            onToggleContext={hasContextSupport ? handleToggleContext : undefined}
+          />
+        ))}
+      </section>
+    </SearchAppLayout>
   );
 }

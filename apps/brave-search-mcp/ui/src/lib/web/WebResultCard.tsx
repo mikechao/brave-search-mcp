@@ -35,17 +35,17 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
       <div className="web-result-url-line">
         {item.favicon
           ? (
-            <img
-              src={item.favicon}
-              alt=""
-              className="web-result-favicon"
-              width={16}
-              height={16}
-            />
-          )
+              <img
+                src={item.favicon}
+                alt=""
+                className="web-result-favicon"
+                width={16}
+                height={16}
+              />
+            )
           : (
-            <Globe size={16} className="web-result-favicon-placeholder" />
-          )}
+              <Globe size={16} className="web-result-favicon-placeholder" />
+            )}
         <span className="web-result-domain">{item.domain}</span>
         {item.age && (
           <>

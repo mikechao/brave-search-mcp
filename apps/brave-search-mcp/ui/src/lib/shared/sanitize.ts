@@ -9,14 +9,14 @@ import DOMPurify from 'dompurify';
  * Use with dangerouslySetInnerHTML to render the result
  */
 export function sanitizeHtml(html: string | undefined | null): string {
-    if (!html)
-        return '';
+  if (!html)
+    return '';
 
-    // Allow only safe formatting tags, remove everything else (scripts, iframes, etc.)
-    return DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ['strong', 'em', 'b', 'i', 'u', 'mark', 'span', 'p', 'br'],
-        ALLOWED_ATTR: [], // No attributes allowed for extra security
-    });
+  // Allow only safe formatting tags, remove everything else (scripts, iframes, etc.)
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: ['strong', 'em', 'b', 'i', 'u', 'mark', 'span', 'p', 'br'],
+    ALLOWED_ATTR: [], // No attributes allowed for extra security
+  });
 }
 
 /**
@@ -24,12 +24,12 @@ export function sanitizeHtml(html: string | undefined | null): string {
  * Use when you don't want any HTML rendering
  */
 export function stripHtml(html: string | undefined | null): string {
-    if (!html)
-        return '';
+  if (!html)
+    return '';
 
-    // Return plain text with all tags stripped
-    return DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: [], // Strip all tags
-        KEEP_CONTENT: true, // Keep text content
-    });
+  // Return plain text with all tags stripped
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [], // Strip all tags
+    KEEP_CONTENT: true, // Keep text content
+  });
 }

@@ -5,7 +5,7 @@
 import type { WidgetProps } from '../../widget-props';
 import type { ContextPlace, LocalBusinessItem, LocalSearchData } from './types';
 import { useRef, useState } from 'react';
-import { FullscreenButton } from '../shared/FullscreenButton';
+import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { LocalBusinessCard } from './LocalBusinessCard';
 import { LocalMap } from './LocalMap';
 
@@ -58,14 +58,6 @@ export default function LocalSearchApp({
   const isInContext = (item: LocalBusinessItem) => contextIds.has(`${item.name}-${item.address}`);
   const hasContextSupport = Boolean(onContextChange);
 
-  const safeAreaInsets = hostContext?.safeAreaInsets;
-  const containerStyle = {
-    paddingTop: safeAreaInsets?.top,
-    paddingRight: safeAreaInsets?.right,
-    paddingBottom: safeAreaInsets?.bottom,
-    paddingLeft: safeAreaInsets?.left,
-  };
-
   const handleOpenLink = async (url: string) => {
     try {
       const { isError } = await openLink({ url });
@@ -89,13 +81,6 @@ export default function LocalSearchApp({
       if (cards[index]) {
         cards[index].scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
-    }
-  };
-
-  const handleFullscreenToggle = () => {
-    if (requestDisplayMode) {
-      const nextMode = displayMode === 'fullscreen' ? 'inline' : 'fullscreen';
-      requestDisplayMode(nextMode);
     }
   };
 
@@ -165,132 +150,76 @@ export default function LocalSearchApp({
   const pageNumber = currentOffset + 1;
 
   return (
-    <main className="app local-app" style={containerStyle} data-display-mode={displayMode}>
-      <header className="header">
-        <div className="brand">
-          <span className="brand-mark">Brave</span>
-          <span className="brand-sub">Local Search</span>
-        </div>
-        <div className="meta">
-          <div className="term">
-            {hasData ? data?.query : 'Run brave_local_search to see results'}
-          </div>
-          <div className="count">
-            {hasData ? `${data?.count ?? 0} PLACES` : 'Awaiting tool output'}
-            {hasData && canPaginate && ` · Page ${pageNumber}`}
-            {hasContextSupport && contextPlaces.length > 0 && ` · ${contextPlaces.length} in context`}
-          </div>
-        </div>
-        <div className="header-actions">
-          {hasContextSupport && items.length > 0 && (
-            <button
-              type="button"
-              className="add-all-btn"
-              onClick={handleAddAllToContext}
-              disabled={items.every(item => isInContext(item))}
-            >
-              Add All
-            </button>
-          )}
-          {requestDisplayMode && (
-            <FullscreenButton
-              onRequestFullscreen={handleFullscreenToggle}
-              displayMode={displayMode}
-            />
-          )}
-        </div>
-      </header>
-
-      {error && (
-        <div className="error-banner">
-          <strong>Error:</strong>
+    <SearchAppLayout
+      variant="local"
+      brandSub="Local Search"
+      query={data?.query}
+      countLabel={`${data?.count ?? 0} PLACES`}
+      error={error}
+      infoBanner={fallbackToWeb ? 'No local results found. Showing web search results instead.' : undefined}
+      hasData={hasData}
+      isEmpty={items.length === 0 && !fallbackToWeb}
+      emptyTitle="Ready for local search"
+      emptyDescription={(
+        <>
+          Call
           {' '}
-          {error}
-        </div>
+          <code>brave_local_search</code>
+          {' '}
+          with a location query to see the results.
+        </>
       )}
-
-      {fallbackToWeb && (
-        <div className="info-banner">
-          No local results found. Showing web search results instead.
-        </div>
-      )}
-
-      {!hasData && (
-        <section className="empty-state">
-          <h2>Ready for local search</h2>
-          <p>
-            Call
-            {' '}
-            <code>brave_local_search</code>
-            {' '}
-            with a location query to see the results.
-          </p>
-        </section>
-      )}
-
-      {hasData && items.length === 0 && !error && !fallbackToWeb && (
-        <section className="empty-state">
-          <h2>No places found</h2>
-          <p>Try a different location or query.</p>
-        </section>
-      )}
-
-      {items.length > 0 && (
-        <div className="local-split-view">
-          {/* Left: Business List */}
-          <div className="local-list" ref={listRef}>
-            {items.map((item, index) => (
-              <LocalBusinessCard
-                key={item.id || index}
-                item={item}
-                index={index}
-                isSelected={selectedIndex === index}
-                onSelect={() => setSelectedIndex(prev => prev === index ? null : index)}
-                onOpenLink={handleOpenLink}
-                isInContext={isInContext(item)}
-                onToggleContext={hasContextSupport ? handleToggleContext : undefined}
-              />
-            ))}
-          </div>
-
-          {/* Right: Map */}
-          <div className="local-map-wrapper">
-            <LocalMap
-              items={items}
-              selectedIndex={selectedIndex}
-              onSelectIndex={handleSelectFromMap}
-              displayMode={displayMode}
-              contextPlaces={contextPlaces}
+      noResultsTitle="No places found"
+      noResultsDescription="Try a different location or query."
+      hostContext={hostContext}
+      displayMode={displayMode}
+      requestDisplayMode={requestDisplayMode}
+      pagination={canPaginate
+        ? {
+            pageNumber,
+            hasPrevious,
+            hasNext,
+            isLoading,
+            onPrevious: handlePrevious,
+            onNext: handleNext,
+          }
+        : undefined}
+      context={hasContextSupport && items.length > 0
+        ? {
+            count: contextPlaces.length,
+            onAddAll: handleAddAllToContext,
+            addAllDisabled: items.every(item => isInContext(item)),
+          }
+        : undefined}
+    >
+      <div className="local-split-view">
+        {/* Left: Business List */}
+        <div className="local-list" ref={listRef}>
+          {items.map((item, index) => (
+            <LocalBusinessCard
+              key={item.id || index}
+              item={item}
+              index={index}
+              isSelected={selectedIndex === index}
+              onSelect={() => setSelectedIndex(prev => prev === index ? null : index)}
+              onOpenLink={handleOpenLink}
+              isInContext={isInContext(item)}
+              onToggleContext={hasContextSupport ? handleToggleContext : undefined}
             />
-          </div>
+          ))}
         </div>
-      )}
 
-      {canPaginate && items.length > 0 && (
-        <nav className="pagination">
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={handlePrevious}
-            disabled={!hasPrevious || isLoading}
-            aria-label="Previous page"
-          >
-            ← Previous
-          </button>
-          <span className="pagination-info">
-            {isLoading ? 'Loading...' : `Page ${pageNumber}`}
-          </span>
-          <button
-            type="button"
-            className="pagination-btn"
-            onClick={handleNext}
-            disabled={!hasNext || isLoading}
-            aria-label="Next page"
-          >
-            Next →
-          </button>
-        </nav>
-      )}
-    </main>
+        {/* Right: Map */}
+        <div className="local-map-wrapper">
+          <LocalMap
+            items={items}
+            selectedIndex={selectedIndex}
+            onSelectIndex={handleSelectFromMap}
+            displayMode={displayMode}
+            contextPlaces={contextPlaces}
+          />
+        </div>
+      </div>
+    </SearchAppLayout>
   );
 }
