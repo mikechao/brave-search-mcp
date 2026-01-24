@@ -84,6 +84,7 @@
   "devDependencies": {
     "@antfu/eslint-config": "^7.2.0",
     "@changesets/cli": "^2.28.1",
+    "@eslint-react/eslint-plugin": "^2.7.2",
     "@modelcontextprotocol/inspector": "^0.18.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/cors": "^2.8.19",
@@ -93,20 +94,19 @@
     "@types/node": "^22.13.14",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@unocss/eslint-plugin": "^66.6.0",
     "@vitejs/plugin-react-swc": "^4.2.2",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.2",
     "eslint-plugin-format": "^1.1.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.26",
     "postcss": "^8.5.6",
     "shx": "^0.4.0",
     "tailwindcss": "^4.1.18",
     "tsup": "^8.0.1",
     "typescript": "^5.8.2",
     "vite": "^7.3.1",
-    "vite-plugin-singlefile": "^2.1.0",
-    "@unocss/eslint-plugin": "^66.6.0",
-    "@eslint-react/eslint-plugin": "^2.7.2",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-react-refresh": "^0.4.26"
+    "vite-plugin-singlefile": "^2.1.0"
   }
 }
