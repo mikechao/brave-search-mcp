@@ -107,8 +107,16 @@ body::before {
   padding-bottom: 16px;
 }
 
-.header .meta {
+/* Right side of header (meta + actions) */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin-left: auto;
+}
+
+.header .meta {
+  text-align: right;
 }
 
 .brand {
@@ -439,7 +447,6 @@ body::before {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
 }
 
 .add-all-btn {

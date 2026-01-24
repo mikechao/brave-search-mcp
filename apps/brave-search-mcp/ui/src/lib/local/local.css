@@ -414,34 +414,7 @@
   border-color: #22c55e;
 }
 
-/* Header actions container */
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Add All button */
-.add-all-btn {
-  background: var(--accent);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-.add-all-btn:hover:not(:disabled) {
-  background: var(--accent-dark, #2563eb);
-}
-
-.add-all-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+/* Header actions and Add All button styles in global.css */
 
 /* Pagination responsive styles handled in global.css */
 

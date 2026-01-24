@@ -106,33 +106,35 @@ export function SearchAppLayout({
           <span className="brand-mark">Brave</span>
           <span className="brand-sub">{brandSub}</span>
         </div>
-        <div className="meta">
-          <div className="term">
-            {hasData ? query : `Run brave_${variant}_search to see results`}
+        <div className="header-right">
+          <div className="meta">
+            <div className="term">
+              {hasData ? query : `Run brave_${variant}_search to see results`}
+            </div>
+            <div className="count">
+              {hasData ? countLabel : 'Awaiting tool output'}
+              {hasData && pagination && pageInfo}
+              {contextInfo}
+            </div>
           </div>
-          <div className="count">
-            {hasData ? countLabel : 'Awaiting tool output'}
-            {hasData && pagination && pageInfo}
-            {contextInfo}
+          <div className="header-actions">
+            {context && (
+              <button
+                type="button"
+                className="add-all-btn"
+                onClick={context.onAddAll}
+                disabled={context.addAllDisabled}
+              >
+                Add All
+              </button>
+            )}
+            {requestDisplayMode && (
+              <FullscreenButton
+                onRequestFullscreen={handleFullscreenToggle}
+                displayMode={displayMode}
+              />
+            )}
           </div>
-        </div>
-        <div className="header-actions">
-          {context && (
-            <button
-              type="button"
-              className="add-all-btn"
-              onClick={context.onAddAll}
-              disabled={context.addAllDisabled}
-            >
-              Add All
-            </button>
-          )}
-          {requestDisplayMode && (
-            <FullscreenButton
-              onRequestFullscreen={handleFullscreenToggle}
-              displayMode={displayMode}
-            />
-          )}
         </div>
       </header>
 
