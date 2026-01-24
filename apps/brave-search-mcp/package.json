@@ -62,6 +62,7 @@
   "dependencies": {
     "@modelcontextprotocol/ext-apps": "^0.4.1",
     "@modelcontextprotocol/sdk": "^1.25.2",
+    "@openai/apps-sdk-ui": "^0.2.1",
     "@radix-ui/react-slot": "^1.2.4",
     "@tabler/icons-react": "^3.36.1",
     "brave-search": "workspace:*",

@@ -4,3 +4,5 @@ packages:
 
 onlyBuiltDependencies:
   - esbuild
+
+storeDir: .pnpm-store
