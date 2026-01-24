@@ -1,17 +1,19 @@
 /**
- * VideoCard component - Individual video result card
+ * VideoCard component - Individual video result card with context selection
  */
 import type { VideoItem } from './types';
-import { Play } from 'lucide-react';
+import { Check, Play, Plus } from 'lucide-react';
 
 interface VideoCardProps {
   item: VideoItem;
   index: number;
   onPlay: (item: VideoItem) => void;
   onOpenLink: (url: string) => void;
+  isInContext?: boolean;
+  onToggleContext?: (item: VideoItem) => void;
 }
 
-export function VideoCard({ item, index, onPlay, onOpenLink }: VideoCardProps) {
+export function VideoCard({ item, index, onPlay, onOpenLink, isInContext, onToggleContext }: VideoCardProps) {
   const isEmbeddable = Boolean(item.embedId);
 
   const handleClick = () => {
@@ -23,9 +25,16 @@ export function VideoCard({ item, index, onPlay, onOpenLink }: VideoCardProps) {
     }
   };
 
+  const handleContextToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onToggleContext) {
+      onToggleContext(item);
+    }
+  };
+
   return (
     <button
-      className={`video-card ${isEmbeddable ? 'video-card--embeddable' : ''}`}
+      className={`video-card ${isEmbeddable ? 'video-card--embeddable' : ''} ${isInContext ? 'video-card--in-context' : ''}`}
       onClick={handleClick}
       style={{ animationDelay: `${index * 60}ms` }}
     >
@@ -63,6 +72,19 @@ export function VideoCard({ item, index, onPlay, onOpenLink }: VideoCardProps) {
           <span className="video-embed-badge">
             {item.embedType === 'youtube' ? 'YouTube' : 'Vimeo'}
           </span>
+        )}
+
+        {/* Context button - top right of thumbnail */}
+        {onToggleContext && (
+          <button
+            type="button"
+            className={`context-btn ${isInContext ? 'context-btn--active' : ''}`}
+            onClick={handleContextToggle}
+            aria-label={isInContext ? 'Remove from context' : 'Add to context'}
+            title={isInContext ? 'In context' : 'Add to context'}
+          >
+            {isInContext ? <Check size={14} /> : <Plus size={14} />}
+          </button>
         )}
       </div>
 

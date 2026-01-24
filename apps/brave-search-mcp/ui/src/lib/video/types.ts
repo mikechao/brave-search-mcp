@@ -21,6 +21,14 @@ export interface VideoItem {
 export interface VideoSearchData {
   query: string;
   count: number;
+  offset?: number;
   items: VideoItem[];
   error?: string;
+}
+
+export interface ContextVideo {
+  title: string;
+  creator: string;
+  duration: string;
+  url: string;
 }

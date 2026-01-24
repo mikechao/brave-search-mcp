@@ -8,7 +8,7 @@ import { BraveSearch } from 'brave-search';
 import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
 import { BraveLocalSearchTool, localSearchOutputSchema } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
-import { BraveVideoSearchTool, videoSearchOutputSchema } from './tools/BraveVideoSearchTool.js';
+import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
@@ -323,10 +323,10 @@ export class BraveMcpServer {
         title: 'Brave Video Search',
         description: this.videoSearchTool.description,
         inputSchema: this.videoSearchTool.inputSchema.shape,
-        outputSchema: videoSearchOutputSchema.shape,
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
+          'openai/widgetAccessible': true,
           'openai/toolInvocation/invoking': 'Searching for videos…',
           'openai/toolInvocation/invoked': 'Videos found.',
         },

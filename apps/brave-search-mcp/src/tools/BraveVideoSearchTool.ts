@@ -47,6 +47,7 @@ const videoItemSchema = z.object({
 export const videoSearchOutputSchema = z.object({
   query: z.string(),
   count: z.number(),
+  offset: z.number().optional(),
   items: z.array(videoItemSchema),
   error: z.string().optional(),
 });
@@ -104,17 +105,19 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
       const result: {
         content: Array<{ type: 'text'; text: string }>;
         isError: true;
-        structuredContent?: BraveVideoSearchStructuredContent;
+        _meta?: { structuredContent: BraveVideoSearchStructuredContent };
       } = {
         content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
         isError: true,
       };
       if (this.isUI) {
-        result.structuredContent = {
-          query: input.query,
-          count: 0,
-          items: [],
-          error: message,
+        result._meta = {
+          structuredContent: {
+            query: input.query,
+            count: 0,
+            items: [],
+            error: message,
+          },
         };
       }
       return result;
@@ -135,13 +138,16 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
       const text = `No video results found for "${query}"`;
       const result = { content: [{ type: 'text' as const, text }] } as {
         content: Array<{ type: 'text'; text: string }>;
-        structuredContent?: BraveVideoSearchStructuredContent;
+        _meta?: { structuredContent: BraveVideoSearchStructuredContent };
       };
       if (this.isUI) {
-        result.structuredContent = {
-          query,
-          count: 0,
-          items: [],
+        result._meta = {
+          structuredContent: {
+            query,
+            offset,
+            count: 0,
+            items: [],
+          },
         };
       }
       return result;
@@ -192,36 +198,46 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
       });
     }
 
-    const items = videoItems.map((item) => {
-      const subscriptionText = item.requiresSubscription ? 'Requires subscription' : null;
-      const tagsText = item.tags?.length ? `Tags: ${item.tags.join(', ')}` : null;
-      const extraLines = [subscriptionText, tagsText]
-        .filter((value): value is string => Boolean(value))
-        .join('\n');
-      const text = `Title: ${item.title}\n`
-        + `URL: ${item.url}\n`
-        + `Description: ${item.description}\n`
-        + `Age: ${item.age}\n`
-        + `Duration: ${item.duration}\n`
-        + `Views: ${item.views}\n`
-        + `Creator: ${item.creator}${extraLines ? `\n${extraLines}` : ''}`;
-      return text;
-    });
+    // In UI mode, return minimal text - widget controls model context
+    // In non-UI mode, return full video details for the model
+    const contentText = this.isUI
+      ? `Found ${videoItems.length} videos for "${query}". `
+      + 'IMPORTANT: You CANNOT see the video titles, creators, or descriptions. '
+      + 'The user sees a widget with the videos, but you have NO information about them. '
+      + 'Do NOT claim to see details or describe what the videos are about. '
+      + 'Simply tell the user the videos are displayed in the widget and wait for them to share details. '
+      + 'Tell the user to click the + icon on any video to add it to the conversation, '
+      + 'then you will be able to see and discuss that video.'
+      : videoItems
+          .map((item, index) => {
+            const subscriptionText = item.requiresSubscription ? 'Requires subscription' : null;
+            const tagsText = item.tags?.length ? `Tags: ${item.tags.join(', ')}` : null;
+            const extraLines = [subscriptionText, tagsText]
+              .filter((value): value is string => Boolean(value))
+              .join('\n');
+            return `${index + 1}: Title: ${item.title}\n`
+              + `URL: ${item.url}\n`
+              + `Description: ${item.description}\n`
+              + `Age: ${item.age}\n`
+              + `Duration: ${item.duration}\n`
+              + `Views: ${item.views}\n`
+              + `Creator: ${item.creator}${extraLines ? `\n${extraLines}` : ''}`;
+          })
+          .join('\n\n');
 
-    const combinedText = items
-      .map((text, index) => `${index + 1}: ${text}`)
-      .join('\n\n');
-
-    const result = { content: [{ type: 'text' as const, text: combinedText }] } as {
+    const result = { content: [{ type: 'text' as const, text: contentText }] } as {
       content: Array<{ type: 'text'; text: string }>;
-      structuredContent?: BraveVideoSearchStructuredContent;
+      _meta?: { structuredContent: BraveVideoSearchStructuredContent };
     };
 
     if (this.isUI) {
-      result.structuredContent = {
-        query,
-        count: videoItems.length,
-        items: videoItems,
+      result._meta = {
+        structuredContent: {
+          query,
+          offset,
+          count: videoItems.length,
+          items: videoItems,
+        },
       };
     }
 

@@ -41,6 +41,25 @@
   border-color: #ff0000;
 }
 
+/* In-context card state */
+.video-card--in-context {
+  border-color: var(--accent);
+}
+
+.video-card--in-context:hover {
+  border-color: var(--accent);
+}
+
+/* Position context button inside thumbnail - reuses .context-btn from global.css */
+.video-thumbnail .context-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
+  width: 26px;
+  height: 26px;
+}
+
 .video-thumbnail {
   position: relative;
   aspect-ratio: 16 / 9;

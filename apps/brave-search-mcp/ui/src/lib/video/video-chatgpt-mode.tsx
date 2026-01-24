@@ -1,16 +1,33 @@
+import type { ContextVideo, VideoSearchData } from './types';
 /**
- * Video Search - ChatGPT mode wrapper
+ * Video Search - ChatGPT mode with pagination and context selection support
  * Uses custom useOpenAiGlobal hook for reactive updates
  */
-import type { WidgetProps } from '../../widget-props';
-import type { VideoSearchData } from './types';
-import { useDisplayMode, useToolOutput } from '../../hooks/useOpenAiGlobal';
+import type { VideoSearchAppProps } from './VideoSearchApp';
+import { useCallback, useState } from 'react';
+import { useDisplayMode, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import VideoSearchApp from './VideoSearchApp';
 
+/**
+ * ChatGPT mode wrapper with context selection support
+ */
 export default function VideoChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const toolOutput = useToolOutput() as unknown as VideoSearchData | null;
+  const [toolOutput, setToolOutput] = useState<VideoSearchData | null>(null);
+
+  // Access tool output (content) and metadata (_meta) separately
+  const rawOutput = useToolOutput() as any;
+  const rawMetadata = useToolResponseMetadata() as any;
+
+  // Prefer metadata (where structuredContent lives now), fallback to output (legacy)
+  const initialData = (rawMetadata?.structuredContent ?? rawOutput?.structuredContent) as VideoSearchData | null;
+
   const displayMode = useDisplayMode();
+  const [isLoading, setIsLoading] = useState(false);
+  const [contextVideos, setContextVideos] = useState<ContextVideo[]>([]);
+
+  // Use local state if we've loaded a new page, otherwise use initial
+  const currentData = toolOutput ?? initialData;
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
@@ -32,13 +49,63 @@ export default function VideoChatGPTMode() {
     }
   };
 
+  // Pagination handler - calls the video search tool with new offset
+  const handleLoadPage = useCallback(async (offset: number) => {
+    if (!currentData || !window.openai?.callTool)
+      return;
+
+    setIsLoading(true);
+    try {
+      const result = await window.openai.callTool('brave_video_search', {
+        query: currentData.query,
+        count: currentData.count || 10,
+        offset,
+      }) as { structuredContent?: VideoSearchData; _meta?: { structuredContent?: VideoSearchData }; meta?: { structuredContent?: VideoSearchData } } | null;
+
+      // callTool returns metadata in 'meta' (not '_meta'), initial load uses hooks
+      const newData = result?.meta?.structuredContent ?? result?._meta?.structuredContent ?? result?.structuredContent;
+
+      if (newData) {
+        // Update local state with new results
+        setToolOutput(newData);
+      }
+    }
+    catch (err) {
+      console.error('Failed to load page:', err);
+    }
+    finally {
+      setIsLoading(false);
+    }
+  }, [currentData]);
+
+  // Context selection handler - updates widgetState for model access
+  const handleContextChange = useCallback((videos: ContextVideo[]) => {
+    setContextVideos(videos);
+
+    // Expose selected videos to the model via widgetState
+    if (window.openai?.setWidgetState) {
+      window.openai.setWidgetState({
+        modelContent: {
+          selectedVideos: videos.map((v, idx) => ({
+            index: idx + 1,
+            title: v.title,
+            creator: v.creator,
+            duration: v.duration,
+            url: v.url,
+          })),
+          count: videos.length,
+        },
+      });
+    }
+  }, []);
+
   const noop = async () => ({ isError: false });
   const noopLog = async () => { };
 
-  const props: WidgetProps = {
+  const props: VideoSearchAppProps = {
     toolInputs: null,
     toolInputsPartial: null,
-    toolResult: toolOutput ? { structuredContent: toolOutput } as any : null,
+    toolResult: currentData ? { structuredContent: currentData } as any : null,
     hostContext: null,
     callServerTool: noop as any,
     sendMessage: noop as any,
@@ -46,6 +113,10 @@ export default function VideoChatGPTMode() {
     sendLog: noopLog as any,
     displayMode: displayMode ?? 'inline',
     requestDisplayMode: handleRequestDisplayMode,
+    onLoadPage: window.openai?.callTool ? handleLoadPage : undefined,
+    isLoading,
+    contextVideos,
+    onContextChange: window.openai?.setWidgetState ? handleContextChange : undefined,
   };
 
   return <VideoSearchApp {...props} />;
