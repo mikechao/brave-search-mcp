@@ -315,7 +315,7 @@ export class BraveMcpServer {
           'src/lib/video/chatgpt-app.html',
           undefined,
           {
-            resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com'],
+            resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'],
             frame_domains: ['https://www.youtube.com', 'https://youtube.com', 'https://player.vimeo.com', 'https://vimeo.com'],
           },
           'mc-brave-search-mcp',
@@ -388,7 +388,7 @@ export class BraveMcpServer {
           CHATGPT_MIME_TYPE,
           'src/lib/web/chatgpt-app.html',
           undefined,
-          { resource_domains: ['https://imgs.search.brave.com'] },
+          { resource_domains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
           'mc-brave-search-mcp',
         );
       },
