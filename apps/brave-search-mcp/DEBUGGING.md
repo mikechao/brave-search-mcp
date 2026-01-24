@@ -27,6 +27,12 @@ functional breakpoints in the code:
 3. Select the run/debug button.
    We can debug the various tools using [MCP Inspector](https://github.com/modelcontextprotocol/inspector) and VS Code.
 
+If you want to use MCP Inspector, install it first:
+
+```bash
+pnpm -C apps/brave-search-mcp add -D @modelcontextprotocol/inspector
+```
+
 ### VS Code Debug setup
 
 To set up local debugging with breakpoints:

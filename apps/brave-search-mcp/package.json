@@ -85,7 +85,6 @@
     "@antfu/eslint-config": "^7.2.0",
     "@changesets/cli": "^2.28.1",
     "@eslint-react/eslint-plugin": "^2.7.2",
-    "@modelcontextprotocol/inspector": "^0.18.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/cors": "^2.8.19",
     "@types/dompurify": "^3.2.0",
