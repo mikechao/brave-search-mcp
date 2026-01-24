@@ -119,6 +119,11 @@ export class BraveMcpServer {
         description: this.imageSearchTool.description,
         inputSchema: this.imageSearchTool.inputSchema.shape,
         outputSchema: imageSearchOutputSchema.shape,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
@@ -178,6 +183,11 @@ export class BraveMcpServer {
         title: 'Brave News Search',
         description: this.newsSearchTool.description,
         inputSchema: this.newsSearchTool.inputSchema.shape,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
@@ -261,6 +271,11 @@ export class BraveMcpServer {
       {
         description: this.imageSearchTool.description,
         inputSchema: this.imageSearchTool.inputSchema,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
       },
       this.imageSearchTool.execute.bind(this.imageSearchTool),
     );
@@ -272,6 +287,11 @@ export class BraveMcpServer {
       {
         description: this.newsSearchTool.description,
         inputSchema: this.newsSearchTool.inputSchema,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
       },
       this.newsSearchTool.execute.bind(this.newsSearchTool),
     );
@@ -331,6 +351,11 @@ export class BraveMcpServer {
         title: 'Brave Video Search',
         description: this.videoSearchTool.description,
         inputSchema: this.videoSearchTool.inputSchema.shape,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
@@ -349,6 +374,11 @@ export class BraveMcpServer {
       {
         description: this.videoSearchTool.description,
         inputSchema: this.videoSearchTool.inputSchema,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
       },
       this.videoSearchTool.execute.bind(this.videoSearchTool),
     );
@@ -402,6 +432,11 @@ export class BraveMcpServer {
         title: 'Brave Web Search',
         description: this.webSearchTool.description,
         inputSchema: this.webSearchTool.inputSchema.shape,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
@@ -420,6 +455,11 @@ export class BraveMcpServer {
       {
         description: this.webSearchTool.description,
         inputSchema: this.webSearchTool.inputSchema,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
       },
       this.webSearchTool.execute.bind(this.webSearchTool),
     );
@@ -492,6 +532,11 @@ export class BraveMcpServer {
         title: 'Brave Local Search',
         description: this.localSearchTool.description,
         inputSchema: this.localSearchTool.inputSchema.shape,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
         _meta: {
           'ui': { resourceUri: mcpAppResourceUri },
           'openai/outputTemplate': chatgptResourceUri,
@@ -510,6 +555,11 @@ export class BraveMcpServer {
       {
         description: this.localSearchTool.description,
         inputSchema: this.localSearchTool.inputSchema,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
       },
       this.localSearchTool.execute.bind(this.localSearchTool),
     );
