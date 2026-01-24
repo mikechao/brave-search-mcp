@@ -66,7 +66,6 @@ export default function LocalChatGPTMode() {
       const newData = result?.meta?.structuredContent ?? result?._meta?.structuredContent ?? result?.structuredContent;
 
       if (newData) {
-        // Update local state with new results
         setToolOutput(newData);
       }
     }

@@ -123,9 +123,12 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       return webResult;
     }
 
+    // Brave Locations API returns all matching location IDs at once
+    // We implement pagination client-side by slicing the IDs array
     const allIds = results.locations.results.map(result => result.id);
-    const ids = allIds.slice(0, count);
-    this.braveMcpServer.log(`Using ${ids.length} of ${allIds.length} location IDs for "${query}"`, 'debug');
+    const startIndex = (offset ?? 0) * (count ?? 10);
+    const ids = allIds.slice(startIndex, startIndex + (count ?? 10));
+    this.braveMcpServer.log(`Using ${ids.length} of ${allIds.length} location IDs for "${query}" (offset: ${offset ?? 0})`, 'debug');
 
     const localPoiSearchApiResponse = await this.braveSearch.localPoiSearch(ids);
     const poiResults = (localPoiSearchApiResponse.results || []).map((result, index) => {
