@@ -3,6 +3,7 @@
  */
 import type { WebResultItem } from './types';
 import { Check, Globe, Plus } from 'lucide-react';
+import { sanitizeHtml, stripHtml } from '../shared/sanitize';
 
 interface WebResultCardProps {
   item: WebResultItem;
@@ -34,17 +35,17 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
       <div className="web-result-url-line">
         {item.favicon
           ? (
-              <img
-                src={item.favicon}
-                alt=""
-                className="web-result-favicon"
-                width={16}
-                height={16}
-              />
-            )
+            <img
+              src={item.favicon}
+              alt=""
+              className="web-result-favicon"
+              width={16}
+              height={16}
+            />
+          )
           : (
-              <Globe size={16} className="web-result-favicon-placeholder" />
-            )}
+            <Globe size={16} className="web-result-favicon-placeholder" />
+          )}
         <span className="web-result-domain">{item.domain}</span>
         {item.age && (
           <>
@@ -54,11 +55,14 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
         )}
       </div>
 
-      {/* Title */}
-      <h3 className="web-result-title">{item.title}</h3>
+      {/* Title - strip HTML since we don't want formatting in titles */}
+      <h3 className="web-result-title">{stripHtml(item.title)}</h3>
 
-      {/* Description */}
-      <p className="web-result-description">{item.description}</p>
+      {/* Description - render sanitized HTML to preserve <strong> highlights */}
+      <p
+        className="web-result-description"
+        dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.description) }}
+      />
 
       {/* Context toggle button */}
       {onToggleContext && (
