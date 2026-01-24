@@ -57,6 +57,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
   - Inputs:
     - `query` (string): Local search term
     - `count` (number, optional): The number of results to return (max 20, default 5)
+    - `offset` (number, optional, default 0): The zero-based offset for pagination (max 9)
 
 - **brave_video_search**
   - Search the web for videos

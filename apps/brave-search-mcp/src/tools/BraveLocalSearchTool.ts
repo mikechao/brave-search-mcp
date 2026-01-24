@@ -9,6 +9,7 @@ import { BaseTool } from './BaseTool.js';
 const localSearchInputSchema = z.object({
   query: z.string().describe('Local search query (e.g. \'pizza near Central Park\')'),
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
+  offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
 });
 
 const localBusinessSchema = z.object({
@@ -87,9 +88,10 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
   }
 
   public async executeCore(input: z.infer<typeof localSearchInputSchema>) {
-    const { query, count } = input;
+    const { query, count, offset } = input;
     const results = await this.braveSearch.webSearch(query, {
       count,
+      offset,
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
