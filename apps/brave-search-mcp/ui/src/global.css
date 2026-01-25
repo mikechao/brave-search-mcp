@@ -36,7 +36,7 @@
 }
 
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   --bg: var(--color-surface);
   --bg-ink: var(--color-text);
   --bg-ink-soft: var(--color-text-secondary);
@@ -47,12 +47,25 @@
   --accent-soft-weak: color-mix(in oklab, var(--accent) 5%, transparent);
   --card-bg: var(--color-surface-elevated);
   --card-border: var(--color-border);
+  --card-shadow: var(--shadow);
+  --card-shadow-hover: var(--shadow-200);
   --muted: var(--color-text-secondary);
   /* Additional variables for widgets */
   --border: var(--color-border);
   --bg-card: var(--color-surface-elevated);
   --bg-muted: var(--color-surface-secondary);
   --bg-surface: var(--color-surface);
+}
+
+html[data-theme='dark'] {
+  --bg-ink-soft: color-mix(in oklab, var(--color-text-secondary) 85%, var(--color-text) 15%);
+  --muted: color-mix(in oklab, var(--color-text-secondary) 85%, var(--color-text) 15%);
+  --card-bg: color-mix(in oklab, var(--color-surface-elevated) 92%, white 8%);
+  --card-border: color-mix(in oklab, var(--color-border-strong) 80%, white 20%);
+  --card-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+  --card-shadow-hover: 0 14px 28px rgba(0, 0, 0, 0.45);
+  --grid-line: color-mix(in oklab, var(--color-border-subtle) 55%, transparent);
+  --grid-line-strong: color-mix(in oklab, var(--color-border-strong) 65%, transparent);
 }
 
 * {
@@ -84,6 +97,10 @@ body::before {
   background-size: 24px 24px;
   pointer-events: none;
   opacity: 0.5;
+}
+
+html[data-theme='dark'] body::before {
+  opacity: 0.3;
 }
 
 #root {
@@ -275,7 +292,7 @@ body::before {
   overflow: hidden;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  box-shadow: var(--shadow);
+  box-shadow: var(--card-shadow);
 }
 
 .thumb img {

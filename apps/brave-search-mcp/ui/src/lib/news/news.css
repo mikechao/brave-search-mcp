@@ -24,7 +24,7 @@
   border: 1px solid var(--card-border);
   border-radius: 10px;
   background: var(--card-bg);
-  box-shadow: var(--shadow);
+  box-shadow: var(--card-shadow);
   text-align: left;
   cursor: pointer;
   transition:
@@ -37,7 +37,7 @@
 
 .news-card:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-200);
+  box-shadow: var(--card-shadow-hover);
 }
 
 .news-card:focus-visible {
@@ -48,14 +48,14 @@
 .news-card--breaking {
   border-color: var(--color-border-danger-outline);
   box-shadow:
-    var(--shadow),
+    var(--card-shadow),
     0 0 12px color-mix(in oklab, var(--color-background-danger-solid) 25%, transparent);
 }
 
 .news-card--breaking:hover {
   border-color: var(--color-border-danger-outline-hover);
   box-shadow:
-    var(--shadow-200),
+    var(--card-shadow-hover),
     0 0 16px color-mix(in oklab, var(--color-background-danger-solid) 35%, transparent);
 }
 

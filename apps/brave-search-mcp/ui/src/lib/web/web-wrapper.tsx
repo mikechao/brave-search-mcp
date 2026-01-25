@@ -4,6 +4,7 @@
  */
 import { lazy, StrictMode, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import '../../global.css';
 import './web.css';
 
@@ -14,6 +15,7 @@ const WebChatGPTMode = lazy(() => import('./web-chatgpt-mode.tsx'));
 type RuntimeMode = 'detecting' | 'chatgpt' | 'mcp-app';
 
 function WebAppWrapper() {
+  useAppTheme();
   const [mode, setMode] = useState<RuntimeMode>('detecting');
 
   useEffect(() => {

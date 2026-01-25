@@ -4,6 +4,7 @@
  */
 import { lazy, StrictMode, Suspense, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import '../../global.css';
 import './news.css';
 
@@ -14,6 +15,7 @@ const NewsChatGPTMode = lazy(() => import('./news-chatgpt-mode.tsx'));
 type RuntimeMode = 'detecting' | 'chatgpt' | 'mcp-app';
 
 function NewsAppWrapper() {
+  useAppTheme();
   const [mode, setMode] = useState<RuntimeMode>('detecting');
 
   useEffect(() => {

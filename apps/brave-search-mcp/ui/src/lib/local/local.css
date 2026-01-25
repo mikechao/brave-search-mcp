@@ -78,15 +78,29 @@
   text-align: left;
 }
 
+html[data-theme='dark'] .local-card {
+  box-shadow: var(--card-shadow);
+}
+
 .local-card:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
+}
+
+html[data-theme='dark'] .local-card:hover {
+  box-shadow: var(--card-shadow-hover);
 }
 
 .local-card--selected {
   border-color: var(--accent);
   background: var(--accent-soft);
   box-shadow: 0 0 0 2px var(--accent);
+}
+
+html[data-theme='dark'] .local-card--selected {
+  box-shadow:
+    0 0 0 2px var(--accent),
+    var(--card-shadow-hover);
 }
 
 .local-card-number {

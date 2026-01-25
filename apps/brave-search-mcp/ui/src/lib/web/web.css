@@ -24,7 +24,7 @@
   gap: 4px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  box-shadow: var(--shadow);
+  box-shadow: var(--card-shadow);
   text-align: left;
   cursor: pointer;
   padding: 12px;
@@ -41,7 +41,7 @@
 
 .web-result:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-200);
+  box-shadow: var(--card-shadow-hover);
 }
 
 .web-result:focus-visible {

@@ -36,6 +36,14 @@
   box-shadow: var(--shadow-200);
 }
 
+html[data-theme='dark'] .image-thumbnail {
+  box-shadow: var(--card-shadow);
+}
+
+html[data-theme='dark'] .image-thumbnail:hover {
+  box-shadow: var(--card-shadow-hover);
+}
+
 .image-thumbnail:focus {
   outline: 2px solid var(--accent);
   outline-offset: 2px;

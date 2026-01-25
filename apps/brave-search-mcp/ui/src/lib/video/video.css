@@ -31,10 +31,18 @@
   animation: fadeInUp 0.3s ease both;
 }
 
+html[data-theme='dark'] .video-card {
+  box-shadow: var(--card-shadow);
+}
+
 .video-card:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow);
   border-color: var(--accent);
+}
+
+html[data-theme='dark'] .video-card:hover {
+  box-shadow: var(--card-shadow-hover);
 }
 
 .video-card--embeddable:hover {
