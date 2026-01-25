@@ -4,6 +4,7 @@
  */
 import type { ReactNode } from 'react';
 import type { WidgetProps } from '../../widget-props';
+import { Button } from '@openai/apps-sdk-ui/components/Button';
 import { FullscreenButton } from './FullscreenButton';
 
 export interface PaginationConfig {
@@ -171,27 +172,31 @@ export function SearchAppLayout({
       {pagination && hasData && !isEmpty && (
         <footer className="app-footer">
           <nav className="pagination" aria-label="Pagination">
-            <button
+            <Button
               type="button"
-              className="pagination-btn"
+              color="secondary"
+              variant="outline"
+              size="sm"
               onClick={pagination.onPrevious}
               disabled={!pagination.hasPrevious || pagination.isLoading}
               aria-label="Previous page"
             >
               ← Previous
-            </button>
+            </Button>
             <span className="pagination-info">
               {pagination.isLoading ? 'Loading...' : `Page ${pagination.pageNumber}`}
             </span>
-            <button
+            <Button
               type="button"
-              className="pagination-btn"
+              color="secondary"
+              variant="outline"
+              size="sm"
               onClick={pagination.onNext}
               disabled={!pagination.hasNext || pagination.isLoading}
               aria-label="Next page"
             >
               Next →
-            </button>
+            </Button>
           </nav>
         </footer>
       )}

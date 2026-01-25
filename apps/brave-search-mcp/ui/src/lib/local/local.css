@@ -443,9 +443,4 @@
   .pagination {
     gap: 6px;
   }
-
-  .pagination-btn {
-    padding: 6px 12px;
-    font-size: 12px;
-  }
 }
