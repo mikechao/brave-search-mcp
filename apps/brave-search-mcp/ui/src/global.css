@@ -434,24 +434,3 @@ body::before {
   align-items: center;
   gap: 8px;
 }
-
-.add-all-btn {
-  background: var(--accent);
-  border: none;
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.add-all-btn:hover:not(:disabled) {
-  opacity: 0.9;
-}
-
-.add-all-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}

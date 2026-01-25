@@ -121,14 +121,16 @@ export function SearchAppLayout({
           </div>
           <div className="header-actions">
             {context && (
-              <button
+              <Button
                 type="button"
-                className="add-all-btn"
+                color="secondary"
+                variant="soft"
+                size="sm"
                 onClick={context.onAddAll}
                 disabled={context.addAllDisabled}
               >
                 Add All
-              </button>
+              </Button>
             )}
             {requestDisplayMode && (
               <FullscreenButton
