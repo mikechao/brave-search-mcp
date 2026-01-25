@@ -2,7 +2,7 @@
  * NewsCard component - Individual news article card with context selection
  */
 import type { NewsItem } from './types';
-import { Check, Newspaper, Plus } from 'lucide-react';
+import { Check, NewsPaper, Plus } from '@openai/apps-sdk-ui/components/Icon';
 
 interface NewsCardProps {
   item: NewsItem;
@@ -42,7 +42,7 @@ export function NewsCard({ item, index, onOpenLink, isInContext, onToggleContext
             )
           : (
               <div className="news-placeholder">
-                <Newspaper size={24} />
+                <NewsPaper width={24} height={24} />
               </div>
             )}
       </div>
@@ -68,7 +68,7 @@ export function NewsCard({ item, index, onOpenLink, isInContext, onToggleContext
           aria-label={isInContext ? 'Remove from context' : 'Add to context'}
           title={isInContext ? 'In context' : 'Add to context'}
         >
-          {isInContext ? <Check size={16} /> : <Plus size={16} />}
+          {isInContext ? <Check width={16} height={16} /> : <Plus width={16} height={16} />}
         </button>
       )}
     </button>

@@ -2,7 +2,7 @@
  * VideoCard component - Individual video result card with context selection
  */
 import type { VideoItem } from './types';
-import { Check, Play, Plus } from 'lucide-react';
+import { Check, Play, Plus } from '@openai/apps-sdk-ui/components/Icon';
 
 interface VideoCardProps {
   item: VideoItem;
@@ -51,7 +51,7 @@ export function VideoCard({ item, index, onPlay, onOpenLink, isInContext, onTogg
             )
           : (
               <div className="video-placeholder">
-                <Play size={32} />
+                <Play width={32} height={32} />
               </div>
             )}
 
@@ -63,7 +63,7 @@ export function VideoCard({ item, index, onPlay, onOpenLink, isInContext, onTogg
         {/* Play overlay */}
         <div className="video-play-overlay">
           <div className={`video-play-button ${isEmbeddable ? 'video-play-button--youtube' : ''}`}>
-            <Play size={24} fill="currentColor" />
+            <Play width={24} height={24} />
           </div>
         </div>
 
@@ -83,7 +83,7 @@ export function VideoCard({ item, index, onPlay, onOpenLink, isInContext, onTogg
             aria-label={isInContext ? 'Remove from context' : 'Add to context'}
             title={isInContext ? 'In context' : 'Add to context'}
           >
-            {isInContext ? <Check size={14} /> : <Plus size={14} />}
+            {isInContext ? <Check width={14} height={14} /> : <Plus width={14} height={14} />}
           </button>
         )}
       </div>

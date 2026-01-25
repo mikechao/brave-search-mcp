@@ -2,7 +2,7 @@
  * Video Embed Modal - Displays embedded YouTube/Vimeo player
  */
 import type { VideoItem } from './types';
-import { X } from 'lucide-react';
+import { X } from '@openai/apps-sdk-ui/components/Icon';
 
 interface VideoEmbedModalProps {
   video: VideoItem;
@@ -21,7 +21,7 @@ export function VideoEmbedModal({ video, onClose }: VideoEmbedModalProps) {
     <div className="video-modal-backdrop" onClick={onClose}>
       <div className="video-modal" onClick={e => e.stopPropagation()}>
         <button className="video-modal-close" onClick={onClose}>
-          <X size={24} />
+          <X width={24} height={24} />
         </button>
         <div className="video-modal-content">
           <iframe

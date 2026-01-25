@@ -2,7 +2,7 @@
  * WebResultCard - Individual search result in classic Google-style layout with context selection
  */
 import type { WebResultItem } from './types';
-import { Check, Globe, Plus } from 'lucide-react';
+import { Check, Globe, Plus } from '@openai/apps-sdk-ui/components/Icon';
 import { sanitizeHtml, stripHtml } from '../shared/sanitize';
 
 interface WebResultCardProps {
@@ -44,7 +44,7 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
               />
             )
           : (
-              <Globe size={16} className="web-result-favicon-placeholder" />
+              <Globe width={16} height={16} className="web-result-favicon-placeholder" />
             )}
         <span className="web-result-domain">{item.domain}</span>
         {item.age && (
@@ -73,7 +73,7 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
           aria-label={isInContext ? 'Remove from context' : 'Add to context'}
           title={isInContext ? 'In context' : 'Add to context'}
         >
-          {isInContext ? <Check size={16} /> : <Plus size={16} />}
+          {isInContext ? <Check width={16} height={16} /> : <Plus width={16} height={16} />}
         </button>
       )}
     </button>

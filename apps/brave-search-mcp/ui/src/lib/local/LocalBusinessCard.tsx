@@ -2,7 +2,17 @@
  * LocalBusinessCard - Business listing card component with expandable details
  */
 import type { LocalBusinessItem } from './types';
-import { Check, ChevronDown, ChevronUp, Clock, Mail, MapPin, Phone, Plus, Star } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Mail,
+  MapPin,
+  Phone,
+  Plus,
+  Star,
+} from '@openai/apps-sdk-ui/components/Icon';
 import ReactMarkdown from 'react-markdown';
 
 interface LocalBusinessCardProps {
@@ -72,7 +82,7 @@ export function LocalBusinessCard({
           <div className="local-card-rating">
             {item.rating !== undefined && (
               <>
-                <Star size={14} fill="currentColor" className="local-star" />
+                <Star width={14} height={14} className="local-star" />
                 <span className="local-rating-value">{item.rating.toFixed(1)}</span>
                 {item.reviewCount && (
                   <span className="local-review-count">
@@ -94,21 +104,21 @@ export function LocalBusinessCard({
           {/* Phone */}
           {item.phone && (
             <div className="local-card-phone">
-              <Phone size={12} />
+              <Phone width={12} height={12} />
               <span>{item.phone}</span>
             </div>
           )}
 
           {/* Address */}
           <div className="local-card-address">
-            <MapPin size={12} />
+            <MapPin width={12} height={12} />
             <span>{item.address}</span>
           </div>
 
           {/* Hours */}
           {item.todayHours && (
             <div className="local-card-hours">
-              <Clock size={12} />
+              <Clock width={12} height={12} />
               <span>
                 Today:
                 {item.todayHours}
@@ -121,12 +131,12 @@ export function LocalBusinessCard({
         <div className="local-card-actions">
           {item.phone && (
             <button className="local-action-btn" onClick={handleCall} title="Call">
-              <Phone size={16} />
+              <Phone width={16} height={16} />
             </button>
           )}
           {item.coordinates && (
             <button className="local-action-btn" onClick={handleDirections} title="Directions">
-              <MapPin size={16} />
+              <MapPin width={16} height={16} />
             </button>
           )}
           {onToggleContext && (
@@ -135,11 +145,11 @@ export function LocalBusinessCard({
               onClick={handleContextToggle}
               title={isInContext ? 'In context' : 'Add to context'}
             >
-              {isInContext ? <Check size={16} /> : <Plus size={16} />}
+              {isInContext ? <Check width={16} height={16} /> : <Plus width={16} height={16} />}
             </button>
           )}
           <div className="local-expand-icon">
-            {isSelected ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            {isSelected ? <ChevronUp width={16} height={16} /> : <ChevronDown width={16} height={16} />}
           </div>
         </div>
       </div>
@@ -150,7 +160,7 @@ export function LocalBusinessCard({
           {/* Email */}
           {item.email && (
             <div className="local-detail-row">
-              <Mail size={14} />
+              <Mail width={14} height={14} />
               <button className="local-detail-link" onClick={handleEmail}>
                 {item.email}
               </button>
