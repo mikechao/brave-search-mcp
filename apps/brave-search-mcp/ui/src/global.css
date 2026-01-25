@@ -11,25 +11,23 @@
   --font-sans: 'Space Grotesk', system-ui, -apple-system, sans-serif;
 
   /* Colors for shadcn/ui components */
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(0 0% 3.9%);
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(0 0% 3.9%);
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(0 0% 3.9%);
-  --color-primary: hsl(227 100% 56%);
-  --color-primary-foreground: hsl(0 0% 98%);
-  --color-secondary: hsl(0 0% 96.1%);
-  --color-secondary-foreground: hsl(0 0% 9%);
-  --color-muted: hsl(0 0% 96.1%);
-  --color-muted-foreground: hsl(0 0% 45.1%);
-  --color-accent: hsl(0 0% 96.1%);
-  --color-accent-foreground: hsl(0 0% 9%);
-  --color-destructive: hsl(0 84.2% 60.2%);
-  --color-destructive-foreground: hsl(0 0% 98%);
-  --color-border: hsl(0 0% 89.8%);
-  --color-input: hsl(0 0% 89.8%);
-  --color-ring: hsl(227 100% 56%);
+  --color-background: var(--color-surface);
+  --color-foreground: var(--color-text);
+  --color-card: var(--color-surface-elevated);
+  --color-card-foreground: var(--color-text);
+  --color-popover: var(--color-surface-elevated);
+  --color-popover-foreground: var(--color-text);
+  --color-primary: var(--color-background-primary-solid);
+  --color-primary-foreground: var(--color-text-primary-solid);
+  --color-secondary: var(--color-background-secondary-soft);
+  --color-secondary-foreground: var(--color-text-secondary);
+  --color-muted: var(--color-surface-secondary);
+  --color-muted-foreground: var(--color-text-tertiary);
+  --color-accent: var(--color-background-primary-soft);
+  --color-accent-foreground: var(--color-text);
+  --color-destructive: var(--color-background-danger-solid);
+  --color-destructive-foreground: var(--color-text-danger-solid);
+  --color-input: var(--color-border);
 
   /* Border radius */
   --radius-lg: 0.5rem;
@@ -39,22 +37,22 @@
 
 :root {
   color-scheme: light;
-  --bg: #fafaf7;
-  --bg-ink: #111111;
-  --bg-ink-soft: #2f2f2f;
-  --grid-line: rgba(17, 17, 17, 0.08);
-  --grid-line-strong: rgba(17, 17, 17, 0.16);
-  --accent: #1f4fff;
-  --accent-soft: rgba(31, 79, 255, 0.12);
-  --card-bg: #ffffff;
-  --card-border: rgba(17, 17, 17, 0.12);
-  --muted: rgba(17, 17, 17, 0.55);
-  --shadow: 0 14px 40px rgba(17, 17, 17, 0.08);
+  --bg: var(--color-surface);
+  --bg-ink: var(--color-text);
+  --bg-ink-soft: var(--color-text-secondary);
+  --grid-line: var(--color-border-subtle);
+  --grid-line-strong: var(--color-border-strong);
+  --accent: var(--color-text-info);
+  --accent-soft: color-mix(in oklab, var(--accent) 10%, transparent);
+  --accent-soft-weak: color-mix(in oklab, var(--accent) 5%, transparent);
+  --card-bg: var(--color-surface-elevated);
+  --card-border: var(--color-border);
+  --muted: var(--color-text-secondary);
   /* Additional variables for widgets */
-  --border: rgba(17, 17, 17, 0.12);
-  --bg-card: #ffffff;
-  --bg-muted: #f5f5f5;
-  --bg-surface: #fafaf7;
+  --border: var(--color-border);
+  --bg-card: var(--color-surface-elevated);
+  --bg-muted: var(--color-surface-secondary);
+  --bg-surface: var(--color-surface);
 }
 
 * {
@@ -71,9 +69,9 @@ body {
     sans-serif;
   color: var(--bg-ink);
   background:
-    radial-gradient(circle at 20% 10%, rgba(31, 79, 255, 0.08), transparent 55%),
-    radial-gradient(circle at 80% 0%, rgba(31, 79, 255, 0.12), transparent 60%),
-    linear-gradient(180deg, #fafaf7 0%, #f2f2ee 100%);
+    radial-gradient(circle at 20% 10%, color-mix(in oklab, var(--accent) 8%, transparent), transparent 55%),
+    radial-gradient(circle at 80% 0%, color-mix(in oklab, var(--accent) 12%, transparent), transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-muted) 100%);
 }
 
 body::before {
@@ -437,7 +435,7 @@ body::before {
 .context-btn:hover {
   border-color: var(--accent);
   color: var(--accent);
-  background: rgba(var(--accent-rgb, 99, 102, 241), 0.1);
+  background: var(--accent-soft);
 }
 
 .context-btn--active {

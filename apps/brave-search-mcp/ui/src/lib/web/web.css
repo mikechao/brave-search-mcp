@@ -115,7 +115,7 @@
 /* Context Selection - position button in center-right */
 .web-result--in-context {
   border-color: var(--accent);
-  background: rgba(var(--accent-rgb, 99, 102, 241), 0.05);
+  background: var(--accent-soft-weak);
 }
 
 .web-result--in-context:hover {
