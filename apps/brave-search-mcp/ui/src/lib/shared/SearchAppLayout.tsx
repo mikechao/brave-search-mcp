@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react';
 import type { WidgetProps } from '../../widget-props';
 import { Button } from '@openai/apps-sdk-ui/components/Button';
+import { ArrowLeftSm, ArrowRightSm } from '@openai/apps-sdk-ui/components/Icon';
 import { FullscreenButton } from './FullscreenButton';
 
 export interface PaginationConfig {
@@ -181,7 +182,8 @@ export function SearchAppLayout({
               disabled={!pagination.hasPrevious || pagination.isLoading}
               aria-label="Previous page"
             >
-              ← Previous
+              <ArrowLeftSm width={14} height={14} />
+              Previous
             </Button>
             <span className="pagination-info">
               {pagination.isLoading ? 'Loading...' : `Page ${pagination.pageNumber}`}
@@ -195,7 +197,8 @@ export function SearchAppLayout({
               disabled={!pagination.hasNext || pagination.isLoading}
               aria-label="Next page"
             >
-              Next →
+              Next
+              <ArrowRightSm width={14} height={14} />
             </Button>
           </nav>
         </footer>
