@@ -8,7 +8,8 @@ import {
   ChevronUp,
   Clock,
   Mail,
-  MapPin,
+  MapsAddress,
+  MapsDirections,
   Phone,
   Plus,
   Star,
@@ -111,7 +112,7 @@ export function LocalBusinessCard({
 
           {/* Address */}
           <div className="local-card-address">
-            <MapPin width={12} height={12} />
+            <MapsAddress width={12} height={12} />
             <span>{item.address}</span>
           </div>
 
@@ -136,7 +137,7 @@ export function LocalBusinessCard({
           )}
           {item.coordinates && (
             <button className="local-action-btn" onClick={handleDirections} title="Directions">
-              <MapPin width={16} height={16} />
+              <MapsDirections width={16} height={16} />
             </button>
           )}
           {onToggleContext && (

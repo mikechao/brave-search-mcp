@@ -22,11 +22,11 @@ export function FullscreenButton({ onRequestFullscreen, displayMode }: Fullscree
       {isFullscreen
         ? (
           // Collapse icon
-          <CollapseLarge width={16} height={16} />
+            <CollapseLarge width={16} height={16} />
           )
         : (
           // Expand icon
-          <ExpandLarge width={16} height={16} />
+            <ExpandLarge width={16} height={16} />
           )}
     </button>
   );
