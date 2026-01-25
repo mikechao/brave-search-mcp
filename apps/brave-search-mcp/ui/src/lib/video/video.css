@@ -86,8 +86,8 @@
   position: absolute;
   bottom: 6px;
   right: 6px;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
+  background: color-mix(in oklab, var(--color-text) 80%, transparent);
+  color: var(--color-text-inverse);
   font-size: 11px;
   font-weight: 500;
   padding: 2px 6px;
@@ -100,13 +100,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0, 0, 0, 0);
+  background: transparent;
   transition: background 0.2s ease;
   opacity: 0;
 }
 
 .video-card:hover .video-play-overlay {
-  background: rgba(0, 0, 0, 0.3);
+  background: color-mix(in oklab, var(--color-text) 30%, transparent);
   opacity: 1;
 }
 
@@ -114,7 +114,7 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.9);
+  background: color-mix(in oklab, var(--color-surface) 90%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -124,7 +124,7 @@
 
 .video-play-button--youtube {
   background: #ff0000;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .video-card:hover .video-play-button {
@@ -136,7 +136,7 @@
   top: 6px;
   left: 6px;
   background: #ff0000;
-  color: white;
+  color: var(--color-text-inverse);
   font-size: 10px;
   font-weight: 600;
   padding: 2px 6px;
@@ -200,7 +200,7 @@
 .video-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.85);
+  background: color-mix(in oklab, var(--color-text) 85%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -224,7 +224,7 @@
   right: 0;
   background: transparent;
   border: none;
-  color: white;
+  color: var(--color-text-inverse);
   cursor: pointer;
   padding: 8px;
   opacity: 0.7;
@@ -248,10 +248,10 @@
 
 .video-modal-title {
   padding: 12px 16px;
-  color: white;
+  color: var(--color-text-inverse);
   font-size: 14px;
   font-weight: 500;
-  background: rgba(0, 0, 0, 0.5);
+  background: color-mix(in oklab, var(--color-text) 50%, transparent);
 }
 
 @keyframes scaleIn {

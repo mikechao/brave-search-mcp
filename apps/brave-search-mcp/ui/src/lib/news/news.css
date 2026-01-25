@@ -37,7 +37,7 @@
 
 .news-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(17, 17, 17, 0.12);
+  box-shadow: var(--shadow-200);
 }
 
 .news-card:focus-visible {
@@ -46,17 +46,17 @@
 }
 
 .news-card--breaking {
-  border-color: rgba(231, 76, 60, 0.5);
+  border-color: var(--color-border-danger-outline);
   box-shadow:
     var(--shadow),
-    0 0 12px rgba(231, 76, 60, 0.25);
+    0 0 12px color-mix(in oklab, var(--color-background-danger-solid) 25%, transparent);
 }
 
 .news-card--breaking:hover {
-  border-color: rgba(231, 76, 60, 0.7);
+  border-color: var(--color-border-danger-outline-hover);
   box-shadow:
-    0 8px 24px rgba(17, 17, 17, 0.12),
-    0 0 16px rgba(231, 76, 60, 0.35);
+    var(--shadow-200),
+    0 0 16px color-mix(in oklab, var(--color-background-danger-solid) 35%, transparent);
 }
 
 .news-thumbnail {
@@ -120,8 +120,8 @@
 }
 
 .news-breaking-badge {
-  background: rgba(231, 76, 60, 0.15);
-  color: #c0392b;
+  background: var(--color-background-danger-soft-alpha);
+  color: var(--color-text-danger);
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 10px;

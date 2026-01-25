@@ -172,22 +172,22 @@ body::before {
 
 .fullscreen-btn:hover {
   background: var(--accent);
-  color: white;
+  color: var(--color-text-inverse);
   border-color: var(--accent);
 }
 
 .error-banner {
   padding: 14px 16px;
-  border: 1px solid rgba(231, 76, 60, 0.4);
-  background: rgba(231, 76, 60, 0.08);
-  color: #8b1f12;
+  border: 1px solid var(--color-border-danger-outline);
+  background: var(--color-background-danger-soft-alpha);
+  color: var(--color-text-danger);
   font-size: 14px;
 }
 
 .empty-state {
   padding: 48px 24px;
   border: 1px dashed var(--grid-line-strong);
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in oklab, var(--color-surface) 60%, transparent);
   text-align: center;
   box-shadow: var(--shadow);
 }
@@ -298,8 +298,12 @@ body::before {
   flex-direction: column;
   justify-content: flex-end;
   gap: 6px;
-  background: linear-gradient(180deg, rgba(17, 17, 17, 0) 20%, rgba(17, 17, 17, 0.55) 100%);
-  color: #ffffff;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--color-text) 0%, transparent) 20%,
+    color-mix(in oklab, var(--color-text) 55%, transparent) 100%
+  );
+  color: var(--color-text-inverse);
   opacity: 0;
   transition: opacity 0.35s ease;
 }
@@ -418,7 +422,7 @@ body::before {
 .context-btn--active {
   background: var(--accent);
   border-color: var(--accent);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 .context-btn--active:hover {
