@@ -2,12 +2,6 @@
    Video Search Widget Styles
    ======================================== */
 
-/* Fullscreen mode - remove height constraints */
-.video-app[data-display-mode='fullscreen'] .video-grid {
-  max-height: none;
-  height: calc(100vh - 100px);
-}
-
 .video-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -15,7 +9,13 @@
   padding: 16px;
   overflow-y: auto;
   flex: 1;
-  max-height: 70vh;
+  /* iOS momentum scrolling */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fullscreen mode - fill available space */
+.video-app[data-display-mode='fullscreen'] .video-grid {
+  max-height: none;
 }
 
 .video-card {

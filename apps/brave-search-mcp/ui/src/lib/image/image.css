@@ -8,14 +8,15 @@
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 12px;
   padding: 12px 0;
-  max-height: 400px;
   overflow-y: auto;
+  flex: 1;
+  /* iOS momentum scrolling */
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Fullscreen mode - remove height constraints */
+/* Fullscreen mode - fill available space */
 .image-app[data-display-mode='fullscreen'] .image-grid {
   max-height: none;
-  height: calc(100vh - 100px);
 }
 
 /* Individual thumbnail card */

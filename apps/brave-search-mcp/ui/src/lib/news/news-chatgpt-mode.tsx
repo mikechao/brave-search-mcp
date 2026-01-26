@@ -5,7 +5,7 @@
 import type { NewsSearchAppProps } from './NewsSearchApp';
 import type { ContextArticle, NewsSearchData } from './types';
 import { useCallback, useState } from 'react';
-import { useDisplayMode, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useSafeArea, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import NewsSearchApp from './NewsSearchApp';
 
 /**
@@ -23,11 +23,18 @@ export default function NewsChatGPTMode() {
   const initialData = (rawMetadata?.structuredContent ?? rawOutput?.structuredContent) as NewsSearchData | null;
 
   const displayMode = useDisplayMode();
+  const safeArea = useSafeArea();
+
+  // Create synthetic hostContext from ChatGPT safe area for proper padding
+  const hostContext = safeArea ? { safeAreaInsets: safeArea } : null;
+
   const [isLoading, setIsLoading] = useState(false);
   const [contextArticles, setContextArticles] = useState<ContextArticle[]>([]);
 
   // Use local state if we've loaded a new page, otherwise use initial
   const currentData = toolOutput ?? initialData;
+
+  console.log('NewsChaptGPTMode', window.openai?.safeArea);
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
@@ -106,7 +113,7 @@ export default function NewsChatGPTMode() {
     toolInputs: null,
     toolInputsPartial: null,
     toolResult: currentData ? { structuredContent: currentData } as any : null,
-    hostContext: null,
+    hostContext,
     callServerTool: noop as any,
     sendMessage: noop as any,
     openLink: handleOpenLink,

@@ -391,8 +391,17 @@ html[data-theme='dark'] body::before {
   justify-content: center;
   align-items: center;
   margin-top: 6px;
-  padding: 4px 0 2px;
+  padding: 8px 0;
+  /* Base padding; JS inline style overrides with SDK safe area when available */
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   min-height: 44px;
+  position: sticky;
+  bottom: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--grid-line);
+  z-index: 10;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 .pagination {

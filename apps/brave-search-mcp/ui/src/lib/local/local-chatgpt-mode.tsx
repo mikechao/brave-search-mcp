@@ -5,7 +5,7 @@
 import type { LocalSearchAppProps } from './LocalSearchApp';
 import type { ContextPlace, LocalSearchData } from './types';
 import { useCallback, useState } from 'react';
-import { useDisplayMode, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useSafeArea, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import LocalSearchApp from './LocalSearchApp';
 
 /**
@@ -23,6 +23,11 @@ export default function LocalChatGPTMode() {
   const initialData = (rawMetadata?.structuredContent ?? rawOutput?.structuredContent) as LocalSearchData | null;
 
   const displayMode = useDisplayMode();
+  const safeArea = useSafeArea();
+
+  // Create synthetic hostContext from ChatGPT safe area for proper padding
+  const hostContext = safeArea ? { safeAreaInsets: safeArea } : null;
+
   const [isLoading, setIsLoading] = useState(false);
   const [contextPlaces, setContextPlaces] = useState<ContextPlace[]>([]);
 
@@ -105,7 +110,7 @@ export default function LocalChatGPTMode() {
     toolInputs: null,
     toolInputsPartial: null,
     toolResult: currentData ? { structuredContent: currentData } as any : null,
-    hostContext: null,
+    hostContext,
     callServerTool: noop as any,
     sendMessage: noop as any,
     openLink: handleOpenLink,

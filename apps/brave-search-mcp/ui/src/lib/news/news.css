@@ -2,19 +2,20 @@
    News Search Styles
    ===================== */
 
-/* Fullscreen mode - remove height constraints */
-.news-app[data-display-mode='fullscreen'] .news-list {
-  max-height: none;
-  height: calc(100vh - 100px);
-}
-
 .news-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 70vh;
   overflow-y: auto;
   padding-right: 4px;
+  flex: 1;
+  /* iOS momentum scrolling */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fullscreen mode - fill available space */
+.news-app[data-display-mode='fullscreen'] .news-list {
+  max-height: none;
 }
 
 .news-card {

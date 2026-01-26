@@ -5,7 +5,7 @@ import type { ContextResult, WebSearchData } from './types';
  */
 import type { WebSearchAppProps } from './WebSearchApp';
 import { useCallback, useState } from 'react';
-import { useDisplayMode, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useSafeArea, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import WebSearchApp from './WebSearchApp';
 
 /**
@@ -23,6 +23,10 @@ export default function WebChatGPTMode() {
   const initialData = (rawMetadata?.structuredContent ?? rawOutput?.structuredContent) as WebSearchData | null;
 
   const displayMode = useDisplayMode();
+  const safeArea = useSafeArea();
+
+  // Create synthetic hostContext from ChatGPT safe area for proper padding
+  const hostContext = safeArea ? { safeAreaInsets: safeArea } : null;
   const [isLoading, setIsLoading] = useState(false);
   const [contextResults, setContextResults] = useState<ContextResult[]>([]);
 
@@ -106,7 +110,7 @@ export default function WebChatGPTMode() {
     toolInputs: null,
     toolInputsPartial: null,
     toolResult: currentData ? { structuredContent: currentData } as any : null,
-    hostContext: null,
+    hostContext,
     callServerTool: noop as any,
     sendMessage: noop as any,
     openLink: handleOpenLink,

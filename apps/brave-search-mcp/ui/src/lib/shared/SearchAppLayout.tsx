@@ -173,7 +173,10 @@ export function SearchAppLayout({
       {hasData && !isEmpty && children}
 
       {pagination && hasData && !isEmpty && (
-        <footer className="app-footer">
+        <footer
+          className="app-footer"
+          style={safeAreaInsets?.bottom ? { bottom: safeAreaInsets.bottom } : undefined}
+        >
           <nav className="pagination" aria-label="Pagination">
             <Button
               type="button"

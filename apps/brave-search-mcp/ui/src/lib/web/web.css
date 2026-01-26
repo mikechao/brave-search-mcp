@@ -2,12 +2,6 @@
    Web Search Widget Styles (Classic)
    ======================================== */
 
-/* Fullscreen mode - remove height constraints */
-.web-app[data-display-mode='fullscreen'] .web-results-list {
-  max-height: none;
-  height: calc(100vh - 100px);
-}
-
 .web-results-list {
   display: flex;
   flex-direction: column;
@@ -15,7 +9,13 @@
   padding: 16px;
   overflow-y: auto;
   flex: 1;
-  max-height: 70vh;
+  /* iOS momentum scrolling */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Fullscreen mode - fill available space */
+.web-app[data-display-mode='fullscreen'] .web-results-list {
+  max-height: none;
 }
 
 .web-result {

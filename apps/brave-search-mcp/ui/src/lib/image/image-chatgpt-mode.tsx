@@ -4,13 +4,17 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { ImageSearchData } from './types';
-import { useDisplayMode, useToolOutput } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useSafeArea, useToolOutput } from '../../hooks/useOpenAiGlobal';
 import ImageSearchApp from './ImageSearchApp';
 
 export default function ImageChatGPTMode() {
   // Use reactive hooks instead of manual polling
   const toolOutput = useToolOutput() as unknown as ImageSearchData | null;
   const displayMode = useDisplayMode();
+  const safeArea = useSafeArea();
+
+  // Create synthetic hostContext from ChatGPT safe area for proper padding
+  const hostContext = safeArea ? { safeAreaInsets: safeArea } : null;
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
@@ -39,7 +43,7 @@ export default function ImageChatGPTMode() {
     toolInputs: null,
     toolInputsPartial: null,
     toolResult: toolOutput ? { structuredContent: toolOutput } as any : null,
-    hostContext: null,
+    hostContext,
     callServerTool: noop as any,
     sendMessage: noop as any,
     openLink: handleOpenLink,
