@@ -88,7 +88,7 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/image/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          { resourceDomains: ['https://imgs.search.brave.com'] },
         );
       },
     );
@@ -104,7 +104,7 @@ export class BraveMcpServer {
           CHATGPT_MIME_TYPE,
           'src/lib/image/chatgpt-app.html',
           undefined,
-          { resource_domains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          { resource_domains: ['https://imgs.search.brave.com'] },
           'mc-brave-search-mcp',
         );
       },
@@ -153,7 +153,7 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/news/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          { resourceDomains: ['https://imgs.search.brave.com'] },
         );
       },
     );
@@ -169,7 +169,7 @@ export class BraveMcpServer {
           CHATGPT_MIME_TYPE,
           'src/lib/news/chatgpt-app.html',
           undefined,
-          { resource_domains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          { resource_domains: ['https://imgs.search.brave.com'] },
           'mc-brave-search-mcp',
         );
       },
@@ -316,7 +316,7 @@ export class BraveMcpServer {
           RESOURCE_MIME_TYPE,
           'src/lib/video/mcp-app.html',
           {
-            resourceDomains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'],
+            resourceDomains: ['https://imgs.search.brave.com'],
             frameDomains: ['https://www.youtube.com', 'https://player.vimeo.com'],
           },
         );
@@ -335,7 +335,7 @@ export class BraveMcpServer {
           'src/lib/video/chatgpt-app.html',
           undefined,
           {
-            resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'],
+            resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com'],
             frame_domains: ['https://www.youtube.com', 'https://youtube.com', 'https://player.vimeo.com', 'https://vimeo.com'],
           },
           'mc-brave-search-mcp',
@@ -402,7 +402,7 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/web/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          { resourceDomains: ['https://imgs.search.brave.com'] },
         );
       },
     );
@@ -418,7 +418,7 @@ export class BraveMcpServer {
           CHATGPT_MIME_TYPE,
           'src/lib/web/chatgpt-app.html',
           undefined,
-          { resource_domains: ['https://imgs.search.brave.com', 'https://fonts.googleapis.com', 'https://fonts.gstatic.com'] },
+          { resource_domains: ['https://imgs.search.brave.com'] },
           'mc-brave-search-mcp',
         );
       },
@@ -489,8 +489,6 @@ export class BraveMcpServer {
               'https://b.tile.openstreetmap.org',
               'https://c.tile.openstreetmap.org',
               'https://cdnjs.cloudflare.com',
-              'https://fonts.googleapis.com',
-              'https://fonts.gstatic.com',
             ],
           },
         );
@@ -515,8 +513,6 @@ export class BraveMcpServer {
               'https://b.tile.openstreetmap.org',
               'https://c.tile.openstreetmap.org',
               'https://cdnjs.cloudflare.com',
-              'https://fonts.googleapis.com',
-              'https://fonts.gstatic.com',
             ],
           },
           'mc-brave-search-mcp',
