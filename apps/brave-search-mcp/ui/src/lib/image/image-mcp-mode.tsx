@@ -107,7 +107,7 @@ export default function ImageMcpAppMode() {
 
   // Derive initial loading state: tool invoked but no result yet
   const isInitialLoading = toolInputs !== null && toolResult === null;
-  const loadingQuery = (toolInputs?.query as string) ?? undefined;
+  const loadingQuery = (toolInputs?.searchTerm as string) ?? undefined;
 
   return <ImageSearchApp {...props} isInitialLoading={isInitialLoading} loadingQuery={loadingQuery} />;
 }

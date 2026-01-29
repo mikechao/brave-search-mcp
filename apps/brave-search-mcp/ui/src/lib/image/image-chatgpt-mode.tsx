@@ -12,7 +12,7 @@ export default function ImageChatGPTMode() {
   const toolOutput = useToolOutput() as unknown as ImageSearchData | null;
 
   // Access tool input (arguments) for loading state detection
-  const toolInput = useToolInput() as { query?: string } | null;
+  const toolInput = useToolInput() as { searchTerm?: string } | null;
 
   const displayMode = useDisplayMode();
   const safeArea = useSafeArea();
@@ -58,7 +58,7 @@ export default function ImageChatGPTMode() {
   // Derive initial loading state: tool invoked (has input) but no result yet
   const hasData = Boolean(toolOutput);
   const isInitialLoading = toolInput !== null && !hasData;
-  const loadingQuery = toolInput?.query;
+  const loadingQuery = toolInput?.searchTerm;
 
   const props: WidgetProps = {
     toolInputs: null,
