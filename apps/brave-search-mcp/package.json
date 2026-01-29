@@ -60,7 +60,7 @@
     "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/ext-apps": "^0.4.1",
+    "@modelcontextprotocol/ext-apps": "^1.0.1",
     "@modelcontextprotocol/sdk": "^1.25.2",
     "@openai/apps-sdk-ui": "^0.2.1",
     "brave-search": "workspace:*",
