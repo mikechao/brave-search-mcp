@@ -83,12 +83,19 @@ export function SearchAppLayout({
   requestDisplayMode,
 }: SearchAppLayoutProps) {
   const safeAreaInsets = hostContext?.safeAreaInsets;
+  // When safe area bottom is present (ChatGPT fullscreen), shift the entire container up
+  // This moves everything above the ChatGPT prompt bar cleanly
   const containerStyle = {
     paddingTop: safeAreaInsets?.top,
     paddingRight: safeAreaInsets?.right,
     paddingBottom: safeAreaInsets?.bottom,
     paddingLeft: safeAreaInsets?.left,
+    // Shift entire widget up by the safe area bottom inset
+    marginBottom: safeAreaInsets?.bottom,
   };
+
+  // No special footer positioning needed - it moves with the container
+  const footerStyle = undefined;
 
   const handleFullscreenToggle = () => {
     if (requestDisplayMode) {
@@ -175,7 +182,7 @@ export function SearchAppLayout({
       {pagination && hasData && !isEmpty && (
         <footer
           className="app-footer"
-          style={safeAreaInsets?.bottom ? { bottom: safeAreaInsets.bottom } : undefined}
+          style={footerStyle}
         >
           <nav className="pagination" aria-label="Pagination">
             <Button

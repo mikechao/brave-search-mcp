@@ -14,7 +14,19 @@ export default function ImageChatGPTMode() {
   const safeArea = useSafeArea();
 
   // Create synthetic hostContext from ChatGPT safe area for proper padding
-  const hostContext = safeArea ? { safeAreaInsets: safeArea } : null;
+  // safeArea has nested .insets object: { insets: { top, bottom, left, right } }
+  // Coerce optional values to required numbers for McpUiHostContext compatibility
+  const insets = safeArea?.insets;
+  const hostContext = insets
+    ? {
+        safeAreaInsets: {
+          top: insets.top ?? 0,
+          right: insets.right ?? 0,
+          bottom: insets.bottom ?? 0,
+          left: insets.left ?? 0,
+        },
+      }
+    : null;
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events

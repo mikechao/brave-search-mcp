@@ -21,6 +21,13 @@ interface SafeAreaInsets {
 }
 
 /**
+ * Safe area wrapper object returned by window.openai.safeArea
+ */
+interface SafeArea {
+  insets: SafeAreaInsets;
+}
+
+/**
  * Tool input - arguments passed to the tool
  */
 interface OpenAIToolInput {
@@ -173,8 +180,8 @@ interface OpenAIWidgetRuntime {
   /** Maximum height in pixels for inline mode */
   maxHeight?: number;
 
-  /** Safe area insets for mobile devices */
-  safeArea?: SafeAreaInsets;
+  /** Safe area insets for mobile devices (contains nested insets object) */
+  safeArea?: SafeArea;
 
   /** User's locale (e.g., 'en-US') */
   locale?: string;
@@ -296,5 +303,6 @@ export {
   OpenAIToolResponseMetadata,
   OpenAIWidgetRuntime,
   OpenAIWidgetState,
+  SafeArea,
   SafeAreaInsets,
 };
