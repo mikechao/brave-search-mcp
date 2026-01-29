@@ -38,9 +38,6 @@ importers:
       express:
         specifier: ^5.2.1
         version: 5.2.1
-      hono:
-        specifier: 4.11.7
-        version: 4.11.7
       leaflet:
         specifier: ^1.9.4
         version: 1.9.4
