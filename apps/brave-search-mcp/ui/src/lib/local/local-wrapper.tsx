@@ -2,9 +2,10 @@
  * Local Search UI - App Wrapper with Runtime Detection
  * Supports both MCP-APP (ext-apps) and ChatGPT (OpenAI Apps SDK)
  */
-import { lazy, StrictMode, Suspense, useEffect, useState } from 'react';
+import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
 import { useAppTheme } from '../../hooks/useAppTheme';
+import { useRuntimeMode } from '../../hooks/useRuntimeMode';
 import '../../global.css';
 import './local.css';
 
@@ -12,41 +13,9 @@ import './local.css';
 const LocalMcpAppMode = lazy(() => import('./local-mcp-mode.tsx'));
 const LocalChatGPTMode = lazy(() => import('./local-chatgpt-mode.tsx'));
 
-type RuntimeMode = 'detecting' | 'chatgpt' | 'mcp-app';
-
 function LocalAppWrapper() {
   useAppTheme();
-  const [mode, setMode] = useState<RuntimeMode>('detecting');
-
-  useEffect(() => {
-    const checkIntervals = [0, 50, 100, 200, 500];
-    let attempt = 0;
-    let timer: ReturnType<typeof setTimeout>;
-
-    const checkRuntime = () => {
-      if (typeof window.openai !== 'undefined') {
-        console.log('[Brave Local Widget] Detected ChatGPT runtime');
-        setMode('chatgpt');
-        return;
-      }
-
-      attempt++;
-      if (attempt < checkIntervals.length) {
-        timer = setTimeout(checkRuntime, checkIntervals[attempt]);
-      }
-      else {
-        console.log('[Brave Local Widget] Using MCP-APP runtime');
-        setMode('mcp-app');
-      }
-    };
-
-    checkRuntime();
-
-    return () => {
-      if (timer)
-        clearTimeout(timer);
-    };
-  }, []);
+  const mode = useRuntimeMode('Local');
 
   if (mode === 'detecting') {
     return <div className="loading">Detecting runtime...</div>;

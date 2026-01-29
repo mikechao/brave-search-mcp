@@ -176,7 +176,7 @@ export default function NewsSearchApp({
       <section className="news-list">
         {items.map((item, index) => (
           <NewsCard
-            key={`${item.url}-${index}`}
+            key={item.url}
             item={item}
             index={index}
             onOpenLink={handleOpenLink}

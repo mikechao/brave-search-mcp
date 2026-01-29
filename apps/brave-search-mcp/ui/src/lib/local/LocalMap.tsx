@@ -76,33 +76,61 @@ function MapResizeHandler({ displayMode }: { displayMode?: string }) {
 
   useEffect(() => {
     // Invalidate size immediately and after a short delay
-    const timeouts = [0, 100, 300, 500, 1000].map(delay =>
-      setTimeout(() => {
-        map.invalidateSize();
-      }, delay),
-    );
+    const timer0 = setTimeout(() => {
+      map.invalidateSize();
+    }, 0);
+    const timer1 = setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+    const timer2 = setTimeout(() => {
+      map.invalidateSize();
+    }, 300);
+    const timer3 = setTimeout(() => {
+      map.invalidateSize();
+    }, 500);
+    const timer4 = setTimeout(() => {
+      map.invalidateSize();
+    }, 1000);
 
     // Also listen for window resize
     const handleResize = () => map.invalidateSize();
     window.addEventListener('resize', handleResize);
 
     return () => {
-      timeouts.forEach(clearTimeout);
+      clearTimeout(timer0);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+      clearTimeout(timer4);
       window.removeEventListener('resize', handleResize);
     };
   }, [map]);
 
   // Invalidate size when display mode changes (e.g., fullscreen toggle)
   useEffect(() => {
-    if (displayMode) {
-      // Delay to allow CSS transition to complete
-      const timeouts = [0, 100, 300, 500].map(delay =>
-        setTimeout(() => {
-          map.invalidateSize();
-        }, delay),
-      );
-      return () => timeouts.forEach(clearTimeout);
-    }
+    if (!displayMode)
+      return;
+
+    // Delay to allow CSS transition to complete
+    const timer0 = setTimeout(() => {
+      map.invalidateSize();
+    }, 0);
+    const timer1 = setTimeout(() => {
+      map.invalidateSize();
+    }, 100);
+    const timer2 = setTimeout(() => {
+      map.invalidateSize();
+    }, 300);
+    const timer3 = setTimeout(() => {
+      map.invalidateSize();
+    }, 500);
+
+    return () => {
+      clearTimeout(timer0);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
   }, [displayMode, map]);
 
   return null;
@@ -124,15 +152,14 @@ export function LocalMap({ items, selectedIndex, onSelectIndex, displayMode, con
     return contextPlaces.some(p => `${p.name}-${p.address}` === `${name}-${address}`);
   };
 
-  // Helper to check if a context place is on the current page
-  const isOnCurrentPage = (contextPlace: ContextPlace) => {
-    return items.some(item => `${item.name}-${item.address}` === `${contextPlace.name}-${contextPlace.address}`);
-  };
+  const itemKeySet = useMemo(() => {
+    return new Set(items.map(item => `${item.name}-${item.address}`));
+  }, [items]);
 
   // Context places that are NOT on the current page (need separate markers)
   const offPageContextPlaces = useMemo(() => {
-    return contextPlaces.filter(p => p.coordinates && !isOnCurrentPage(p));
-  }, [contextPlaces, items]);
+    return contextPlaces.filter(p => p.coordinates && !itemKeySet.has(`${p.name}-${p.address}`));
+  }, [contextPlaces, itemKeySet]);
 
   // Calculate center and bounds
   const { center, hasCoordinates } = useMemo(() => {
@@ -190,7 +217,7 @@ export function LocalMap({ items, selectedIndex, onSelectIndex, displayMode, con
 
         return (
           <Marker
-            key={`current-${item.id || index}`}
+            key={`current-${item.id ?? `${item.name}-${item.address}`}`}
             position={[lat, lng]}
             icon={createNumberedIcon(index + 1, isSelected, inContext)}
             eventHandlers={{
@@ -215,14 +242,14 @@ export function LocalMap({ items, selectedIndex, onSelectIndex, displayMode, con
       })}
 
       {/* Context places that are NOT on the current page */}
-      {offPageContextPlaces.map((place, index) => {
+      {offPageContextPlaces.map((place) => {
         if (!place.coordinates)
           return null;
         const [lat, lng] = place.coordinates;
 
         return (
           <Marker
-            key={`context-${place.name}-${place.address}-${index}`}
+            key={`context-${place.name}-${place.address}`}
             position={[lat, lng]}
             icon={createContextIcon()}
           >

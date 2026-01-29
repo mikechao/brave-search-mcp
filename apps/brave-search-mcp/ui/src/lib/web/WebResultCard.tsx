@@ -3,6 +3,7 @@
  */
 import type { WebResultItem } from './types';
 import { Check, Globe, Plus } from '@openai/apps-sdk-ui/components/Icon';
+import { useMemo } from 'react';
 import { sanitizeHtml, stripHtml } from '../shared/sanitize';
 
 interface WebResultCardProps {
@@ -24,6 +25,46 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
       onToggleContext(item);
     }
   };
+
+  const descriptionNodes = useMemo(() => {
+    if (!item.description)
+      return null;
+    if (typeof window === 'undefined')
+      return stripHtml(item.description);
+
+    const sanitized = sanitizeHtml(item.description);
+    if (!sanitized)
+      return null;
+
+    const container = document.createElement('div');
+    container.innerHTML = sanitized;
+
+    const toReactNode = (node: ChildNode, key: string): React.ReactNode => {
+      if (node.nodeType === Node.TEXT_NODE)
+        return node.textContent;
+      if (node.nodeType !== Node.ELEMENT_NODE)
+        return null;
+
+      const element = node as HTMLElement;
+      const tagName = element.tagName.toLowerCase();
+      if (tagName === 'br')
+        return <br key={key} />;
+
+      const allowedTags = new Set(['strong', 'em', 'b', 'i', 'u', 'mark', 'span', 'p']);
+      if (!allowedTags.has(tagName))
+        return element.textContent;
+
+      const Tag = (tagName === 'p' ? 'span' : tagName) as keyof JSX.IntrinsicElements;
+      const children = Array.from(element.childNodes).map((child, index) => (
+        toReactNode(child, `${key}-${index}`)
+      ));
+      return <Tag key={key}>{children}</Tag>;
+    };
+
+    return Array.from(container.childNodes).map((node, index) =>
+      toReactNode(node, `desc-${index}`),
+    );
+  }, [item.description]);
 
   return (
     <button
@@ -58,11 +99,8 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
       {/* Title - strip HTML since we don't want formatting in titles */}
       <h3 className="web-result-title">{stripHtml(item.title)}</h3>
 
-      {/* Description - render sanitized HTML to preserve <strong> highlights */}
-      <p
-        className="web-result-description"
-        dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.description) }}
-      />
+      {/* Description - render sanitized HTML as React nodes to preserve highlights */}
+      <div className="web-result-description">{descriptionNodes}</div>
 
       {/* Context toggle button */}
       {onToggleContext && (

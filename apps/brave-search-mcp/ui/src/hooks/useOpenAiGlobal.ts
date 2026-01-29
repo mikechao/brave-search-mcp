@@ -8,7 +8,7 @@
  * components subscribe to a single global value reactively.
  */
 import type { OpenAISetGlobalsEvent, OpenAIWidgetRuntime } from '../openai.d';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 const SET_GLOBALS_EVENT_TYPE = 'openai:set_globals';
 
@@ -24,39 +24,30 @@ const SET_GLOBALS_EVENT_TYPE = 'openai:set_globals';
 export function useOpenAiGlobal<K extends keyof OpenAIWidgetRuntime>(
   key: K,
 ): OpenAIWidgetRuntime[K] | undefined {
-  // Initialize with current value
-  const [value, setValue] = useState<OpenAIWidgetRuntime[K] | undefined>(
-    () => window.openai?.[key],
-  );
+  const subscribe = (onStoreChange: () => void) => {
+    if (typeof window === 'undefined')
+      return () => {};
 
-  useEffect(() => {
-    // Update state when event fires
     const handleSetGlobal = (event: Event) => {
       const customEvent = event as OpenAISetGlobalsEvent;
-      // Only update if this specific key was included in the update
       if (customEvent.detail?.globals && key in customEvent.detail.globals) {
-        const newValue = window.openai?.[key];
-        setValue(newValue);
+        onStoreChange();
       }
     };
 
-    // Listen for global updates from host
     window.addEventListener(SET_GLOBALS_EVENT_TYPE, handleSetGlobal, {
       passive: true,
     });
 
-    // Also check initial value in case it was set before mount
-    const initialValue = window.openai?.[key];
-    if (initialValue !== undefined) {
-      setValue(initialValue);
-    }
-
     return () => {
       window.removeEventListener(SET_GLOBALS_EVENT_TYPE, handleSetGlobal);
     };
-  }, [key]);
+  };
 
-  return value;
+  const getSnapshot = () => window.openai?.[key];
+  const getServerSnapshot = () => undefined;
+
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
 
 // ============================================================================

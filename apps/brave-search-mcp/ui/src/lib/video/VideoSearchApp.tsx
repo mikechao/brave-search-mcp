@@ -187,7 +187,7 @@ export default function VideoSearchApp({
         <section className="video-grid">
           {items.map((item, index) => (
             <VideoCard
-              key={`${item.url}-${index}`}
+              key={item.url}
               item={item}
               index={index}
               onPlay={handlePlay}

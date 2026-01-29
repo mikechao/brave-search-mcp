@@ -62,9 +62,9 @@ export default function ImageSearchApp({
       requestDisplayMode={requestDisplayMode}
     >
       <section className="image-grid">
-        {items.map((item, index) => (
+        {items.map(item => (
           <button
-            key={`${item.pageUrl}-${index}`}
+            key={item.imageUrl}
             className="image-thumbnail"
             onClick={() => handleOpenLink(item)}
             type="button"
