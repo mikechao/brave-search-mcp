@@ -104,5 +104,9 @@ export default function LocalMcpAppMode() {
     requestDisplayMode,
   };
 
-  return <LocalSearchApp {...props} />;
+  // Derive initial loading state: tool invoked but no result yet
+  const isInitialLoading = toolInputs !== null && toolResult === null;
+  const loadingQuery = (toolInputs?.query as string) ?? undefined;
+
+  return <LocalSearchApp {...props} isInitialLoading={isInitialLoading} loadingQuery={loadingQuery} />;
 }

@@ -5,6 +5,13 @@ import type { WidgetProps } from '../../widget-props';
 import type { ImageItem, ImageSearchData } from './types';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
 
+export interface ImageSearchAppProps extends WidgetProps {
+  /** Whether the initial search is in progress (tool invoked but no result yet) */
+  isInitialLoading?: boolean;
+  /** Query being searched during initial loading */
+  loadingQuery?: string;
+}
+
 export default function ImageSearchApp({
   toolResult,
   hostContext,
@@ -12,7 +19,9 @@ export default function ImageSearchApp({
   sendLog,
   displayMode,
   requestDisplayMode,
-}: WidgetProps) {
+  isInitialLoading,
+  loadingQuery,
+}: ImageSearchAppProps) {
   const data = toolResult?.structuredContent as ImageSearchData | undefined;
   const items = data?.items ?? [];
   const error = data?.error;
@@ -40,18 +49,12 @@ export default function ImageSearchApp({
       query={data?.searchTerm}
       countLabel={`${data?.count ?? 0} results`}
       error={error}
+      isInitialLoading={isInitialLoading}
+      loadingQuery={loadingQuery}
       hasData={hasData}
       isEmpty={items.length === 0}
-      emptyTitle="Ready for images"
-      emptyDescription={(
-        <>
-          Call
-          {' '}
-          <code>brave_image_search</code>
-          {' '}
-          with a search term to see results.
-        </>
-      )}
+      emptyTitle="Image Search"
+      emptyDescription="Ask to search for images on any topic."
       noResultsTitle="No results"
       noResultsDescription="Try a broader query or adjust the count."
       hostContext={hostContext}

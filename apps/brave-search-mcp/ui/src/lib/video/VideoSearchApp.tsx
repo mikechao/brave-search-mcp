@@ -13,6 +13,10 @@ export interface VideoSearchAppProps extends WidgetProps {
   onLoadPage?: (offset: number) => Promise<void>;
   /** Whether a page load is in progress */
   isLoading?: boolean;
+  /** Whether the initial search is in progress (tool invoked but no result yet) */
+  isInitialLoading?: boolean;
+  /** Query being searched during initial loading */
+  loadingQuery?: string;
   /** Videos currently in context */
   contextVideos?: ContextVideo[];
   /** Callback when user adds/removes video from context */
@@ -28,6 +32,8 @@ export default function VideoSearchApp({
   requestDisplayMode,
   onLoadPage,
   isLoading: externalIsLoading,
+  isInitialLoading,
+  loadingQuery,
   contextVideos = [],
   onContextChange,
 }: VideoSearchAppProps) {
@@ -149,18 +155,12 @@ export default function VideoSearchApp({
         query={data?.query}
         countLabel={`${data?.count ?? 0} videos`}
         error={error}
+        isInitialLoading={isInitialLoading}
+        loadingQuery={loadingQuery}
         hasData={hasData}
         isEmpty={items.length === 0}
-        emptyTitle="Ready for videos"
-        emptyDescription={(
-          <>
-            Call
-            {' '}
-            <code>brave_video_search</code>
-            {' '}
-            with a search term to see the results.
-          </>
-        )}
+        emptyTitle="Video Search"
+        emptyDescription="Ask to search for videos on any topic."
         noResultsTitle="No results"
         noResultsDescription="Try a broader query or adjust the count."
         hostContext={hostContext}

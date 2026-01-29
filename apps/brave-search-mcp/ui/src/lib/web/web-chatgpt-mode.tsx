@@ -5,7 +5,7 @@ import type { ContextResult, WebSearchData } from './types';
  */
 import type { WebSearchAppProps } from './WebSearchApp';
 import { useCallback, useState } from 'react';
-import { useDisplayMode, useSafeArea, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import WebSearchApp from './WebSearchApp';
 
 /**
@@ -14,6 +14,9 @@ import WebSearchApp from './WebSearchApp';
 export default function WebChatGPTMode() {
   // Use reactive hooks instead of manual polling
   const [toolOutput, setToolOutput] = useState<WebSearchData | null>(null);
+
+  // Access tool input (arguments) for loading state detection
+  const toolInput = useToolInput() as { query?: string } | null;
 
   // Access tool output (content) and metadata (_meta) separately
   const rawOutput = useToolOutput() as any;
@@ -118,6 +121,11 @@ export default function WebChatGPTMode() {
   const noop = async () => ({ isError: false });
   const noopLog = async () => { };
 
+  // Derive initial loading state: tool invoked (has input) but no result yet
+  const hasData = Boolean(currentData);
+  const isInitialLoading = toolInput !== null && !hasData;
+  const loadingQuery = toolInput?.query;
+
   const props: WebSearchAppProps = {
     toolInputs: null,
     toolInputsPartial: null,
@@ -131,6 +139,8 @@ export default function WebChatGPTMode() {
     requestDisplayMode: handleRequestDisplayMode,
     onLoadPage: window.openai?.callTool ? handleLoadPage : undefined,
     isLoading,
+    isInitialLoading,
+    loadingQuery,
     contextResults,
     onContextChange: window.openai?.setWidgetState ? handleContextChange : undefined,
   };

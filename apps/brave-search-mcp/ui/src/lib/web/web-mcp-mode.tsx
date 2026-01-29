@@ -103,5 +103,9 @@ export default function WebMcpAppMode() {
     requestDisplayMode,
   };
 
-  return <WebSearchApp {...props} />;
+  // Derive initial loading state: tool invoked but no result yet
+  const isInitialLoading = toolInputs !== null && toolResult === null;
+  const loadingQuery = (toolInputs?.query as string) ?? undefined;
+
+  return <WebSearchApp {...props} isInitialLoading={isInitialLoading} loadingQuery={loadingQuery} />;
 }

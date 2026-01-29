@@ -5,7 +5,7 @@
 import type { LocalSearchAppProps } from './LocalSearchApp';
 import type { ContextPlace, LocalSearchData } from './types';
 import { useCallback, useState } from 'react';
-import { useDisplayMode, useSafeArea, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import LocalSearchApp from './LocalSearchApp';
 
 /**
@@ -14,6 +14,9 @@ import LocalSearchApp from './LocalSearchApp';
 export default function LocalChatGPTMode() {
   // Use reactive hooks instead of manual polling
   const [toolOutput, setToolOutput] = useState<LocalSearchData | null>(null);
+
+  // Access tool input (arguments) for loading state detection
+  const toolInput = useToolInput() as { query?: string } | null;
 
   // Access tool output (content) and metadata (_meta) separately
   const rawOutput = useToolOutput() as any;
@@ -118,6 +121,11 @@ export default function LocalChatGPTMode() {
   const noop = async () => ({ isError: false });
   const noopLog = async () => { };
 
+  // Derive initial loading state: tool invoked (has input) but no result yet
+  const hasData = Boolean(currentData);
+  const isInitialLoading = toolInput !== null && !hasData;
+  const loadingQuery = toolInput?.query;
+
   const props: LocalSearchAppProps = {
     toolInputs: null,
     toolInputsPartial: null,
@@ -131,6 +139,8 @@ export default function LocalChatGPTMode() {
     requestDisplayMode: handleRequestDisplayMode,
     onLoadPage: window.openai?.callTool ? handleLoadPage : undefined,
     isLoading,
+    isInitialLoading,
+    loadingQuery,
     contextPlaces,
     onContextChange: window.openai?.setWidgetState ? handleContextChange : undefined,
   };

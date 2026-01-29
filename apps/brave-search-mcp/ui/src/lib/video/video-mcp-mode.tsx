@@ -103,5 +103,9 @@ export default function VideoMcpAppMode() {
     requestDisplayMode,
   };
 
-  return <VideoSearchApp {...props} />;
+  // Derive initial loading state: tool invoked but no result yet
+  const isInitialLoading = toolInputs !== null && toolResult === null;
+  const loadingQuery = (toolInputs?.query as string) ?? undefined;
+
+  return <VideoSearchApp {...props} isInitialLoading={isInitialLoading} loadingQuery={loadingQuery} />;
 }

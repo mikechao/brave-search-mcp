@@ -12,6 +12,10 @@ export interface WebSearchAppProps extends WidgetProps {
   onLoadPage?: (offset: number) => Promise<void>;
   /** Whether a page load is in progress */
   isLoading?: boolean;
+  /** Whether the initial search is in progress (tool invoked but no result yet) */
+  isInitialLoading?: boolean;
+  /** Query being searched during initial loading */
+  loadingQuery?: string;
   /** Results currently in context */
   contextResults?: ContextResult[];
   /** Callback when user adds/removes result from context */
@@ -27,6 +31,8 @@ export default function WebSearchApp({
   requestDisplayMode,
   onLoadPage,
   isLoading: externalIsLoading,
+  isInitialLoading,
+  loadingQuery,
   contextResults = [],
   onContextChange,
 }: WebSearchAppProps) {
@@ -138,18 +144,12 @@ export default function WebSearchApp({
       query={data?.query}
       countLabel={`${items.length} results`}
       error={error}
+      isInitialLoading={isInitialLoading}
+      loadingQuery={loadingQuery}
       hasData={hasData}
       isEmpty={items.length === 0}
-      emptyTitle="Ready to search"
-      emptyDescription={(
-        <>
-          Call
-          {' '}
-          <code>brave_web_search</code>
-          {' '}
-          with a search term to see the results.
-        </>
-      )}
+      emptyTitle="Web Search"
+      emptyDescription="Ask to search the web for any topic."
       noResultsTitle="No results"
       noResultsDescription="Try a different query or adjust the parameters."
       hostContext={hostContext}

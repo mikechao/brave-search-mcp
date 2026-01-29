@@ -5,7 +5,7 @@ import type { ContextVideo, VideoSearchData } from './types';
  */
 import type { VideoSearchAppProps } from './VideoSearchApp';
 import { useCallback, useState } from 'react';
-import { useDisplayMode, useSafeArea, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import VideoSearchApp from './VideoSearchApp';
 
 /**
@@ -14,6 +14,9 @@ import VideoSearchApp from './VideoSearchApp';
 export default function VideoChatGPTMode() {
   // Use reactive hooks instead of manual polling
   const [toolOutput, setToolOutput] = useState<VideoSearchData | null>(null);
+
+  // Access tool input (arguments) for loading state detection
+  const toolInput = useToolInput() as { query?: string } | null;
 
   // Access tool output (content) and metadata (_meta) separately
   const rawOutput = useToolOutput() as any;
@@ -119,6 +122,11 @@ export default function VideoChatGPTMode() {
   const noop = async () => ({ isError: false });
   const noopLog = async () => { };
 
+  // Derive initial loading state: tool invoked (has input) but no result yet
+  const hasData = Boolean(currentData);
+  const isInitialLoading = toolInput !== null && !hasData;
+  const loadingQuery = toolInput?.query;
+
   const props: VideoSearchAppProps = {
     toolInputs: null,
     toolInputsPartial: null,
@@ -132,6 +140,8 @@ export default function VideoChatGPTMode() {
     requestDisplayMode: handleRequestDisplayMode,
     onLoadPage: window.openai?.callTool ? handleLoadPage : undefined,
     isLoading,
+    isInitialLoading,
+    loadingQuery,
     contextVideos,
     onContextChange: window.openai?.setWidgetState ? handleContextChange : undefined,
   };

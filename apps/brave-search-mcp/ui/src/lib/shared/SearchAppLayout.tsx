@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import type { WidgetProps } from '../../widget-props';
 import { Button } from '@openai/apps-sdk-ui/components/Button';
 import { ArrowLeftSm, ArrowRightSm } from '@openai/apps-sdk-ui/components/Icon';
+import { LoadingIndicator } from '@openai/apps-sdk-ui/components/Indicator';
 import { FullscreenButton } from './FullscreenButton';
 
 export interface PaginationConfig {
@@ -32,6 +33,10 @@ export interface SearchAppLayoutProps {
   query?: string;
   /** Count label (e.g., "10 videos", "5 places") */
   countLabel?: string;
+  /** Whether the initial search is in progress (tool invoked but no result yet) */
+  isInitialLoading?: boolean;
+  /** Query being searched during initial loading */
+  loadingQuery?: string;
   /** Error message to display */
   error?: string;
   /** Info banner message (e.g., fallback to web) */
@@ -67,6 +72,8 @@ export function SearchAppLayout({
   brandSub,
   query,
   countLabel,
+  isInitialLoading,
+  loadingQuery,
   error,
   infoBanner,
   hasData,
@@ -118,10 +125,10 @@ export function SearchAppLayout({
         <div className="header-right">
           <div className="meta">
             <div className="term">
-              {hasData ? query : `Run brave_${variant}_search to see results`}
+              {hasData ? query : (isInitialLoading && loadingQuery ? loadingQuery : `Run brave_${variant}_search to see results`)}
             </div>
             <div className="count">
-              {hasData ? countLabel : 'Awaiting tool output'}
+              {hasData ? countLabel : (isInitialLoading ? 'Searching...' : 'Awaiting tool output')}
               {hasData && pagination && pageInfo}
               {contextInfo}
             </div>
@@ -163,7 +170,18 @@ export function SearchAppLayout({
         </div>
       )}
 
-      {!hasData && (
+      {isInitialLoading && !hasData && (
+        <section className="loading-state">
+          <LoadingIndicator size="32px" strokeWidth="3px" />
+          <p>
+            Searching for
+            {' '}
+            <strong>{loadingQuery || '...'}</strong>
+          </p>
+        </section>
+      )}
+
+      {!hasData && !isInitialLoading && (
         <section className="empty-state">
           <h2>{emptyTitle}</h2>
           <p>{emptyDescription}</p>

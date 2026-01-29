@@ -14,6 +14,10 @@ export interface LocalSearchAppProps extends WidgetProps {
   onLoadPage?: (offset: number) => Promise<void>;
   /** Whether a page load is in progress */
   isLoading?: boolean;
+  /** Whether the initial search is in progress (tool invoked but no result yet) */
+  isInitialLoading?: boolean;
+  /** Query being searched during initial loading */
+  loadingQuery?: string;
   /** Places currently in context */
   contextPlaces?: ContextPlace[];
   /** Callback when user adds/removes place from context */
@@ -29,6 +33,8 @@ export default function LocalSearchApp({
   requestDisplayMode,
   onLoadPage,
   isLoading: externalIsLoading,
+  isInitialLoading,
+  loadingQuery,
   contextPlaces = [],
   onContextChange,
 }: LocalSearchAppProps) {
@@ -157,18 +163,12 @@ export default function LocalSearchApp({
       countLabel={`${data?.count ?? 0} PLACES`}
       error={error}
       infoBanner={fallbackToWeb ? 'No local results found. Showing web search results instead.' : undefined}
+      isInitialLoading={isInitialLoading}
+      loadingQuery={loadingQuery}
       hasData={hasData}
       isEmpty={items.length === 0 && !fallbackToWeb}
-      emptyTitle="Ready for local search"
-      emptyDescription={(
-        <>
-          Call
-          {' '}
-          <code>brave_local_search</code>
-          {' '}
-          with a location query to see the results.
-        </>
-      )}
+      emptyTitle="Local Search"
+      emptyDescription="Ask to search for local businesses and places."
       noResultsTitle="No places found"
       noResultsDescription="Try a different location or query."
       hostContext={hostContext}

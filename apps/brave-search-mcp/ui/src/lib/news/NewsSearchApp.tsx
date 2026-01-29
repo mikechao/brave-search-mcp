@@ -12,6 +12,10 @@ export interface NewsSearchAppProps extends WidgetProps {
   onLoadPage?: (offset: number) => Promise<void>;
   /** Whether a page load is in progress */
   isLoading?: boolean;
+  /** Whether the initial search is in progress (tool invoked but no result yet) */
+  isInitialLoading?: boolean;
+  /** Query being searched during initial loading */
+  loadingQuery?: string;
   /** Articles currently in context */
   contextArticles?: ContextArticle[];
   /** Callback when user adds/removes article from context */
@@ -27,6 +31,8 @@ export default function NewsSearchApp({
   requestDisplayMode,
   onLoadPage,
   isLoading: externalIsLoading,
+  isInitialLoading,
+  loadingQuery,
   contextArticles = [],
   onContextChange,
 }: NewsSearchAppProps) {
@@ -138,18 +144,12 @@ export default function NewsSearchApp({
       query={data?.query}
       countLabel={`${items.length} articles`}
       error={error}
+      isInitialLoading={isInitialLoading}
+      loadingQuery={loadingQuery}
       hasData={hasData}
       isEmpty={items.length === 0}
-      emptyTitle="Ready for news"
-      emptyDescription={(
-        <>
-          Call
-          {' '}
-          <code>brave_news_search</code>
-          {' '}
-          with a query to see the latest articles.
-        </>
-      )}
+      emptyTitle="News Search"
+      emptyDescription="Ask to search for news on any topic."
       noResultsTitle="No results"
       noResultsDescription="Try a different query or adjust the freshness filter."
       hostContext={hostContext}

@@ -129,6 +129,8 @@ export default function NewsMcpAppMode() {
     requestDisplayMode: handleRequestDisplayMode,
     onLoadPage: app ? handleLoadPage : undefined,
     isLoading,
+    isInitialLoading: !toolResult && Boolean(app),
+    loadingQuery: undefined, // MCP news mode doesn't track toolInputs currently
     contextArticles,
     onContextChange: app ? handleContextChange : undefined,
   };

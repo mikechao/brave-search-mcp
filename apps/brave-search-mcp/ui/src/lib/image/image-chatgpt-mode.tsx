@@ -4,12 +4,16 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { ImageSearchData } from './types';
-import { useDisplayMode, useSafeArea, useToolOutput } from '../../hooks/useOpenAiGlobal';
+import { useDisplayMode, useSafeArea, useToolInput, useToolOutput } from '../../hooks/useOpenAiGlobal';
 import ImageSearchApp from './ImageSearchApp';
 
 export default function ImageChatGPTMode() {
   // Use reactive hooks instead of manual polling
   const toolOutput = useToolOutput() as unknown as ImageSearchData | null;
+
+  // Access tool input (arguments) for loading state detection
+  const toolInput = useToolInput() as { query?: string } | null;
+
   const displayMode = useDisplayMode();
   const safeArea = useSafeArea();
 
@@ -51,6 +55,11 @@ export default function ImageChatGPTMode() {
   const noop = async () => ({ isError: false });
   const noopLog = async () => { };
 
+  // Derive initial loading state: tool invoked (has input) but no result yet
+  const hasData = Boolean(toolOutput);
+  const isInitialLoading = toolInput !== null && !hasData;
+  const loadingQuery = toolInput?.query;
+
   const props: WidgetProps = {
     toolInputs: null,
     toolInputsPartial: null,
@@ -64,5 +73,5 @@ export default function ImageChatGPTMode() {
     requestDisplayMode: handleRequestDisplayMode,
   };
 
-  return <ImageSearchApp {...props} />;
+  return <ImageSearchApp {...props} isInitialLoading={isInitialLoading} loadingQuery={loadingQuery} />;
 }
