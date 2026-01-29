@@ -9,3 +9,8 @@ The chain
 
 The fix
  added "hono": "4.11.4" to apps/brave-search-mcp/package.json
+
+ ## hono 4.11.7 to fix security issues.
+ https://github.com/mikechao/brave-search-mcp/security/dependabot/27
+ to
+ https://github.com/mikechao/brave-search-mcp/security/dependabot/33
