@@ -20,8 +20,12 @@ export default function VideoMcpAppMode() {
   const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
 
   useEffect(() => {
-    // Create App manually with autoResize disabled
-    const appInstance = new App(APP_INFO, {}, { autoResize: false });
+    // Create App manually with autoResize disabled, declaring PiP support
+    const appInstance = new App(
+      APP_INFO,
+      { availableDisplayModes: ['inline', 'fullscreen', 'pip'] },
+      { autoResize: false },
+    );
 
     // Register handlers before connection
     appInstance.ontoolinput = (params) => {
@@ -101,6 +105,7 @@ export default function VideoMcpAppMode() {
     sendLog,
     displayMode: hostContext?.displayMode,
     requestDisplayMode,
+    availableDisplayModes: hostContext?.availableDisplayModes,
   };
 
   // Derive initial loading state: tool invoked but no result yet

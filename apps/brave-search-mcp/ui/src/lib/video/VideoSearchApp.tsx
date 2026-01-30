@@ -3,10 +3,11 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { ContextVideo, VideoItem, VideoSearchData } from './types';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { VideoCard } from './VideoCard';
 import { VideoEmbedModal } from './VideoEmbedModal';
+import { VideoPipView } from './VideoPipView';
 
 export interface VideoSearchAppProps extends WidgetProps {
   /** Callback to load a different page of results */
@@ -21,6 +22,8 @@ export interface VideoSearchAppProps extends WidgetProps {
   contextVideos?: ContextVideo[];
   /** Callback when user adds/removes video from context */
   onContextChange?: (videos: ContextVideo[]) => void;
+  /** Display modes available on the host */
+  availableDisplayModes?: string[];
 }
 
 export default function VideoSearchApp({
@@ -36,10 +39,17 @@ export default function VideoSearchApp({
   loadingQuery,
   contextVideos = [],
   onContextChange,
+  availableDisplayModes,
 }: VideoSearchAppProps) {
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
   const [internalLoading, setInternalLoading] = useState(false);
   const isLoading = externalIsLoading ?? internalLoading;
+
+  // Track previous display mode to detect host-initiated PiP exit
+  const prevDisplayMode = useRef(displayMode);
+
+  // Check if host supports PiP mode
+  const supportsPip = availableDisplayModes?.includes('pip') ?? false;
 
   // Access structured content from _meta (new location) or top-level (legacy)
   const rawData = toolResult as any;
@@ -76,12 +86,36 @@ export default function VideoSearchApp({
     }
   };
 
-  const handlePlay = (video: VideoItem) => {
+  // Handle host-initiated PiP exit (user dismissed PiP via host controls)
+  // We need to clear activeVideo when host exits PiP mode
+  useEffect(() => {
+    const wasInPip = prevDisplayMode.current === 'pip';
+    const exitedPip = wasInPip && displayMode !== 'pip';
+    prevDisplayMode.current = displayMode;
+
+    if (exitedPip && activeVideo) {
+      // Host exited PiP mode, close the video
+      // Using setTimeout to avoid the lint warning about direct setState in useEffect
+      // This is intentional reactive behavior based on host context changes
+      const timeoutId = setTimeout(() => setActiveVideo(null), 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [displayMode, activeVideo]);
+
+  const handlePlay = async (video: VideoItem) => {
     setActiveVideo(video);
+    // Auto-enter PiP mode if host supports it
+    if (supportsPip && requestDisplayMode) {
+      await requestDisplayMode('pip');
+    }
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = async () => {
     setActiveVideo(null);
+    // If in PiP mode, request return to inline
+    if (displayMode === 'pip' && requestDisplayMode) {
+      await requestDisplayMode('inline');
+    }
   };
 
   const handlePrevious = async () => {
@@ -147,6 +181,11 @@ export default function VideoSearchApp({
 
   const pageNumber = currentOffset + 1;
 
+  // Render PiP view when in PiP mode with active video
+  if (displayMode === 'pip' && activeVideo) {
+    return <VideoPipView video={activeVideo} />;
+  }
+
   return (
     <>
       <SearchAppLayout
@@ -199,7 +238,8 @@ export default function VideoSearchApp({
         </section>
       </SearchAppLayout>
 
-      {activeVideo && (
+      {/* Show modal only when not using PiP mode */}
+      {activeVideo && !supportsPip && (
         <VideoEmbedModal video={activeVideo} onClose={handleCloseModal} />
       )}
     </>

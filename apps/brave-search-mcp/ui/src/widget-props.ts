@@ -17,4 +17,6 @@ export interface WidgetProps<TToolInput = Record<string, unknown>> {
   sendLog: App['sendLog'];
   displayMode?: DisplayMode;
   requestDisplayMode?: (mode: DisplayMode) => Promise<void>;
+  /** Display modes available on the host (for checking before requesting) */
+  availableDisplayModes?: DisplayMode[];
 }

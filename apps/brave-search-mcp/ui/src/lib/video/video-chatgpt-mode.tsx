@@ -138,6 +138,10 @@ export default function VideoChatGPTMode() {
     sendLog: noopLog as any,
     displayMode: displayMode ?? 'inline',
     requestDisplayMode: handleRequestDisplayMode,
+    // ChatGPT supports all display modes when requestDisplayMode is available
+    availableDisplayModes: window.openai?.requestDisplayMode
+      ? ['inline', 'fullscreen', 'pip']
+      : undefined,
     onLoadPage: window.openai?.callTool ? handleLoadPage : undefined,
     isLoading,
     isInitialLoading,
