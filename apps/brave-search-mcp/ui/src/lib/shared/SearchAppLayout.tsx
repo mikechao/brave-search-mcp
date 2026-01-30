@@ -172,7 +172,7 @@ export function SearchAppLayout({
 
       {isInitialLoading && !hasData && (
         <section className="loading-state">
-          <LoadingIndicator size="32px" strokeWidth="3px" />
+          <LoadingIndicator size="32px" strokeWidth={3} />
           <p>
             Searching for
             {' '}

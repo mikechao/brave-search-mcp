@@ -68,7 +68,9 @@ export default function NewsChatGPTMode() {
     // Access directly from window.openai since functions are set at init, not via events
     if (window.openai?.requestDisplayMode) {
       await window.openai.requestDisplayMode({ mode });
+      return mode; // OpenAI API doesn't return the mode, so return the requested mode
     }
+    return undefined;
   };
 
   // Pagination handler - calls the news search tool with new offset

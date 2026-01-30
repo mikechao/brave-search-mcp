@@ -40,8 +40,7 @@ export default function ImageMcpAppMode() {
     };
 
     // Connect to host
-    // @ts-expect-error - PostMessageTransport constructor signature mismatch in types
-    const transport = new PostMessageTransport(window.parent);
+    const transport = new PostMessageTransport(window.parent, window.parent);
     appInstance.connect(transport)
       .then(() => {
         setApp(appInstance);
@@ -76,7 +75,8 @@ export default function ImageMcpAppMode() {
   );
   const requestDisplayMode = useCallback(
     async (mode: 'inline' | 'fullscreen' | 'pip') => {
-      await app!.requestDisplayMode({ mode });
+      const result = await app!.requestDisplayMode({ mode });
+      return result.mode;
     },
     [app],
   );

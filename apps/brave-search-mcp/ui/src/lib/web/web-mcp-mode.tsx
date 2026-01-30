@@ -39,7 +39,7 @@ export default function WebMcpAppMode() {
     };
 
     // Connect to host
-    const transport = new PostMessageTransport(window.parent);
+    const transport = new PostMessageTransport(window.parent, window.parent);
     appInstance.connect(transport)
       .then(() => {
         setApp(appInstance);
@@ -74,7 +74,8 @@ export default function WebMcpAppMode() {
   );
   const requestDisplayMode = useCallback(
     async (mode: 'inline' | 'fullscreen' | 'pip') => {
-      await app!.requestDisplayMode({ mode });
+      const result = await app!.requestDisplayMode({ mode });
+      return result.mode;
     },
     [app],
   );

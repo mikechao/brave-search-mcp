@@ -65,9 +65,8 @@ export default function VideoChatGPTMode() {
   const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
     // Access directly from window.openai since functions are set at init, not via events
     if (window.openai?.requestDisplayMode) {
-      const result = await window.openai.requestDisplayMode({ mode });
-      // Return the actual mode that was set (may differ from requested)
-      return result?.mode as 'inline' | 'fullscreen' | 'pip' | undefined;
+      await window.openai.requestDisplayMode({ mode });
+      return mode; // OpenAI API doesn't return the mode, so return the requested mode
     }
     return undefined;
   };

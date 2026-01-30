@@ -62,8 +62,10 @@ export default function NewsMcpAppMode() {
 
   const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
     if (app) {
-      await app.requestDisplayMode({ mode });
+      const result = await app.requestDisplayMode({ mode });
+      return result.mode;
     }
+    return undefined;
   };
 
   // Pagination handler using app.callServerTool

@@ -54,7 +54,7 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
       if (!allowedTags.has(tagName))
         return element.textContent;
 
-      const Tag = (tagName === 'p' ? 'span' : tagName) as keyof JSX.IntrinsicElements;
+      const Tag = (tagName === 'p' ? 'span' : tagName) as React.ElementType;
       const children = Array.from(element.childNodes).map((child, index) => (
         toReactNode(child, `${key}-${index}`)
       ));

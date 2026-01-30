@@ -43,7 +43,7 @@ export default function VideoMcpAppMode() {
     };
 
     // Connect to host
-    const transport = new PostMessageTransport(window.parent);
+    const transport = new PostMessageTransport(window.parent, window.parent);
     appInstance.connect(transport)
       .then(() => {
         setApp(appInstance);

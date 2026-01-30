@@ -1,7 +1,7 @@
 /**
  * Brave Video Search Widget - Main App Component with pagination and context selection
  */
-import type { WidgetProps } from '../../widget-props';
+import type { DisplayMode, WidgetProps } from '../../widget-props';
 import type { ContextVideo, VideoItem, VideoSearchData } from './types';
 import { useEffect, useRef, useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
@@ -23,7 +23,7 @@ export interface VideoSearchAppProps extends WidgetProps {
   /** Callback when user adds/removes video from context */
   onContextChange?: (videos: ContextVideo[]) => void;
   /** Display modes available on the host */
-  availableDisplayModes?: string[];
+  availableDisplayModes?: DisplayMode[];
 }
 
 export default function VideoSearchApp({
