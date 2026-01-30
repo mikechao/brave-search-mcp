@@ -16,7 +16,8 @@ export interface WidgetProps<TToolInput = Record<string, unknown>> {
   openLink: App['openLink'];
   sendLog: App['sendLog'];
   displayMode?: DisplayMode;
-  requestDisplayMode?: (mode: DisplayMode) => Promise<void>;
+  /** Request a display mode change. Returns the actual mode that was set (may differ from requested). */
+  requestDisplayMode?: (mode: DisplayMode) => Promise<DisplayMode | undefined>;
   /** Display modes available on the host (for checking before requesting) */
   availableDisplayModes?: DisplayMode[];
 }

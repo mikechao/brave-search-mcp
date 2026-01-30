@@ -78,7 +78,9 @@ export default function VideoMcpAppMode() {
   );
   const requestDisplayMode = useCallback(
     async (mode: 'inline' | 'fullscreen' | 'pip') => {
-      await app!.requestDisplayMode({ mode });
+      const result = await app!.requestDisplayMode({ mode });
+      // Return the actual mode that was set (may differ from requested)
+      return result?.mode as 'inline' | 'fullscreen' | 'pip' | undefined;
     },
     [app],
   );

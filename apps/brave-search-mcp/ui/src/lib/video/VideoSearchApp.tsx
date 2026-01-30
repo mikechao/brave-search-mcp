@@ -43,6 +43,7 @@ export default function VideoSearchApp({
 }: VideoSearchAppProps) {
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
   const [internalLoading, setInternalLoading] = useState(false);
+  const [pipFailed, setPipFailed] = useState(false); // Track if PiP request failed
   const isLoading = externalIsLoading ?? internalLoading;
 
   // Track previous display mode to detect host-initiated PiP exit
@@ -104,14 +105,21 @@ export default function VideoSearchApp({
 
   const handlePlay = async (video: VideoItem) => {
     setActiveVideo(video);
+    setPipFailed(false); // Reset on new play
+
     // Auto-enter PiP mode if host supports it
     if (supportsPip && requestDisplayMode) {
-      await requestDisplayMode('pip');
+      const actualMode = await requestDisplayMode('pip');
+      // If PiP wasn't set (host returned different mode or undefined), fall back to modal
+      if (actualMode !== 'pip') {
+        setPipFailed(true);
+      }
     }
   };
 
   const handleCloseModal = async () => {
     setActiveVideo(null);
+    setPipFailed(false);
     // If in PiP mode, request return to inline
     if (displayMode === 'pip' && requestDisplayMode) {
       await requestDisplayMode('inline');
@@ -238,8 +246,8 @@ export default function VideoSearchApp({
         </section>
       </SearchAppLayout>
 
-      {/* Show modal only when not using PiP mode */}
-      {activeVideo && !supportsPip && (
+      {/* Show modal when PiP is not supported, or when PiP request failed */}
+      {activeVideo && (!supportsPip || pipFailed) && (
         <VideoEmbedModal video={activeVideo} onClose={handleCloseModal} />
       )}
     </>
