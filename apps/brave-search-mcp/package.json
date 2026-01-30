@@ -55,7 +55,7 @@
     "build:ui:local:chatgpt": "INPUT=src/lib/local/chatgpt-app.html vite build --config ui/vite.config.ts",
     "lint": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
     "lint:check": "eslint . --ext .ts,.js,.mjs,.cjs",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p ui/tsconfig.json",
     "check": "pnpm run lint:check && pnpm run typecheck",
     "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
