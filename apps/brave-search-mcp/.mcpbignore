@@ -4,6 +4,15 @@ eslint.config.js
 smithery.yaml
 tsconfig.json
 DEBUGGING.md
-./src
-./.vscode/
+src/**
+.vscode/
 .github/
+postcss.config.mjs
+tsup.config.ts
+scripts/
+.changeset/
+ui/**
+AGENTS.md
+CHANGELOG.md
+components.json
+package.json
