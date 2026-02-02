@@ -114,6 +114,7 @@ export function SearchAppLayout({
   // Build page info string
   const pageInfo = pagination ? ` · Page ${pagination.pageNumber}` : '';
   const contextInfo = context && context.count > 0 ? ` · ${context.count} in context` : '';
+  const isPaginationLoading = Boolean(pagination?.isLoading && hasData && !isEmpty);
 
   return (
     <main className={`app ${variant}-app`} style={containerStyle} data-display-mode={displayMode}>
@@ -141,7 +142,7 @@ export function SearchAppLayout({
                 variant="soft"
                 size="sm"
                 onClick={context.onAddAll}
-                disabled={context.addAllDisabled}
+                disabled={context.addAllDisabled || isPaginationLoading}
               >
                 Add All
               </Button>
@@ -195,7 +196,26 @@ export function SearchAppLayout({
         </section>
       )}
 
-      {hasData && !isEmpty && children}
+      {hasData && !isEmpty && (
+        <section
+          className={`results-region${isPaginationLoading ? ' results-region--loading' : ''}`}
+          aria-busy={isPaginationLoading}
+        >
+          <div className={`results-content${isPaginationLoading ? ' results-content--locked' : ''}`} inert={isPaginationLoading}>
+            {children}
+          </div>
+          {isPaginationLoading
+            ? (
+                <div className="results-loading-overlay" role="status" aria-label="Loading page results">
+                  <div className="results-loading-content">
+                    <LoadingIndicator size="28px" strokeWidth={3} />
+                    <span>Loading results...</span>
+                  </div>
+                </div>
+              )
+            : null}
+        </section>
+      )}
 
       {pagination && hasData && !isEmpty && (
         <footer

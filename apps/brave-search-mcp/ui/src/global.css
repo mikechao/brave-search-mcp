@@ -233,6 +233,60 @@ body {
   color: var(--accent);
 }
 
+/* Results area loading overlay (used during pagination fetches) */
+.results-region {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  isolation: isolate;
+}
+
+.results-region--loading {
+  overflow: hidden;
+}
+
+.results-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.results-content--locked {
+  pointer-events: none;
+  user-select: none;
+}
+
+.results-loading-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--bg) 70%, transparent);
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+  cursor: progress;
+}
+
+.results-loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--grid-line-strong);
+  border-radius: 12px;
+  padding: 12px 16px;
+  background: color-mix(in oklab, var(--card-bg) 92%, transparent);
+  box-shadow: var(--card-shadow);
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.01em;
+}
+
 /* Image grid styles (shared by image widget) */
 .grid {
   display: grid;
