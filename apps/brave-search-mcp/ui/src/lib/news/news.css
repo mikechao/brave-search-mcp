@@ -22,6 +22,7 @@
   display: flex;
   gap: 14px;
   padding: 12px;
+  padding-right: 56px;
   border: 1px solid var(--card-border);
   border-radius: 10px;
   background: var(--card-bg);
@@ -34,6 +35,11 @@
     border-color 0.2s ease;
   animation: rise 0.4s ease forwards;
   opacity: 0;
+  width: 100%;
+}
+
+.news-card-shell {
+  position: relative;
 }
 
 .news-card:hover {
@@ -177,4 +183,11 @@
 
 .news-card--in-context:hover {
   border-color: var(--accent);
+}
+
+.news-card-shell .context-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
 }

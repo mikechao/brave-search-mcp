@@ -64,69 +64,81 @@ export function LocalBusinessCard({
     }
   };
 
+  const handleToggleExpand = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelect();
+  };
+
   return (
     <div
       className={`local-card ${isSelected ? 'local-card--selected' : ''} ${isInContext ? 'local-card--in-context' : ''}`}
-      onClick={onSelect}
       style={{ animationDelay: `${index * 50}ms` }}
     >
       {/* Header row */}
       <div className="local-card-header">
-        {/* Number badge */}
-        <div className="local-card-number">{index + 1}</div>
+        <button
+          type="button"
+          className="local-card-trigger"
+          onClick={onSelect}
+          aria-expanded={isSelected}
+          aria-label={`${isSelected ? 'Collapse details for' : 'Expand details for'} ${item.name}`}
+        >
+          {/* Number badge */}
+          <div className="local-card-number">{index + 1}</div>
 
-        {/* Content */}
-        <div className="local-card-content">
-          <h3 className="local-card-name">{item.name}</h3>
+          {/* Content */}
+          <div className="local-card-content">
+            <h3 className="local-card-name">{item.name}</h3>
 
-          {/* Rating row */}
-          <div className="local-card-rating">
-            {item.rating !== undefined && (
-              <>
-                <Star width={14} height={14} className="local-star" />
-                <span className="local-rating-value">{item.rating.toFixed(1)}</span>
-                {item.reviewCount && (
-                  <span className="local-review-count">
-                    (
-                    {item.reviewCount}
-                    )
-                  </span>
-                )}
-              </>
+            {/* Rating row */}
+            <div className="local-card-rating">
+              {item.rating !== undefined && (
+                <>
+                  <Star width={14} height={14} className="local-star" />
+                  <span className="local-rating-value">{item.rating.toFixed(1)}</span>
+                  {item.reviewCount && (
+                    <span className="local-review-count">
+                      (
+                      {item.reviewCount}
+                      )
+                    </span>
+                  )}
+                </>
+              )}
+              {item.priceRange && (
+                <span className="local-price">{item.priceRange}</span>
+              )}
+              {item.cuisine && item.cuisine.length > 0 && (
+                <span className="local-cuisine">{item.cuisine.slice(0, 2).join(', ')}</span>
+              )}
+            </div>
+
+            {/* Phone */}
+            {item.phone && (
+              <div className="local-card-phone">
+                <Phone width={12} height={12} />
+                <span>{item.phone}</span>
+              </div>
             )}
-            {item.priceRange && (
-              <span className="local-price">{item.priceRange}</span>
-            )}
-            {item.cuisine && item.cuisine.length > 0 && (
-              <span className="local-cuisine">{item.cuisine.slice(0, 2).join(', ')}</span>
+
+            {/* Address */}
+            <div className="local-card-address">
+              <MapsAddress width={12} height={12} />
+              <span>{item.address}</span>
+            </div>
+
+            {/* Hours */}
+            {item.todayHours && (
+              <div className="local-card-hours">
+                <Clock width={12} height={12} />
+                <span>
+                  Today:
+                  {item.todayHours}
+                </span>
+              </div>
             )}
           </div>
-
-          {/* Phone */}
-          {item.phone && (
-            <div className="local-card-phone">
-              <Phone width={12} height={12} />
-              <span>{item.phone}</span>
-            </div>
-          )}
-
-          {/* Address */}
-          <div className="local-card-address">
-            <MapsAddress width={12} height={12} />
-            <span>{item.address}</span>
-          </div>
-
-          {/* Hours */}
-          {item.todayHours && (
-            <div className="local-card-hours">
-              <Clock width={12} height={12} />
-              <span>
-                Today:
-                {item.todayHours}
-              </span>
-            </div>
-          )}
-        </div>
+        </button>
 
         {/* Actions + Expand indicator */}
         <div className="local-card-actions">
@@ -149,9 +161,16 @@ export function LocalBusinessCard({
               {isInContext ? <Check width={16} height={16} /> : <Plus width={16} height={16} />}
             </button>
           )}
-          <div className="local-expand-icon">
+          <button
+            type="button"
+            className="local-action-btn local-expand-btn"
+            onClick={handleToggleExpand}
+            aria-expanded={isSelected}
+            aria-label={isSelected ? 'Collapse details' : 'Expand details'}
+            title={isSelected ? 'Collapse details' : 'Expand details'}
+          >
             {isSelected ? <ChevronUp width={16} height={16} /> : <ChevronDown width={16} height={16} />}
-          </div>
+          </button>
         </div>
       </div>
 

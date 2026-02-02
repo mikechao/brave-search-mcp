@@ -39,6 +39,10 @@
   position: relative;
 }
 
+.web-result-shell {
+  position: relative;
+}
+
 .web-result:hover {
   transform: translateY(-2px);
   box-shadow: var(--card-shadow-hover);
@@ -122,7 +126,7 @@
   border-color: var(--accent);
 }
 
-.web-result .context-btn {
+.web-result-shell .context-btn {
   position: absolute;
   right: 12px;
   top: 50%;

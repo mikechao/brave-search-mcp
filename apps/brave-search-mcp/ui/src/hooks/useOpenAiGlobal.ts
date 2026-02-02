@@ -8,14 +8,13 @@
  * components subscribe to a single global value reactively.
  */
 import type { OpenAISetGlobalsEvent, OpenAIWidgetRuntime } from '../openai.d';
-import { useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 
 const SET_GLOBALS_EVENT_TYPE = 'openai:set_globals';
 
 /**
  * Subscribe to a specific window.openai global value reactively.
- * Uses useState + useEffect with event listener instead of useSyncExternalStore
- * to avoid issues with StrictMode double-invocation.
+ * Uses useSyncExternalStore with stable callbacks for correct subscription behavior.
  *
  * Note: Only works for reactive values that are updated via events.
  * Functions like openExternal and requestDisplayMode are set at initialization
@@ -24,7 +23,7 @@ const SET_GLOBALS_EVENT_TYPE = 'openai:set_globals';
 export function useOpenAiGlobal<K extends keyof OpenAIWidgetRuntime>(
   key: K,
 ): OpenAIWidgetRuntime[K] | undefined {
-  const subscribe = (onStoreChange: () => void) => {
+  const subscribe = useCallback((onStoreChange: () => void) => {
     if (typeof window === 'undefined')
       return () => {};
 
@@ -42,10 +41,14 @@ export function useOpenAiGlobal<K extends keyof OpenAIWidgetRuntime>(
     return () => {
       window.removeEventListener(SET_GLOBALS_EVENT_TYPE, handleSetGlobal);
     };
-  };
+  }, [key]);
 
-  const getSnapshot = () => window.openai?.[key];
-  const getServerSnapshot = () => undefined;
+  const getSnapshot = useCallback(() => {
+    if (typeof window === 'undefined')
+      return undefined;
+    return window.openai?.[key];
+  }, [key]);
+  const getServerSnapshot = useCallback(() => undefined, []);
 
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

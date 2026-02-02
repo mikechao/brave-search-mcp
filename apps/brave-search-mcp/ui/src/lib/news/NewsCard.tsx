@@ -25,41 +25,44 @@ export function NewsCard({ item, index, onOpenLink, isInContext, onToggleContext
   };
 
   return (
-    <button
-      className={`news-card ${item.breaking ? 'news-card--breaking' : ''} ${isInContext ? 'news-card--in-context' : ''}`}
-      onClick={handleClick}
-      style={{ animationDelay: `${index * 60}ms` }}
-    >
-      <div className="news-thumbnail">
-        {item.thumbnail?.src
-          ? (
-              <img
-                src={item.thumbnail.src}
-                alt=""
-                className="news-thumbnail-img"
-                loading="lazy"
-              />
-            )
-          : (
-              <div className="news-placeholder">
-                <NewsPaper width={24} height={24} />
-              </div>
-            )}
-      </div>
-      <div className="news-content">
-        <div className="news-header">
-          <span className="news-source">
-            {item.favicon && (
-              <img src={item.favicon} alt="" className="news-favicon" />
-            )}
-            {item.source}
-          </span>
-          <span className="news-age">{item.age}</span>
-          {item.breaking && <span className="news-breaking-badge">BREAKING</span>}
+    <article className="news-card-shell">
+      <button
+        type="button"
+        className={`news-card ${item.breaking ? 'news-card--breaking' : ''} ${isInContext ? 'news-card--in-context' : ''}`}
+        onClick={handleClick}
+        style={{ animationDelay: `${index * 60}ms` }}
+      >
+        <div className="news-thumbnail">
+          {item.thumbnail?.src
+            ? (
+                <img
+                  src={item.thumbnail.src}
+                  alt=""
+                  className="news-thumbnail-img"
+                  loading="lazy"
+                />
+              )
+            : (
+                <div className="news-placeholder">
+                  <NewsPaper width={24} height={24} />
+                </div>
+              )}
         </div>
-        <h3 className="news-title">{item.title}</h3>
-        <p className="news-description">{item.description}</p>
-      </div>
+        <div className="news-content">
+          <div className="news-header">
+            <span className="news-source">
+              {item.favicon && (
+                <img src={item.favicon} alt="" className="news-favicon" />
+              )}
+              {item.source}
+            </span>
+            <span className="news-age">{item.age}</span>
+            {item.breaking && <span className="news-breaking-badge">BREAKING</span>}
+          </div>
+          <h3 className="news-title">{item.title}</h3>
+          <p className="news-description">{item.description}</p>
+        </div>
+      </button>
       {onToggleContext && (
         <button
           type="button"
@@ -71,6 +74,6 @@ export function NewsCard({ item, index, onOpenLink, isInContext, onToggleContext
           {isInContext ? <Check width={16} height={16} /> : <Plus width={16} height={16} />}
         </button>
       )}
-    </button>
+    </article>
   );
 }

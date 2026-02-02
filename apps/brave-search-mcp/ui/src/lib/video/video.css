@@ -29,6 +29,11 @@
   transition: all 0.2s ease;
   text-align: left;
   animation: fadeInUp 0.3s ease both;
+  width: 100%;
+}
+
+.video-card-shell {
+  position: relative;
 }
 
 html[data-theme='dark'] .video-card {
@@ -58,8 +63,8 @@ html[data-theme='dark'] .video-card:hover {
   border-color: var(--accent);
 }
 
-/* Position context button inside thumbnail - reuses .context-btn from global.css */
-.video-thumbnail .context-btn {
+/* Position context button at the top-right of the card */
+.video-card-shell .context-btn {
   position: absolute;
   top: 6px;
   right: 6px;

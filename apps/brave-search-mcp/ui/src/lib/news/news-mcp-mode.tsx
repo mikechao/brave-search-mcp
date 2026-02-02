@@ -22,6 +22,7 @@ export default function NewsMcpAppMode() {
     if (window === window.parent)
       return;
 
+    let isMounted = true;
     const mcpApp = new App(
       { name: 'Brave News Search', version: '1.0.0' },
       {
@@ -31,25 +32,33 @@ export default function NewsMcpAppMode() {
       },
     );
 
+    // Register handlers before connecting to avoid missing early events.
+    mcpApp.ontoolresult = (params) => {
+      const result = params as any;
+      const content = result?._meta?.structuredContent ?? result?.structuredContent;
+      if (content) {
+        setToolResult({ structuredContent: content });
+      }
+    };
+
     // Initial connection
     mcpApp.connect(new PostMessageTransport(window.parent, window.parent))
       .then(() => {
+        if (!isMounted) {
+          mcpApp.close();
+          return;
+        }
         setApp(mcpApp);
-
-        // Setup notification handlers
-        mcpApp.ontoolresult = (params) => {
-          // Update local state when tool completes
-          const result = params as any;
-          const content = result?._meta?.structuredContent ?? result?.structuredContent;
-          if (content) {
-            setToolResult({ structuredContent: content });
-          }
-        };
       })
-      .catch(err => console.error('Failed to connect to host:', err));
+      .catch((err) => {
+        if (isMounted) {
+          console.error('Failed to connect to host:', err);
+        }
+      });
 
     return () => {
-      // Cleanup if needed
+      isMounted = false;
+      mcpApp.close();
     };
   }, []);
 

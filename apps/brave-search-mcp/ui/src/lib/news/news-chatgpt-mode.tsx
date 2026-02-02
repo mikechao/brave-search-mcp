@@ -49,8 +49,6 @@ export default function NewsChatGPTMode() {
   // Use local state if we've loaded a new page, otherwise use initial
   const currentData = toolOutput ?? initialData;
 
-  console.log('NewsChaptGPTMode', window.openai?.safeArea);
-
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
     try {

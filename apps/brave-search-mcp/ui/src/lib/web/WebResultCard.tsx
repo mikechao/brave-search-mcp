@@ -67,40 +67,43 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
   }, [item.description]);
 
   return (
-    <button
-      className={`web-result ${isInContext ? 'web-result--in-context' : ''}`}
-      onClick={handleClick}
-      style={{ animationDelay: `${index * 40}ms` }}
-    >
-      {/* URL line with favicon */}
-      <div className="web-result-url-line">
-        {item.favicon
-          ? (
-              <img
-                src={item.favicon}
-                alt=""
-                className="web-result-favicon"
-                width={16}
-                height={16}
-              />
-            )
-          : (
-              <Globe width={16} height={16} className="web-result-favicon-placeholder" />
-            )}
-        <span className="web-result-domain">{item.domain}</span>
-        {item.age && (
-          <>
-            <span className="web-result-dot">•</span>
-            <span className="web-result-age">{item.age}</span>
-          </>
-        )}
-      </div>
+    <article className="web-result-shell">
+      <button
+        type="button"
+        className={`web-result ${isInContext ? 'web-result--in-context' : ''}`}
+        onClick={handleClick}
+        style={{ animationDelay: `${index * 40}ms` }}
+      >
+        {/* URL line with favicon */}
+        <div className="web-result-url-line">
+          {item.favicon
+            ? (
+                <img
+                  src={item.favicon}
+                  alt=""
+                  className="web-result-favicon"
+                  width={16}
+                  height={16}
+                />
+              )
+            : (
+                <Globe width={16} height={16} className="web-result-favicon-placeholder" />
+              )}
+          <span className="web-result-domain">{item.domain}</span>
+          {item.age && (
+            <>
+              <span className="web-result-dot">•</span>
+              <span className="web-result-age">{item.age}</span>
+            </>
+          )}
+        </div>
 
-      {/* Title - strip HTML since we don't want formatting in titles */}
-      <h3 className="web-result-title">{stripHtml(item.title)}</h3>
+        {/* Title - strip HTML since we don't want formatting in titles */}
+        <h3 className="web-result-title">{stripHtml(item.title)}</h3>
 
-      {/* Description - render sanitized HTML as React nodes to preserve highlights */}
-      <div className="web-result-description">{descriptionNodes}</div>
+        {/* Description - render sanitized HTML as React nodes to preserve highlights */}
+        <div className="web-result-description">{descriptionNodes}</div>
+      </button>
 
       {/* Context toggle button */}
       {onToggleContext && (
@@ -114,6 +117,6 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
           {isInContext ? <Check width={16} height={16} /> : <Plus width={16} height={16} />}
         </button>
       )}
-    </button>
+    </article>
   );
 }
