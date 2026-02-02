@@ -153,6 +153,7 @@
   font-size: 13px;
   line-height: 1.45;
   color: var(--muted);
+  min-height: calc(1.45em * 2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

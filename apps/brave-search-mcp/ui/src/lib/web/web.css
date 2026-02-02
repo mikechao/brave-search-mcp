@@ -37,10 +37,13 @@
     border-color 0.2s ease;
   animation: fadeInUp 0.3s ease both;
   position: relative;
+  width: 100%;
 }
 
 .web-result-shell {
   position: relative;
+  width: 100%;
+  min-width: 0;
 }
 
 .web-result:hover {
@@ -110,6 +113,7 @@
   color: var(--bg-ink);
   line-height: 1.5;
   margin: 0;
+  min-height: calc(1.5em * 2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
