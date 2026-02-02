@@ -33,7 +33,7 @@ export class BraveMcpServer {
       {
         name: 'Brave Search MCP Server',
         description: 'A server that provides tools for searching the web, images, videos, and local businesses using the Brave Search API.',
-        version: '1.0.0',
+        version: '2.0.1',
       },
       {
         capabilities: {
