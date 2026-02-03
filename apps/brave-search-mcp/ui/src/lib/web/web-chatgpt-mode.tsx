@@ -4,7 +4,7 @@ import type { ContextResult, WebSearchData } from './types';
  * Uses custom useOpenAiGlobal hook for reactive updates
  */
 import type { WebSearchAppProps } from './WebSearchApp';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import WebSearchApp from './WebSearchApp';
 
@@ -13,7 +13,7 @@ import WebSearchApp from './WebSearchApp';
  */
 export default function WebChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const [toolOutput, setToolOutput] = useState<WebSearchData | null>(null);
+  const [pagedOutput, setPagedOutput] = useState<WebSearchData | null>(null);
 
   // Access tool input (arguments) for loading state detection
   const toolInput = useToolInput() as { query?: string } | null;
@@ -45,8 +45,21 @@ export default function WebChatGPTMode() {
   const [isLoading, setIsLoading] = useState(false);
   const [contextResults, setContextResults] = useState<ContextResult[]>([]);
 
-  // Use local state if we've loaded a new page, otherwise use initial
-  const currentData = toolOutput ?? initialData;
+  // Keep paginated data only for the active query.
+  const hostQuery = toolInput?.query ?? initialData?.query ?? null;
+  const currentData = pagedOutput && hostQuery && pagedOutput.query === hostQuery
+    ? pagedOutput
+    : initialData;
+
+  useEffect(() => {
+    if (pagedOutput && hostQuery && pagedOutput.query !== hostQuery) {
+      const timeoutId = setTimeout(() => {
+        setPagedOutput(null);
+        setIsLoading(false);
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [hostQuery, pagedOutput]);
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
@@ -88,7 +101,7 @@ export default function WebChatGPTMode() {
 
       if (newData) {
         // Update local state with new results
-        setToolOutput(newData);
+        setPagedOutput(newData);
       }
     }
     catch (err) {

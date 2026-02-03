@@ -4,7 +4,7 @@
  */
 import type { LocalSearchAppProps } from './LocalSearchApp';
 import type { ContextPlace, LocalSearchData } from './types';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import LocalSearchApp from './LocalSearchApp';
 
@@ -13,7 +13,7 @@ import LocalSearchApp from './LocalSearchApp';
  */
 export default function LocalChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const [toolOutput, setToolOutput] = useState<LocalSearchData | null>(null);
+  const [pagedOutput, setPagedOutput] = useState<LocalSearchData | null>(null);
 
   // Access tool input (arguments) for loading state detection
   const toolInput = useToolInput() as { query?: string } | null;
@@ -46,8 +46,21 @@ export default function LocalChatGPTMode() {
   const [isLoading, setIsLoading] = useState(false);
   const [contextPlaces, setContextPlaces] = useState<ContextPlace[]>([]);
 
-  // Use local state if we've loaded a new page, otherwise use initial
-  const currentData = toolOutput ?? initialData;
+  // Keep paginated data only for the active query.
+  const hostQuery = toolInput?.query ?? initialData?.query ?? null;
+  const currentData = pagedOutput && hostQuery && pagedOutput.query === hostQuery
+    ? pagedOutput
+    : initialData;
+
+  useEffect(() => {
+    if (pagedOutput && hostQuery && pagedOutput.query !== hostQuery) {
+      const timeoutId = setTimeout(() => {
+        setPagedOutput(null);
+        setIsLoading(false);
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [hostQuery, pagedOutput]);
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
@@ -88,7 +101,7 @@ export default function LocalChatGPTMode() {
       const newData = result?.meta?.structuredContent ?? result?._meta?.structuredContent ?? result?.structuredContent;
 
       if (newData) {
-        setToolOutput(newData);
+        setPagedOutput(newData);
       }
     }
     catch (err) {

@@ -4,7 +4,7 @@ import type { ContextVideo, VideoSearchData } from './types';
  * Uses custom useOpenAiGlobal hook for reactive updates
  */
 import type { VideoSearchAppProps } from './VideoSearchApp';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import VideoSearchApp from './VideoSearchApp';
 
@@ -13,7 +13,7 @@ import VideoSearchApp from './VideoSearchApp';
  */
 export default function VideoChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const [toolOutput, setToolOutput] = useState<VideoSearchData | null>(null);
+  const [pagedOutput, setPagedOutput] = useState<VideoSearchData | null>(null);
 
   // Access tool input (arguments) for loading state detection
   const toolInput = useToolInput() as { query?: string } | null;
@@ -46,8 +46,21 @@ export default function VideoChatGPTMode() {
   const [isLoading, setIsLoading] = useState(false);
   const [contextVideos, setContextVideos] = useState<ContextVideo[]>([]);
 
-  // Use local state if we've loaded a new page, otherwise use initial
-  const currentData = toolOutput ?? initialData;
+  // Keep paginated data only for the active query.
+  const hostQuery = toolInput?.query ?? initialData?.query ?? null;
+  const currentData = pagedOutput && hostQuery && pagedOutput.query === hostQuery
+    ? pagedOutput
+    : initialData;
+
+  useEffect(() => {
+    if (pagedOutput && hostQuery && pagedOutput.query !== hostQuery) {
+      const timeoutId = setTimeout(() => {
+        setPagedOutput(null);
+        setIsLoading(false);
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [hostQuery, pagedOutput]);
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
@@ -89,7 +102,7 @@ export default function VideoChatGPTMode() {
 
       if (newData) {
         // Update local state with new results
-        setToolOutput(newData);
+        setPagedOutput(newData);
       }
     }
     catch (err) {

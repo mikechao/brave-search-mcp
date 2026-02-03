@@ -4,7 +4,7 @@
  */
 import type { NewsSearchAppProps } from './NewsSearchApp';
 import type { ContextArticle, NewsSearchData } from './types';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import NewsSearchApp from './NewsSearchApp';
 
@@ -13,7 +13,7 @@ import NewsSearchApp from './NewsSearchApp';
  */
 export default function NewsChatGPTMode() {
   // Use reactive hooks instead of manual polling
-  const [toolOutput, setToolOutput] = useState<NewsSearchData | null>(null);
+  const [pagedOutput, setPagedOutput] = useState<NewsSearchData | null>(null);
 
   // Access tool input (arguments) for loading state detection
   const toolInput = useToolInput() as { query?: string } | null;
@@ -46,8 +46,21 @@ export default function NewsChatGPTMode() {
   const [isLoading, setIsLoading] = useState(false);
   const [contextArticles, setContextArticles] = useState<ContextArticle[]>([]);
 
-  // Use local state if we've loaded a new page, otherwise use initial
-  const currentData = toolOutput ?? initialData;
+  // Keep paginated data only for the active query.
+  const hostQuery = toolInput?.query ?? initialData?.query ?? null;
+  const currentData = pagedOutput && hostQuery && pagedOutput.query === hostQuery
+    ? pagedOutput
+    : initialData;
+
+  useEffect(() => {
+    if (pagedOutput && hostQuery && pagedOutput.query !== hostQuery) {
+      const timeoutId = setTimeout(() => {
+        setPagedOutput(null);
+        setIsLoading(false);
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [hostQuery, pagedOutput]);
 
   const handleOpenLink = async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
@@ -89,7 +102,7 @@ export default function NewsChatGPTMode() {
 
       if (newData) {
         // Update local state with new results
-        setToolOutput(newData);
+        setPagedOutput(newData);
       }
     }
     catch (err) {
