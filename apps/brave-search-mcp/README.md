@@ -264,58 +264,9 @@ brave-search:
     - BRAVE_API_KEY=API KEY npx -y brave-search-mcp
 ```
 
-## Monorepo Structure
-
-This repository is a monorepo. The MCP server lives in `apps/brave-search-mcp`, and the shared Brave Search SDK lives in `packages/brave-search`. Most development and release work happens from the repo root using `pnpm` and `turbo`.
-
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## MCP Bundles (MCPB)
-
-Anthropic recently released [MCP Bundles](https://github.com/modelcontextprotocol/mcpb/) allowing installation of local MCP Servers with one click.
-
-Install the CLI tool to help generate both `manifest.json` and final `.mcpb` file.
-
-```sh
-npm install -g @anthropic-ai/mcpb
-```
-
-### Creating the manifest.json file
-
-1. In this folder/directory which contains the local MCP Server, run `mcpb init`. The command will start an interactive CLI to help create the `manifest.json`.
-
-### Creating the `mcpb` file
-
-1. First install dev dependencies and build
-
-```sh
-pnpm install
-pnpm run build
-```
-
-2. Then install only the production dependencies, generate a smaller nodule_modules directory
-
-```sh
-pnpm install --prod
-```
-
-3. Run `mcpb pack` to create a `mcpb` file. This will also validate the manifest.json that was created. The `mcpb` is essentially a zip file and will contain everything in this directory.
-
-## Releasing the package
-
-- The `brave-search` SDK is bundled into the server build; only `apps/brave-search-mcp` is published to npm.
-- Requires Node 20+ (see the `engines` field in `apps/brave-search-mcp/package.json`). CI uses Node 24.
-- Build with `pnpm -C apps/brave-search-mcp build` (or `pnpm -C apps/brave-search-mcp build:all`).
-  - If pnpm blocks esbuild postinstall, run `pnpm approve-builds` and allow `esbuild`.
-- To release (e.g. 1.0.1):
-  1. Run `pnpm changeset` and select `brave-search-mcp` with a patch bump.
-  2. Apply versions + sync manifest with `pnpm -C apps/brave-search-mcp changeset:version`.
-  3. Commit and push the version changes.
-  4. Create a GitHub release/tag (this triggers the publish workflow).
-- If user-facing behavior changes, create a changeset in `.changeset/` before releasing.
-- Verify locally with `BRAVE_API_KEY=... node dist/index.js --http`.
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, monorepo structure, and release instructions.
 
 ## Disclaimer
 
