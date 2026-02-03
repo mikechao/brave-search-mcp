@@ -4,10 +4,13 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { ImageSearchData } from './types';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { useDisplayMode, useSafeArea, useToolInput, useToolOutput } from '../../hooks/useOpenAiGlobal';
 import ImageSearchApp from './ImageSearchApp';
 
 export default function ImageChatGPTMode() {
+  useAppTheme();
+
   // Use reactive hooks instead of manual polling
   const toolOutput = useToolOutput() as unknown as ImageSearchData | null;
 

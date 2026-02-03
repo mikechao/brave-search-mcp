@@ -4,7 +4,6 @@
  */
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useAppTheme } from '../../hooks/useAppTheme';
 import { useRuntimeMode } from '../../hooks/useRuntimeMode';
 import '../../global.css';
 import './news.css';
@@ -14,7 +13,6 @@ const NewsMcpAppMode = lazy(() => import('./news-mcp-mode.tsx'));
 const NewsChatGPTMode = lazy(() => import('./news-chatgpt-mode.tsx'));
 
 function NewsAppWrapper() {
-  useAppTheme();
   const mode = useRuntimeMode('News');
 
   if (mode === 'detecting') {

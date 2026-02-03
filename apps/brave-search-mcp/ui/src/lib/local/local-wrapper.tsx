@@ -4,7 +4,6 @@
  */
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useAppTheme } from '../../hooks/useAppTheme';
 import { useRuntimeMode } from '../../hooks/useRuntimeMode';
 import '../../global.css';
 import './local.css';
@@ -14,7 +13,6 @@ const LocalMcpAppMode = lazy(() => import('./local-mcp-mode.tsx'));
 const LocalChatGPTMode = lazy(() => import('./local-chatgpt-mode.tsx'));
 
 function LocalAppWrapper() {
-  useAppTheme();
   const mode = useRuntimeMode('Local');
 
   if (mode === 'detecting') {

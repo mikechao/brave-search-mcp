@@ -7,6 +7,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { WidgetProps } from '../../widget-props';
 import { App, PostMessageTransport } from '@modelcontextprotocol/ext-apps';
 import { useCallback, useEffect, useState } from 'react';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import WebSearchApp from './WebSearchApp';
 
 const APP_INFO = { name: 'Brave Web Search', version: '1.0.0' };
@@ -18,6 +19,8 @@ export default function WebMcpAppMode() {
   const [toolInputsPartial, setToolInputsPartial] = useState<Record<string, unknown> | null>(null);
   const [toolResult, setToolResult] = useState<CallToolResult | null>(null);
   const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
+  const hostTheme = (hostContext as { theme?: unknown } | null)?.theme;
+  useAppTheme(hostTheme === 'light' || hostTheme === 'dark' ? hostTheme : undefined);
 
   useEffect(() => {
     // Create App manually with autoResize disabled

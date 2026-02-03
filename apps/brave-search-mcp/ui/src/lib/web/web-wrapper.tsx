@@ -4,7 +4,6 @@
  */
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useAppTheme } from '../../hooks/useAppTheme';
 import { useRuntimeMode } from '../../hooks/useRuntimeMode';
 import '../../global.css';
 import './web.css';
@@ -14,7 +13,6 @@ const WebMcpAppMode = lazy(() => import('./web-mcp-mode.tsx'));
 const WebChatGPTMode = lazy(() => import('./web-chatgpt-mode.tsx'));
 
 function WebAppWrapper() {
-  useAppTheme();
   const mode = useRuntimeMode('Web');
 
   if (mode === 'detecting') {

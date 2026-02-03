@@ -4,7 +4,6 @@
  */
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useAppTheme } from '../../hooks/useAppTheme';
 import { useRuntimeMode } from '../../hooks/useRuntimeMode';
 import '../../global.css';
 import './video.css';
@@ -14,7 +13,6 @@ const VideoMcpAppMode = lazy(() => import('./video-mcp-mode.tsx'));
 const VideoChatGPTMode = lazy(() => import('./video-chatgpt-mode.tsx'));
 
 function VideoAppWrapper() {
-  useAppTheme();
   const mode = useRuntimeMode('Video');
 
   if (mode === 'detecting') {

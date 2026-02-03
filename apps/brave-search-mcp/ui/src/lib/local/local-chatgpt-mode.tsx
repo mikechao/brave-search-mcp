@@ -5,6 +5,7 @@
 import type { LocalSearchAppProps } from './LocalSearchApp';
 import type { ContextPlace, LocalSearchData } from './types';
 import { useCallback, useEffect, useState } from 'react';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import LocalSearchApp from './LocalSearchApp';
 
@@ -12,6 +13,8 @@ import LocalSearchApp from './LocalSearchApp';
  * ChatGPT mode wrapper with context selection and pagination support
  */
 export default function LocalChatGPTMode() {
+  useAppTheme();
+
   // Use reactive hooks instead of manual polling
   const [pagedOutput, setPagedOutput] = useState<LocalSearchData | null>(null);
 

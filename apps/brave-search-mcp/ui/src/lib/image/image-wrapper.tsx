@@ -4,7 +4,6 @@
  */
 import { lazy, StrictMode, Suspense } from 'react';
 import { createRoot } from 'react-dom/client';
-import { useAppTheme } from '../../hooks/useAppTheme';
 import { useRuntimeMode } from '../../hooks/useRuntimeMode';
 import '../../global.css';
 import './image.css';
@@ -14,7 +13,6 @@ const ImageMcpAppMode = lazy(() => import('./image-mcp-mode.tsx'));
 const ImageChatGPTMode = lazy(() => import('./image-chatgpt-mode.tsx'));
 
 function ImageAppWrapper() {
-  useAppTheme();
   const mode = useRuntimeMode('Image');
 
   if (mode === 'detecting') {

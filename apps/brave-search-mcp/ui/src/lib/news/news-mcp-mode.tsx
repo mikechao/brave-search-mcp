@@ -1,10 +1,12 @@
 /**
  * News Search - MCP App mode with pagination and context selection support
  */
+import type { McpUiHostContext } from '@modelcontextprotocol/ext-apps';
 import type { NewsSearchAppProps } from './NewsSearchApp';
 import type { ContextArticle, NewsSearchData } from './types';
 import { App, PostMessageTransport } from '@modelcontextprotocol/ext-apps';
 import { useCallback, useEffect, useState } from 'react';
+import { useAppTheme } from '../../hooks/useAppTheme';
 import NewsSearchApp from './NewsSearchApp';
 
 /**
@@ -15,6 +17,9 @@ export default function NewsMcpAppMode() {
   const [toolResult, setToolResult] = useState<{ structuredContent?: NewsSearchData } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [contextArticles, setContextArticles] = useState<ContextArticle[]>([]);
+  const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
+  const hostTheme = (hostContext as { theme?: unknown } | null)?.theme;
+  useAppTheme(hostTheme === 'light' || hostTheme === 'dark' ? hostTheme : undefined);
 
   // Initialize App SDK
   useEffect(() => {
@@ -40,6 +45,9 @@ export default function NewsMcpAppMode() {
         setToolResult({ structuredContent: content });
       }
     };
+    mcpApp.onhostcontextchanged = (params) => {
+      setHostContext(prev => ({ ...prev, ...params }));
+    };
 
     // Initial connection
     mcpApp.connect(new PostMessageTransport(window.parent, window.parent))
@@ -49,6 +57,9 @@ export default function NewsMcpAppMode() {
           return;
         }
         setApp(mcpApp);
+        const ctx = mcpApp.getHostContext();
+        if (ctx)
+          setHostContext(ctx);
       })
       .catch((err) => {
         if (isMounted) {

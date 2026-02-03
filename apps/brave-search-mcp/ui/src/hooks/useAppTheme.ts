@@ -3,17 +3,19 @@ import { useEffect } from 'react';
 import { useTheme } from './useOpenAiGlobal';
 
 const DARK_MEDIA_QUERY = '(prefers-color-scheme: dark)';
+type AppTheme = 'light' | 'dark';
 
-function getSystemTheme(): 'light' | 'dark' {
+function getSystemTheme(): AppTheme {
   return window.matchMedia?.(DARK_MEDIA_QUERY).matches ? 'dark' : 'light';
 }
 
-export function useAppTheme() {
-  const hostTheme = useTheme();
+export function useAppTheme(overrideTheme?: AppTheme) {
+  const openAiTheme = useTheme();
 
   useEffect(() => {
-    if (hostTheme === 'light' || hostTheme === 'dark') {
-      applyDocumentTheme(hostTheme);
+    const theme = overrideTheme ?? (openAiTheme === 'light' || openAiTheme === 'dark' ? openAiTheme : undefined);
+    if (theme) {
+      applyDocumentTheme(theme);
       return;
     }
 
@@ -39,5 +41,5 @@ export function useAppTheme() {
     return () => {
       media.removeListener?.(handleChange);
     };
-  }, [hostTheme]);
+  }, [openAiTheme, overrideTheme]);
 }
