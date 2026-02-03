@@ -73,11 +73,13 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
         - py: Discovered within the last 365 Days
         - YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)
 
-## OpenAI Apps & MCP-APPs Support
+## OpenAI Apps & MCP Apps Support
 
 <p align="center" width="100%">
 <video src="https://github.com/user-attachments/assets/67f91142-e3a0-4f1f-817f-d92c576e5dd5" width="80%" controls></video>
 </p>
+
+There is now support for [OpenAI Apps](https://developers.openai.com/apps-sdk/) and [MCP Apps](https://modelcontextprotocol.io/docs/extensions/apps) in this MCP Server. When UI mode is enabled for each tool there is a corresponding UI widget that let's you control what gets added to the model's context. See the directions in [usage with ChatGPT section](#usage-with-chatgpt).
 
 ## Configuration
 
@@ -124,10 +126,10 @@ Settings → Apps → Advanced settings → Developer mode
 
 Additional instructions [here](https://platform.openai.com/docs/guides/developer-mode)
 
-#### 2. Run the Brave Search MCP in HTTP mode
+#### 2. Run the Brave Search MCP in HTTP mode and UI mode
 
 ```bash
-BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http
+BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http --ui
 ```
 
 #### 3. Create a local tunnel to expose the MCP Server to ChatGPT
