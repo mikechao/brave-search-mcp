@@ -4,10 +4,11 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { ContextPlace, LocalBusinessItem, LocalSearchData } from './types';
-import { useRef, useState } from 'react';
+import { lazy, Suspense, useRef, useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { LocalBusinessCard } from './LocalBusinessCard';
-import { LocalMap } from './LocalMap';
+
+const LocalMap = lazy(() => import('./LocalMap').then(module => ({ default: module.LocalMap })));
 
 export interface LocalSearchAppProps extends WidgetProps {
   /** Callback to load a different page of results */
@@ -154,6 +155,7 @@ export default function LocalSearchApp({
   };
 
   const pageNumber = currentOffset + 1;
+  const hasMapData = items.some(item => item.coordinates) || contextPlaces.some(place => place.coordinates);
 
   return (
     <SearchAppLayout
@@ -211,13 +213,29 @@ export default function LocalSearchApp({
 
         {/* Right: Map */}
         <div className="local-map-wrapper">
-          <LocalMap
-            items={items}
-            selectedIndex={selectedIndex}
-            onSelectIndex={handleSelectFromMap}
-            displayMode={displayMode}
-            contextPlaces={contextPlaces}
-          />
+          {hasMapData
+            ? (
+                <Suspense
+                  fallback={(
+                    <div className="local-map-empty">
+                      <p>Loading map...</p>
+                    </div>
+                  )}
+                >
+                  <LocalMap
+                    items={items}
+                    selectedIndex={selectedIndex}
+                    onSelectIndex={handleSelectFromMap}
+                    displayMode={displayMode}
+                    contextPlaces={contextPlaces}
+                  />
+                </Suspense>
+              )
+            : (
+                <div className="local-map-empty">
+                  <p>No location data available</p>
+                </div>
+              )}
         </div>
       </div>
     </SearchAppLayout>

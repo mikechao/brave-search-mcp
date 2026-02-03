@@ -14,7 +14,9 @@ import {
   Plus,
   Star,
 } from '@openai/apps-sdk-ui/components/Icon';
-import ReactMarkdown from 'react-markdown';
+import { lazy, Suspense } from 'react';
+
+const LocalBusinessDescription = lazy(() => import('./LocalBusinessDescription'));
 
 interface LocalBusinessCardProps {
   item: LocalBusinessItem;
@@ -200,7 +202,9 @@ export function LocalBusinessCard({
             <div className="local-detail-section">
               <div className="local-detail-label">About</div>
               <div className="local-description">
-                <ReactMarkdown>{item.description}</ReactMarkdown>
+                <Suspense fallback={<p>Loading details...</p>}>
+                  <LocalBusinessDescription description={item.description} />
+                </Suspense>
               </div>
             </div>
           )}
