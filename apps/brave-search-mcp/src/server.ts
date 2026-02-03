@@ -15,6 +15,7 @@ const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '
 
 /** ChatGPT Apps SDK MIME type for widget resources */
 const CHATGPT_MIME_TYPE = 'text/html+skybridge';
+const OPENAI_CDN_RESOURCE_DOMAIN = 'https://cdn.openai.com';
 
 export class BraveMcpServer {
   private server: McpServer;
@@ -88,7 +89,7 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/image/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com'] },
+          { resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
         );
       },
     );
@@ -104,7 +105,7 @@ export class BraveMcpServer {
           CHATGPT_MIME_TYPE,
           'src/lib/image/chatgpt-app.html',
           undefined,
-          { resource_domains: ['https://imgs.search.brave.com'] },
+          { resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
           'mc-brave-search-mcp',
         );
       },
@@ -153,7 +154,7 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/news/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com'] },
+          { resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
         );
       },
     );
@@ -169,7 +170,7 @@ export class BraveMcpServer {
           CHATGPT_MIME_TYPE,
           'src/lib/news/chatgpt-app.html',
           undefined,
-          { resource_domains: ['https://imgs.search.brave.com'] },
+          { resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
           'mc-brave-search-mcp',
         );
       },
@@ -316,7 +317,7 @@ export class BraveMcpServer {
           RESOURCE_MIME_TYPE,
           'src/lib/video/mcp-app.html',
           {
-            resourceDomains: ['https://imgs.search.brave.com'],
+            resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
             frameDomains: ['https://www.youtube.com', 'https://player.vimeo.com'],
           },
         );
@@ -335,7 +336,7 @@ export class BraveMcpServer {
           'src/lib/video/chatgpt-app.html',
           undefined,
           {
-            resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com'],
+            resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com', OPENAI_CDN_RESOURCE_DOMAIN],
             frame_domains: ['https://www.youtube.com', 'https://youtube.com', 'https://player.vimeo.com', 'https://vimeo.com'],
           },
           'mc-brave-search-mcp',
@@ -402,7 +403,7 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/web/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com'] },
+          { resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
         );
       },
     );
@@ -418,7 +419,7 @@ export class BraveMcpServer {
           CHATGPT_MIME_TYPE,
           'src/lib/web/chatgpt-app.html',
           undefined,
-          { resource_domains: ['https://imgs.search.brave.com'] },
+          { resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
           'mc-brave-search-mcp',
         );
       },
@@ -489,6 +490,7 @@ export class BraveMcpServer {
               'https://b.tile.openstreetmap.org',
               'https://c.tile.openstreetmap.org',
               'https://cdnjs.cloudflare.com',
+              OPENAI_CDN_RESOURCE_DOMAIN,
             ],
           },
         );
@@ -513,6 +515,7 @@ export class BraveMcpServer {
               'https://b.tile.openstreetmap.org',
               'https://c.tile.openstreetmap.org',
               'https://cdnjs.cloudflare.com',
+              OPENAI_CDN_RESOURCE_DOMAIN,
             ],
           },
           'mc-brave-search-mcp',
