@@ -19,8 +19,7 @@ export default function VideoMcpAppMode() {
   const [toolInputsPartial, setToolInputsPartial] = useState<Record<string, unknown> | null>(null);
   const [toolResult, setToolResult] = useState<CallToolResult | null>(null);
   const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
-  const hostTheme = (hostContext as { theme?: unknown } | null)?.theme;
-  useAppTheme(hostTheme === 'light' || hostTheme === 'dark' ? hostTheme : undefined);
+  useAppTheme(hostContext?.theme);
 
   useEffect(() => {
     // Create App manually with autoResize disabled, declaring PiP support

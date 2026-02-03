@@ -5,7 +5,7 @@
 import type { NewsSearchAppProps } from './NewsSearchApp';
 import type { ContextArticle, NewsSearchData } from './types';
 import { useCallback, useEffect, useState } from 'react';
-import { useAppTheme } from '../../hooks/useAppTheme';
+import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import NewsSearchApp from './NewsSearchApp';
 
@@ -13,7 +13,7 @@ import NewsSearchApp from './NewsSearchApp';
  * ChatGPT mode wrapper with context selection support
  */
 export default function NewsChatGPTMode() {
-  useAppTheme();
+  useOpenAiAppTheme();
 
   // Use reactive hooks instead of manual polling
   const [pagedOutput, setPagedOutput] = useState<NewsSearchData | null>(null);

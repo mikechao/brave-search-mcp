@@ -5,7 +5,7 @@ import type { ContextVideo, VideoSearchData } from './types';
  */
 import type { VideoSearchAppProps } from './VideoSearchApp';
 import { useCallback, useEffect, useState } from 'react';
-import { useAppTheme } from '../../hooks/useAppTheme';
+import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import VideoSearchApp from './VideoSearchApp';
 
@@ -13,7 +13,7 @@ import VideoSearchApp from './VideoSearchApp';
  * ChatGPT mode wrapper with context selection support
  */
 export default function VideoChatGPTMode() {
-  useAppTheme();
+  useOpenAiAppTheme();
 
   // Use reactive hooks instead of manual polling
   const [pagedOutput, setPagedOutput] = useState<VideoSearchData | null>(null);

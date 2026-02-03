@@ -5,7 +5,7 @@ import type { ContextResult, WebSearchData } from './types';
  */
 import type { WebSearchAppProps } from './WebSearchApp';
 import { useCallback, useEffect, useState } from 'react';
-import { useAppTheme } from '../../hooks/useAppTheme';
+import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { useDisplayMode, useSafeArea, useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import WebSearchApp from './WebSearchApp';
 
@@ -13,7 +13,7 @@ import WebSearchApp from './WebSearchApp';
  * ChatGPT mode wrapper with context selection support
  */
 export default function WebChatGPTMode() {
-  useAppTheme();
+  useOpenAiAppTheme();
 
   // Use reactive hooks instead of manual polling
   const [pagedOutput, setPagedOutput] = useState<WebSearchData | null>(null);

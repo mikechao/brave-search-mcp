@@ -10,12 +10,9 @@ function getSystemTheme(): AppTheme {
 }
 
 export function useAppTheme(overrideTheme?: AppTheme) {
-  const openAiTheme = useTheme();
-
   useEffect(() => {
-    const theme = overrideTheme ?? (openAiTheme === 'light' || openAiTheme === 'dark' ? openAiTheme : undefined);
-    if (theme) {
-      applyDocumentTheme(theme);
+    if (overrideTheme) {
+      applyDocumentTheme(overrideTheme);
       return;
     }
 
@@ -41,5 +38,10 @@ export function useAppTheme(overrideTheme?: AppTheme) {
     return () => {
       media.removeListener?.(handleChange);
     };
-  }, [openAiTheme, overrideTheme]);
+  }, [overrideTheme]);
+}
+
+export function useOpenAiAppTheme() {
+  const openAiTheme = useTheme();
+  useAppTheme(openAiTheme === 'light' || openAiTheme === 'dark' ? openAiTheme : undefined);
 }

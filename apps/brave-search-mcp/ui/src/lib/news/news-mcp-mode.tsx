@@ -18,8 +18,7 @@ export default function NewsMcpAppMode() {
   const [isLoading, setIsLoading] = useState(false);
   const [contextArticles, setContextArticles] = useState<ContextArticle[]>([]);
   const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
-  const hostTheme = (hostContext as { theme?: unknown } | null)?.theme;
-  useAppTheme(hostTheme === 'light' || hostTheme === 'dark' ? hostTheme : undefined);
+  useAppTheme(hostContext?.theme);
 
   // Initialize App SDK
   useEffect(() => {
