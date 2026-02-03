@@ -73,6 +73,12 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
         - py: Discovered within the last 365 Days
         - YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)
 
+## OpenAI Apps & MCP-APPs Support
+
+<p align="center" width="100%">
+<video src="https://github.com/user-attachments/assets/67f91142-e3a0-4f1f-817f-d92c576e5dd5" width="80%" controls></video>
+</p>
+
 ## Configuration
 
 ### Getting an API Key
