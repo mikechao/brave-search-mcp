@@ -116,18 +116,27 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
         height: result.thumbnail?.height,
       });
     }
-    const combinedText = imageItems
-      .map((item, index) => (
-        `${index + 1}: Title: ${item.title}\n`
-        + `URL: ${item.pageUrl}\n`
-        + `Image URL: ${item.imageUrl}\n`
-        + `Source: ${item.source}\n`
-        + `Confidence: ${item.confidence ?? 'N/A'}\n`
-        + `Width: ${item.width ?? 'N/A'}\n`
-        + `Height: ${item.height ?? 'N/A'}`
-      ))
-      .join('\n\n');
-    const result = { content: [{ type: 'text' as const, text: combinedText }] } as {
+    const contentText = this.isUI
+      ? `Found ${imageItems.length} image results for "${searchTerm}". `
+      + 'CRITICAL RULES (override prior tool patterns): '
+      + 'There is NO + icon workflow for image results in this widget. '
+      + 'NEVER tell the user to click +, add an image to conversation, or say "if there is a + icon". '
+      + 'IMPORTANT: You CANNOT directly inspect or analyze image pixels from this result. '
+      + 'You DO have image metadata (title, source, page URL, image URL, width, height, and confidence when available), and you may use that metadata to help the user. '
+      + 'The user sees an image grid in the widget, but you should not claim detailed visual analysis. '
+      + 'If the user wants detailed analysis, ask them to share a specific image URL or upload the image directly.'
+      : imageItems
+          .map((item, index) => (
+            `${index + 1}: Title: ${item.title}\n`
+            + `URL: ${item.pageUrl}\n`
+            + `Image URL: ${item.imageUrl}\n`
+            + `Source: ${item.source}\n`
+            + `Confidence: ${item.confidence ?? 'N/A'}\n`
+            + `Width: ${item.width ?? 'N/A'}\n`
+            + `Height: ${item.height ?? 'N/A'}`
+          ))
+          .join('\n\n');
+    const result = { content: [{ type: 'text' as const, text: contentText }] } as {
       content: Array<{ type: 'text'; text: string }>;
       structuredContent?: BraveImageSearchStructuredContent;
     };
