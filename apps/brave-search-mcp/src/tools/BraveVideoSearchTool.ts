@@ -47,6 +47,8 @@ const videoItemSchema = z.object({
 export const videoSearchOutputSchema = z.object({
   query: z.string(),
   count: z.number(),
+  pageSize: z.number().optional(),
+  returnedCount: z.number().optional(),
   offset: z.number().optional(),
   items: z.array(videoItemSchema),
   error: z.string().optional(),
@@ -111,10 +113,13 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
         isError: true,
       };
       if (this.isUI) {
+        const pageSize = input.count ?? 10;
         result._meta = {
           structuredContent: {
             query: input.query,
-            count: 0,
+            count: pageSize,
+            pageSize,
+            returnedCount: 0,
             items: [],
             error: message,
           },
@@ -126,8 +131,9 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
 
   public async executeCore(input: z.infer<typeof videoSearchInputSchema>) {
     const { query, count, offset, freshness } = input;
+    const requestedCount = count ?? 10;
     const videoSearchResults = await this.braveSearch.videoSearch(query, {
-      count,
+      count: requestedCount,
       offset,
       safesearch: SafeSearchLevel.Strict,
       ...(freshness ? { freshness } : {}),
@@ -145,7 +151,9 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
           structuredContent: {
             query,
             offset,
-            count: 0,
+            count: requestedCount,
+            pageSize: requestedCount,
+            returnedCount: 0,
             items: [],
           },
         };
@@ -235,7 +243,9 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
         structuredContent: {
           query,
           offset,
-          count: videoItems.length,
+          count: requestedCount,
+          pageSize: requestedCount,
+          returnedCount: videoItems.length,
           items: videoItems,
         },
       };

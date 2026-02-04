@@ -60,6 +60,8 @@ export default function VideoSearchApp({
   const error = data?.error;
   const hasData = Boolean(data);
   const currentOffset = data?.offset ?? 0;
+  const returnedCount = data?.returnedCount ?? items.length;
+  const pageSize = data?.pageSize ?? data?.count ?? items.length;
 
   // Pagination logic - Brave Video API has max offset of 9
   const MAX_OFFSET = 9;
@@ -200,7 +202,7 @@ export default function VideoSearchApp({
         variant="video"
         brandSub="Video Search"
         query={data?.query}
-        countLabel={`${data?.count ?? 0} videos`}
+        countLabel={`${returnedCount}/${pageSize} videos`}
         error={error}
         isInitialLoading={isInitialLoading}
         loadingQuery={loadingQuery}

@@ -47,6 +47,8 @@ export default function NewsSearchApp({
   const error = data?.error;
   const hasData = Boolean(data);
   const currentOffset = data?.offset ?? 0;
+  const returnedCount = data?.returnedCount ?? items.length;
+  const pageSize = data?.pageSize ?? data?.count ?? items.length;
 
   // Pagination logic - Brave News API has max offset of 9
   const MAX_OFFSET = 9;
@@ -142,7 +144,7 @@ export default function NewsSearchApp({
       variant="news"
       brandSub="News Search"
       query={data?.query}
-      countLabel={`${items.length} articles`}
+      countLabel={`${returnedCount}/${pageSize} articles`}
       error={error}
       isInitialLoading={isInitialLoading}
       loadingQuery={loadingQuery}

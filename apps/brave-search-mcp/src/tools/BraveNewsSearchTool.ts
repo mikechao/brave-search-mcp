@@ -42,6 +42,8 @@ const newsItemSchema = z.object({
 export const newsSearchOutputSchema = z.object({
   query: z.string(),
   count: z.number(),
+  pageSize: z.number().optional(),
+  returnedCount: z.number().optional(),
   offset: z.number().optional(),
   items: z.array(newsItemSchema),
   error: z.string().optional(),
@@ -83,10 +85,13 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
       };
 
       if (this.isUI) {
+        const pageSize = input.count ?? 10;
         result._meta = {
           structuredContent: {
             query: input.query,
-            count: 0,
+            count: pageSize,
+            pageSize,
+            returnedCount: 0,
             items: [],
             error: message,
           },
@@ -99,8 +104,9 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
 
   public async executeCore(input: z.infer<typeof newsSearchInputSchema>) {
     const { query, count, offset, freshness } = input;
+    const requestedCount = count ?? 10;
     const newsResult = await this.braveSearch.newsSearch(query, {
-      count,
+      count: requestedCount,
       offset,
       ...(freshness ? { freshness } : {}),
     });
@@ -116,7 +122,9 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
           structuredContent: {
             query,
             offset,
-            count: 0,
+            count: requestedCount,
+            pageSize: requestedCount,
+            returnedCount: 0,
             items: [],
           },
         };
@@ -196,7 +204,9 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
         structuredContent: {
           query,
           offset,
-          count: newsItems.length,
+          count: requestedCount,
+          pageSize: requestedCount,
+          returnedCount: newsItems.length,
           items: newsItems,
         },
       };

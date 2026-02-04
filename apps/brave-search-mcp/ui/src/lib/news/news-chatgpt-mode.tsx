@@ -96,7 +96,7 @@ export default function NewsChatGPTMode() {
     try {
       const result = await window.openai.callTool('brave_news_search', {
         query: currentData.query,
-        count: currentData.count || 10,
+        count: currentData.pageSize ?? currentData.count ?? 10,
         offset,
       }) as { structuredContent?: NewsSearchData; _meta?: { structuredContent?: NewsSearchData }; meta?: { structuredContent?: NewsSearchData } } | null;
 

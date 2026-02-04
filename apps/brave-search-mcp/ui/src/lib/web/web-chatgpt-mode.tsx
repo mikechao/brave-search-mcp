@@ -95,7 +95,7 @@ export default function WebChatGPTMode() {
     try {
       const result = await window.openai.callTool('brave_web_search', {
         query: currentData.query,
-        count: currentData.count || 10,
+        count: currentData.pageSize ?? currentData.count ?? 10,
         offset,
       }) as { structuredContent?: WebSearchData; _meta?: { structuredContent?: WebSearchData }; meta?: { structuredContent?: WebSearchData } } | null;
 

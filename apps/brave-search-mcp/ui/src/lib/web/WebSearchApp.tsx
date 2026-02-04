@@ -47,6 +47,8 @@ export default function WebSearchApp({
   const error = data?.error;
   const hasData = Boolean(data);
   const currentOffset = data?.offset ?? 0;
+  const returnedCount = data?.returnedCount ?? items.length;
+  const pageSize = data?.pageSize ?? data?.count ?? items.length;
 
   // Pagination logic - Brave Web API has max offset of 9
   const MAX_OFFSET = 9;
@@ -142,7 +144,7 @@ export default function WebSearchApp({
       variant="web"
       brandSub="Web Search"
       query={data?.query}
-      countLabel={`${items.length} results`}
+      countLabel={`${returnedCount}/${pageSize} results`}
       error={error}
       isInitialLoading={isInitialLoading}
       loadingQuery={loadingQuery}

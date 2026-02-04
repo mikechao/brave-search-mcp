@@ -21,6 +21,8 @@ export interface LocalBusinessItem {
 export interface LocalSearchData {
   query: string;
   count: number;
+  pageSize?: number;
+  returnedCount?: number;
   offset?: number;
   items: LocalBusinessItem[];
   fallbackToWeb?: boolean;

@@ -96,7 +96,7 @@ export default function LocalChatGPTMode() {
     try {
       const result = await window.openai.callTool('brave_local_search', {
         query: currentData.query,
-        count: currentData.count || 10,
+        count: currentData.pageSize ?? currentData.count ?? 10,
         offset,
       }) as { structuredContent?: LocalSearchData; _meta?: { structuredContent?: LocalSearchData }; meta?: { structuredContent?: LocalSearchData } } | null;
 

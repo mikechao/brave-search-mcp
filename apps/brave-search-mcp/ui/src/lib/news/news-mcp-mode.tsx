@@ -99,7 +99,7 @@ export default function NewsMcpAppMode() {
         name: 'brave_news_search',
         arguments: {
           query: toolResult.structuredContent.query,
-          count: toolResult.structuredContent.count || 10,
+          count: toolResult.structuredContent.pageSize ?? toolResult.structuredContent.count ?? 10,
           offset,
         },
       });

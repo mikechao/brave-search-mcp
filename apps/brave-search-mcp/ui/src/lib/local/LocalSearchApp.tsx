@@ -53,6 +53,8 @@ export default function LocalSearchApp({
   const fallbackToWeb = data?.fallbackToWeb;
   const hasData = Boolean(data);
   const currentOffset = data?.offset ?? 0;
+  const returnedCount = data?.returnedCount ?? items.length;
+  const pageSize = data?.pageSize ?? data?.count ?? items.length;
 
   // Pagination logic - Brave API has max offset of 9
   const MAX_OFFSET = 9;
@@ -162,7 +164,7 @@ export default function LocalSearchApp({
       variant="local"
       brandSub="Local Search"
       query={data?.query}
-      countLabel={`${data?.count ?? 0} PLACES`}
+      countLabel={`${returnedCount}/${pageSize} PLACES`}
       error={error}
       infoBanner={fallbackToWeb ? 'No local results found. Showing web search results instead.' : undefined}
       isInitialLoading={isInitialLoading}

@@ -15,6 +15,8 @@ export interface WebResultItem {
 export interface WebSearchData {
   query: string;
   count: number;
+  pageSize?: number;
+  returnedCount?: number;
   offset?: number;
   items: WebResultItem[];
   error?: string;

@@ -96,7 +96,7 @@ export default function VideoChatGPTMode() {
     try {
       const result = await window.openai.callTool('brave_video_search', {
         query: currentData.query,
-        count: currentData.count || 10,
+        count: currentData.pageSize ?? currentData.count ?? 10,
         offset,
       }) as { structuredContent?: VideoSearchData; _meta?: { structuredContent?: VideoSearchData }; meta?: { structuredContent?: VideoSearchData } } | null;
 

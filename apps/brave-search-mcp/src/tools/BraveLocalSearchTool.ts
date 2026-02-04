@@ -31,6 +31,8 @@ const localBusinessSchema = z.object({
 export const localSearchOutputSchema = z.object({
   query: z.string(),
   count: z.number(),
+  pageSize: z.number().optional(),
+  returnedCount: z.number().optional(),
   offset: z.number().optional(),
   items: z.array(localBusinessSchema),
   fallbackToWeb: z.boolean().optional(),
@@ -77,10 +79,13 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         isError: true,
       };
       if (this.isUI) {
+        const pageSize = input.count ?? 10;
         result._meta = {
           structuredContent: {
             query: input.query,
-            count: 0,
+            count: pageSize,
+            pageSize,
+            returnedCount: 0,
             offset: input.offset ?? 0,
             items: [],
             error: message,
@@ -93,8 +98,9 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
 
   public async executeCore(input: z.infer<typeof localSearchInputSchema>) {
     const { query, count, offset } = input;
+    const requestedCount = count ?? 10;
     const results = await this.braveSearch.webSearch(query, {
-      count,
+      count: requestedCount,
       offset,
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
@@ -112,7 +118,9 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
           _meta: {
             structuredContent: {
               query,
-              count: 0,
+              count: requestedCount,
+              pageSize: requestedCount,
+              returnedCount: 0,
               offset: offset ?? 0,
               items: [],
               fallbackToWeb: true,
@@ -126,8 +134,8 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     // Brave Locations API returns all matching location IDs at once
     // We implement pagination client-side by slicing the IDs array
     const allIds = results.locations.results.map(result => result.id);
-    const startIndex = (offset ?? 0) * (count ?? 10);
-    const ids = allIds.slice(startIndex, startIndex + (count ?? 10));
+    const startIndex = (offset ?? 0) * requestedCount;
+    const ids = allIds.slice(startIndex, startIndex + requestedCount);
     this.braveMcpServer.log(`Using ${ids.length} of ${allIds.length} location IDs for "${query}" (offset: ${offset ?? 0})`, 'debug');
 
     const localPoiSearchApiResponse = await this.braveSearch.localPoiSearch(ids);
@@ -215,7 +223,9 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         result._meta = {
           structuredContent: {
             query,
-            count: 0,
+            count: requestedCount,
+            pageSize: requestedCount,
+            returnedCount: 0,
             offset: offset ?? 0,
             items: [],
           },
@@ -251,7 +261,9 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         structuredContent: {
           query,
           offset: offset ?? 0,
-          count: localItems.length,
+          count: requestedCount,
+          pageSize: requestedCount,
+          returnedCount: localItems.length,
           items: localItems,
         },
       };

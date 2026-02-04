@@ -41,6 +41,8 @@ const webResultSchema = z.object({
 export const webSearchOutputSchema = z.object({
   query: z.string(),
   count: z.number(),
+  pageSize: z.number().optional(),
+  returnedCount: z.number().optional(),
   offset: z.number().optional(),
   items: z.array(webResultSchema),
   error: z.string().optional(),
@@ -80,10 +82,13 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
         isError: true,
       };
       if (this.isUI) {
+        const pageSize = input.count ?? 10;
         result._meta = {
           structuredContent: {
             query: input.query,
-            count: 0,
+            count: pageSize,
+            pageSize,
+            returnedCount: 0,
             items: [],
             error: message,
           },
@@ -95,8 +100,9 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
 
   public async executeCore(input: z.infer<typeof webSearchInputSchema>) {
     const { query, count, offset, freshness } = input;
+    const requestedCount = count ?? 10;
     const results = await this.braveSearch.webSearch(query, {
-      count,
+      count: requestedCount,
       offset,
       safesearch: SafeSearchLevel.Strict,
       ...(freshness ? { freshness } : {}),
@@ -114,7 +120,9 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
           structuredContent: {
             query,
             offset,
-            count: 0,
+            count: requestedCount,
+            pageSize: requestedCount,
+            returnedCount: 0,
             items: [],
           },
         };
@@ -177,7 +185,9 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
         structuredContent: {
           query,
           offset,
-          count: webItems.length,
+          count: requestedCount,
+          pageSize: requestedCount,
+          returnedCount: webItems.length,
           items: webItems,
         },
       };
