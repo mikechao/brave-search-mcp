@@ -1,5 +1,17 @@
 # brave-search-mcp
 
+## 2.0.1
+
+### Patch Changes
+
+- Added OpenAI Apps SDK and MCP Apps support
+
+## 2.0.0
+
+### Major Changes
+
+- Add OpenAI Apps SDK and MCP Apps support
+
 ## 1.0.3
 
 ### Patch Changes
