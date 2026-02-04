@@ -75,8 +75,10 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 
 ## OpenAI Apps & MCP Apps Support
 
-<p align="center" width="100%">
-<video src="https://github.com/mikechao/brave-search-mcp/raw/main/docs/demo.mp4" width="80%" controls></video>
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=Z5KiC00gBVE">
+    <img src="https://img.youtube.com/vi/Z5KiC00gBVE/maxresdefault.jpg" alt="Watch the demo" width="80%">
+  </a>
 </p>
 
 There is now support for [OpenAI Apps](https://developers.openai.com/apps-sdk/) and [MCP Apps](https://modelcontextprotocol.io/docs/extensions/apps) in this MCP Server. When UI mode is enabled for each tool there is a corresponding UI widget that let's you control what gets added to the model's context. See the directions in [usage with ChatGPT section](#usage-with-chatgpt).
