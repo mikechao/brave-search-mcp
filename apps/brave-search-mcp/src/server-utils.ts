@@ -61,9 +61,18 @@ export async function startStreamableHttpServer(
   createServer: () => McpServer,
 ): Promise<void> {
   const port = Number.parseInt(process.env.PORT ?? '3001', 10);
+  const host = process.env.HOST ?? '0.0.0.0';
+  const allowedHostsEnv = process.env.ALLOWED_HOSTS;
+  const allowedHosts = allowedHostsEnv
+    ?.split(',')
+    .map(value => value.trim())
+    .filter(Boolean);
 
-  // Express app - bind to all interfaces for development/testing
-  const expressApp = createMcpExpressApp({ host: '0.0.0.0' });
+  // Express app host/protection can be configured through env vars.
+  const expressApp = createMcpExpressApp({
+    host,
+    allowedHosts: allowedHosts?.length ? allowedHosts : undefined,
+  });
   expressApp.use(cors());
 
   expressApp.all('/mcp', async (req: Request, res: Response) => {

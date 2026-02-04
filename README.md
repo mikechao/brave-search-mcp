@@ -111,13 +111,30 @@ By default the server listens on port 3001.
 The URL is:
 
 ```
-http://localhost:3001/mcp
+http://0.0.0.0:3001/mcp
 ```
 
-The port can be configured via the PORT environment variable. For example:
+### Environment variables
+
+When running in HTTP mode, the following environment variables are supported:
+
+- `BRAVE_API_KEY` (required): Brave Search API key.
+- `PORT` (optional): HTTP port (default: `3001`).
+- `HOST` (optional): Interface to bind to (default: `0.0.0.0`).
+- `ALLOWED_HOSTS` (optional): Comma-separated list of allowed hostnames for Host header validation.
+  - Example: `ALLOWED_HOSTS=localhost,127.0.0.1,my-app.ngrok-free.app`
+  - Use hostnames only (no scheme/path), e.g. `my-app.ngrok-free.app` not `https://my-app.ngrok-free.app/mcp`
+
+Examples:
 
 ```bash
-PORT=4000 BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http
+# Local only
+HOST=127.0.0.1 ALLOWED_HOSTS=localhost,127.0.0.1 BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http
+```
+
+```bash
+# Local with ngrok tunnel
+HOST=127.0.0.1 ALLOWED_HOSTS=localhost,127.0.0.1,my-app.ngrok-free.app BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http --ui
 ```
 
 ### Usage with ChatGPT
