@@ -64,13 +64,13 @@ brave-search-mcp/
 
 Run these from the **monorepo root**:
 
-| Command | Description |
-|---------|-------------|
+| Command      | Description                 |
+| ------------ | --------------------------- |
 | `pnpm build` | Build all packages and apps |
-| `pnpm dev` | Run development mode |
-| `pnpm lint` | Lint all packages |
-| `pnpm check` | Typecheck and lint all |
-| `pnpm clean` | Clean dist folders |
+| `pnpm dev`   | Run development mode        |
+| `pnpm lint`  | Lint all packages           |
+| `pnpm check` | Typecheck and lint all      |
+| `pnpm clean` | Clean dist folders          |
 
 To run commands for a specific workspace:
 
