@@ -55,8 +55,11 @@
     "build:ui:local:chatgpt": "INPUT=src/lib/local/chatgpt-app.html vite build --config ui/vite.config.ts",
     "lint": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
     "lint:check": "eslint . --ext .ts,.js,.mjs,.cjs",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p ui/tsconfig.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p ui/tsconfig.json && tsc --noEmit -p test/tsconfig.json",
     "check": "pnpm run lint:check && pnpm run typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
   "dependencies": {
@@ -89,6 +92,7 @@
     "@types/react-dom": "^19.2.0",
     "@unocss/eslint-plugin": "^66.6.0",
     "@vitejs/plugin-react-swc": "^4.2.2",
+    "@vitest/coverage-v8": "^4.0.18",
     "autoprefixer": "^10.4.23",
     "eslint": "^9.39.2",
     "eslint-plugin-format": "^1.1.0",
@@ -100,6 +104,7 @@
     "tsup": "^8.0.1",
     "typescript": "^5.8.2",
     "vite": "^7.3.1",
-    "vite-plugin-singlefile": "^2.1.0"
+    "vite-plugin-singlefile": "^2.1.0",
+    "vitest": "^4.0.18"
   }
 }

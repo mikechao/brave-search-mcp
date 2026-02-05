@@ -26,9 +26,16 @@ export class BraveMcpServer {
   private newsSearchTool: BraveNewsSearchTool;
   private videoSearchTool: BraveVideoSearchTool;
 
+  /**
+   * Creates a new BraveMcpServer instance.
+   * @param braveSearchApiKey - The API key for Brave Search API
+   * @param isUI - Whether to enable UI mode with widget resources
+   * @param braveSearchInstance - Optional BraveSearch instance for dependency injection (useful for testing)
+   */
   constructor(
     private braveSearchApiKey: string,
     private isUI: boolean = false,
+    braveSearchInstance?: BraveSearch,
   ) {
     this.server = new McpServer(
       {
@@ -43,7 +50,7 @@ export class BraveMcpServer {
         },
       },
     );
-    this.braveSearch = new BraveSearch(braveSearchApiKey);
+    this.braveSearch = braveSearchInstance ?? new BraveSearch(braveSearchApiKey);
     // Enable structured content when UI mode is enabled
     this.imageSearchTool = new BraveImageSearchTool(this, this.braveSearch, this.isUI);
     this.webSearchTool = new BraveWebSearchTool(this, this.braveSearch, this.isUI);

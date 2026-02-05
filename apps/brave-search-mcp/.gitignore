@@ -5,3 +5,4 @@ dist
 notes.txt
 .vscode
 .DS_Store
+coverage/
