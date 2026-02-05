@@ -6,3 +6,4 @@ notes.txt
 .vscode
 .DS_Store
 coverage/
+coverage-child/

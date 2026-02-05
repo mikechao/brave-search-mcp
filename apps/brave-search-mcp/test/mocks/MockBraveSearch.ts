@@ -86,13 +86,38 @@ export function createMockBraveSearch(): MockBraveSearch {
   } as NewsSearchApiResponse);
 
   mock.videoSearch.mockResolvedValue({
+    type: 'video',
     query: { original: 'test video query' },
     results: [
       {
+        type: 'video_result',
         title: 'Test Video',
         url: 'https://youtube.com/watch?v=test123',
-        description: 'A test video',
-        thumbnail: { src: 'https://i.ytimg.com/vi/test123/default.jpg' },
+        description: 'A test video for integration testing',
+        age: '2 days ago',
+        thumbnail: {
+          src: 'https://i.ytimg.com/vi/test123/default.jpg',
+          height: 90,
+          width: 120,
+        },
+        meta_url: {
+          scheme: 'https',
+          netloc: 'youtube.com',
+          hostname: 'youtube.com',
+          favicon: 'https://youtube.com/favicon.ico',
+          path: '/watch',
+        },
+        video: {
+          duration: '10:30',
+          views: '1.2M views',
+          creator: 'Test Creator',
+          publisher: 'YouTube',
+          thumbnail: {
+            src: 'https://i.ytimg.com/vi/test123/hqdefault.jpg',
+            height: 360,
+            width: 480,
+          },
+        },
       },
     ],
   } as VideoSearchApiResponse);
