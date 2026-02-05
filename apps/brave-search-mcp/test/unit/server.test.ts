@@ -1,8 +1,10 @@
+import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { MockBraveSearch } from '../mocks/index.js';
+import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { BraveMcpServer } from '../../src/server.js';
-import { ALL_UI_RESOURCE_URIS } from '../../src/ui-resources.js';
+import { ALL_UI_RESOURCE_URIS, UI_RESOURCES } from '../../src/ui-resources.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 
 describe('braveMcpServer', () => {
@@ -11,8 +13,12 @@ describe('braveMcpServer', () => {
     handler: (input: Record<string, unknown>) => Promise<unknown>;
   }
 
+  interface RegisteredResourceState {
+    readCallback: () => Promise<ReadResourceResult>;
+  }
+
   interface InternalServerState {
-    _registeredResources: Record<string, unknown>;
+    _registeredResources: Record<string, RegisteredResourceState>;
     _registeredTools: Record<string, RegisteredToolState>;
   }
 
@@ -28,6 +34,19 @@ describe('braveMcpServer', () => {
 
   let mockBraveSearch: MockBraveSearch;
   let server: BraveMcpServer;
+  const CHATGPT_MIME_TYPE = 'text/html+skybridge';
+  const UI_RESOURCE_EXPECTATIONS = [
+    { uri: UI_RESOURCES.image.mcpApp, mimeType: RESOURCE_MIME_TYPE },
+    { uri: UI_RESOURCES.image.chatgpt, mimeType: CHATGPT_MIME_TYPE },
+    { uri: UI_RESOURCES.news.mcpApp, mimeType: RESOURCE_MIME_TYPE },
+    { uri: UI_RESOURCES.news.chatgpt, mimeType: CHATGPT_MIME_TYPE },
+    { uri: UI_RESOURCES.video.mcpApp, mimeType: RESOURCE_MIME_TYPE },
+    { uri: UI_RESOURCES.video.chatgpt, mimeType: CHATGPT_MIME_TYPE },
+    { uri: UI_RESOURCES.web.mcpApp, mimeType: RESOURCE_MIME_TYPE },
+    { uri: UI_RESOURCES.web.chatgpt, mimeType: CHATGPT_MIME_TYPE },
+    { uri: UI_RESOURCES.local.mcpApp, mimeType: RESOURCE_MIME_TYPE },
+    { uri: UI_RESOURCES.local.chatgpt, mimeType: CHATGPT_MIME_TYPE },
+  ] as const;
 
   beforeEach(() => {
     mockBraveSearch = createMockBraveSearch();
@@ -100,6 +119,34 @@ describe('braveMcpServer', () => {
         );
       }
     });
+  });
+
+  describe('ui resource callbacks', () => {
+    for (const { uri, mimeType } of UI_RESOURCE_EXPECTATIONS) {
+      it(`should return ReadResourceResult for "${uri}"`, async () => {
+        const uiServer = new BraveMcpServer(
+          'fake-api-key',
+          true,
+          mockBraveSearch as unknown as BraveSearch,
+        );
+
+        const internals = uiServer.serverInstance as unknown as InternalServerState;
+        const resource = internals._registeredResources[uri];
+
+        expect(resource).toBeDefined();
+        if (!resource) {
+          throw new TypeError(`Expected resource to be registered for URI "${uri}"`);
+        }
+
+        const result = await resource.readCallback();
+        expect(result.contents).toHaveLength(1);
+        expect(result.contents[0]).toEqual(expect.objectContaining({
+          uri,
+          mimeType,
+          text: expect.any(String),
+        }));
+      });
+    }
   });
 
   describe('server metadata', () => {
