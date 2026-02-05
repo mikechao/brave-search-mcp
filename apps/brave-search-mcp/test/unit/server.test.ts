@@ -1,4 +1,5 @@
-import type { ReadResourceResult } from '@modelcontextprotocol/sdk/types.js';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import type { BraveSearch } from 'brave-search';
 import type { MockBraveSearch } from '../mocks/index.js';
 import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
@@ -8,30 +9,6 @@ import { ALL_UI_RESOURCE_URIS, UI_RESOURCES } from '../../src/ui-resources.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 
 describe('braveMcpServer', () => {
-  interface RegisteredToolState {
-    _meta?: Record<string, unknown>;
-    handler: (input: Record<string, unknown>) => Promise<unknown>;
-  }
-
-  interface RegisteredResourceState {
-    readCallback: () => Promise<ReadResourceResult>;
-  }
-
-  interface InternalServerState {
-    _registeredResources: Record<string, RegisteredResourceState>;
-    _registeredTools: Record<string, RegisteredToolState>;
-  }
-
-  interface ServerInfoState {
-    server: {
-      _serverInfo: {
-        name: string;
-        description: string;
-        version: string;
-      };
-    };
-  }
-
   let mockBraveSearch: MockBraveSearch;
   let server: BraveMcpServer;
   const CHATGPT_MIME_TYPE = 'text/html+skybridge';
@@ -58,6 +35,32 @@ describe('braveMcpServer', () => {
     );
   });
 
+  async function createConnectedClient(targetServer: BraveMcpServer): Promise<{
+    client: Client;
+    close: () => Promise<void>;
+  }> {
+    const client = new Client({
+      name: 'brave-search-mcp-test-client',
+      version: '1.0.0',
+    });
+    const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+
+    await Promise.all([
+      targetServer.serverInstance.connect(serverTransport),
+      client.connect(clientTransport),
+    ]);
+
+    return {
+      client,
+      close: async () => {
+        await Promise.all([
+          client.close(),
+          targetServer.serverInstance.close(),
+        ]);
+      },
+    };
+  }
+
   describe('constructor', () => {
     it('should retain the injected BraveSearch instance', () => {
       const internals = server as unknown as { braveSearch: unknown };
@@ -65,15 +68,17 @@ describe('braveMcpServer', () => {
     });
 
     it('should use the injected BraveSearch instance when executing tools', async () => {
-      const internals = server.serverInstance as unknown as InternalServerState;
-      const webTool = internals._registeredTools.brave_web_search;
+      const { client, close } = await createConnectedClient(server);
 
-      expect(webTool).toBeDefined();
-      if (!webTool) {
-        throw new TypeError('Expected brave_web_search tool to be registered');
+      try {
+        await client.callTool({
+          name: 'brave_web_search',
+          arguments: { query: 'dependency injection query' },
+        });
       }
-
-      await webTool.handler({ query: 'dependency injection query' });
+      finally {
+        await close();
+      }
 
       expect(mockBraveSearch.webSearch).toHaveBeenCalledTimes(1);
       expect(mockBraveSearch.webSearch).toHaveBeenCalledWith(
@@ -82,41 +87,50 @@ describe('braveMcpServer', () => {
       );
     });
 
-    it('should register UI resources and UI tool metadata when isUI=true', () => {
+    it('should register UI resources and UI tool metadata when isUI=true', async () => {
       const uiServer = new BraveMcpServer(
         'fake-api-key',
         true,
         mockBraveSearch as unknown as BraveSearch,
       );
+      const { client, close } = await createConnectedClient(uiServer);
 
-      const internals = uiServer.serverInstance as unknown as InternalServerState;
-      const resourceUris = Object.keys(internals._registeredResources);
-      const tools = Object.values(internals._registeredTools);
+      try {
+        const [resourceList, toolList] = await Promise.all([
+          client.listResources(),
+          client.listTools(),
+        ]);
+        const resourceUris = resourceList.resources.map(resource => resource.uri);
+        const tools = toolList.tools;
 
-      expect(resourceUris).toHaveLength(ALL_UI_RESOURCE_URIS.length);
-      expect(resourceUris).toEqual(expect.arrayContaining(ALL_UI_RESOURCE_URIS));
-      expect(tools).toHaveLength(5);
+        expect(resourceUris).toHaveLength(ALL_UI_RESOURCE_URIS.length);
+        expect(resourceUris).toEqual(expect.arrayContaining(ALL_UI_RESOURCE_URIS));
+        expect(tools).toHaveLength(5);
 
-      const resourceUriSet = new Set(resourceUris);
-      for (const tool of tools) {
-        const meta = tool._meta;
-        const ui = meta?.ui as { resourceUri?: string } | undefined;
-        const mcpAppUri = ui?.resourceUri;
-        const chatgptUri = meta?.['openai/outputTemplate'];
+        const resourceUriSet = new Set(resourceUris);
+        for (const tool of tools) {
+          const meta = tool._meta;
+          const ui = meta?.ui as { resourceUri?: string } | undefined;
+          const mcpAppUri = ui?.resourceUri;
+          const chatgptUri = meta?.['openai/outputTemplate'];
 
-        expect(mcpAppUri).toBeTypeOf('string');
-        expect(chatgptUri).toBeTypeOf('string');
-        if (typeof mcpAppUri !== 'string' || typeof chatgptUri !== 'string') {
-          throw new TypeError('Expected UI metadata to include tool resource URIs');
+          expect(mcpAppUri).toBeTypeOf('string');
+          expect(chatgptUri).toBeTypeOf('string');
+          if (typeof mcpAppUri !== 'string' || typeof chatgptUri !== 'string') {
+            throw new TypeError('Expected UI metadata to include tool resource URIs');
+          }
+
+          expect(mcpAppUri).toMatch(/^ui:\/\/.+\/mcp-app\.html$/);
+          expect(chatgptUri).toMatch(/^ui:\/\/.+\/chatgpt-widget\.html$/);
+          expect(resourceUriSet.has(mcpAppUri)).toBe(true);
+          expect(resourceUriSet.has(chatgptUri)).toBe(true);
+          expect(mcpAppUri.replace(/\/mcp-app\.html$/, '')).toBe(
+            chatgptUri.replace(/\/chatgpt-widget\.html$/, ''),
+          );
         }
-
-        expect(mcpAppUri).toMatch(/^ui:\/\/.+\/mcp-app\.html$/);
-        expect(chatgptUri).toMatch(/^ui:\/\/.+\/chatgpt-widget\.html$/);
-        expect(resourceUriSet.has(mcpAppUri)).toBe(true);
-        expect(resourceUriSet.has(chatgptUri)).toBe(true);
-        expect(mcpAppUri.replace(/\/mcp-app\.html$/, '')).toBe(
-          chatgptUri.replace(/\/chatgpt-widget\.html$/, ''),
-        );
+      }
+      finally {
+        await close();
       }
     });
   });
@@ -129,36 +143,44 @@ describe('braveMcpServer', () => {
           true,
           mockBraveSearch as unknown as BraveSearch,
         );
+        const { client, close } = await createConnectedClient(uiServer);
 
-        const internals = uiServer.serverInstance as unknown as InternalServerState;
-        const resource = internals._registeredResources[uri];
+        try {
+          const result = await client.readResource({ uri });
+          const content = result.contents[0];
 
-        expect(resource).toBeDefined();
-        if (!resource) {
-          throw new TypeError(`Expected resource to be registered for URI "${uri}"`);
+          expect(result.contents).toHaveLength(1);
+          expect(content).toEqual(expect.objectContaining({
+            uri,
+            mimeType,
+            text: expect.any(String),
+          }));
+          if (!content || !('text' in content)) {
+            throw new TypeError(`Expected text resource content for URI "${uri}"`);
+          }
+          expect(content.text).not.toContain('Missing UI bundle at');
         }
-
-        const result = await resource.readCallback();
-        expect(result.contents).toHaveLength(1);
-        expect(result.contents[0]).toEqual(expect.objectContaining({
-          uri,
-          mimeType,
-          text: expect.any(String),
-        }));
+        finally {
+          await close();
+        }
       });
     }
   });
 
   describe('server metadata', () => {
-    it('should have correct server name and version', () => {
-      const mcpServer = server.serverInstance as unknown as ServerInfoState;
-      const serverInfo = mcpServer.server._serverInfo;
+    it('should have correct server name and version', async () => {
+      const { client, close } = await createConnectedClient(server);
 
-      expect(serverInfo).toEqual({
-        name: 'Brave Search MCP Server',
-        description: 'A server that provides tools for searching the web, images, videos, and local businesses using the Brave Search API.',
-        version: '2.0.1',
-      });
+      try {
+        expect(client.getServerVersion()).toEqual({
+          name: 'Brave Search MCP Server',
+          description: 'A server that provides tools for searching the web, images, videos, and local businesses using the Brave Search API.',
+          version: '2.0.1',
+        });
+      }
+      finally {
+        await close();
+      }
     });
   });
 });
