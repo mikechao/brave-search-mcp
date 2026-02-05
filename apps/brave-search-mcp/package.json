@@ -63,7 +63,7 @@
     "test:unit:watch": "vitest test/unit",
     "test:integration": "pnpm run build:test-server && vitest run test/integration",
     "test:integration:watch": "pnpm run build:test-server && vitest test/integration",
-    "test:coverage": "vitest run test/unit --coverage",
+    "test:coverage": "shx rm -rf coverage && vitest run test/unit --coverage",
     "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
   "dependencies": {
