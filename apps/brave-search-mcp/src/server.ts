@@ -10,6 +10,7 @@ import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
+import { UI_RESOURCES } from './ui-resources.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 
@@ -82,8 +83,7 @@ export class BraveMcpServer {
    * Dual-Resource Strategy for Image Search: Register both MCP-APP and ChatGPT resources
    */
   private setupDualResourceImageTools(): void {
-    const mcpAppResourceUri = 'ui://brave-image-search/mcp-app.html';
-    const chatgptResourceUri = 'ui://brave-image-search/chatgpt-widget.html';
+    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.image;
 
     // Register MCP-APP resource (ext-apps format)
     registerAppResource(
@@ -147,8 +147,7 @@ export class BraveMcpServer {
    * Dual-Resource Strategy for News Search: Register both MCP-APP and ChatGPT resources
    */
   private setupDualResourceNewsTools(): void {
-    const mcpAppResourceUri = 'ui://brave-news-search/mcp-app.html';
-    const chatgptResourceUri = 'ui://brave-news-search/chatgpt-widget.html';
+    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.news;
 
     // Register MCP-APP resource (ext-apps format)
     registerAppResource(
@@ -309,8 +308,7 @@ export class BraveMcpServer {
    * Dual-Resource Strategy for Video Search: Register both MCP-APP and ChatGPT resources
    */
   private setupDualResourceVideoTools(): void {
-    const mcpAppResourceUri = 'ui://brave-video-search/mcp-app.html';
-    const chatgptResourceUri = 'ui://brave-video-search/chatgpt-widget.html';
+    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.video;
 
     // Register MCP-APP resource (ext-apps format)
     registerAppResource(
@@ -396,8 +394,7 @@ export class BraveMcpServer {
    * Dual-Resource Strategy for Web Search: Register both MCP-APP and ChatGPT resources
    */
   private setupDualResourceWebTools(): void {
-    const mcpAppResourceUri = 'ui://brave-web-search/mcp-app.html';
-    const chatgptResourceUri = 'ui://brave-web-search/chatgpt-widget.html';
+    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.web;
 
     // Register MCP-APP resource (ext-apps format)
     registerAppResource(
@@ -477,8 +474,7 @@ export class BraveMcpServer {
    * Dual-Resource Strategy for Local Search: Register both MCP-APP and ChatGPT resources
    */
   private setupDualResourceLocalTools(): void {
-    const mcpAppResourceUri = 'ui://brave-local-search/mcp-app.html';
-    const chatgptResourceUri = 'ui://brave-local-search/chatgpt-widget.html';
+    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.local;
 
     // Register MCP-APP resource (ext-apps format)
     registerAppResource(
