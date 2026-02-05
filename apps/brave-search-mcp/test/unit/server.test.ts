@@ -28,6 +28,16 @@ describe('braveMcpServer', () => {
       // The mock should be used, not a real BraveSearch instance
       expect(mockBraveSearch.webSearch).not.toHaveBeenCalled();
     });
+
+    it('should create a server instance with isUI=true', () => {
+      const uiServer = new BraveMcpServer(
+        'fake-api-key',
+        true,
+        mockBraveSearch as unknown as BraveSearch,
+      );
+      expect(uiServer).toBeDefined();
+      expect(uiServer.serverInstance).toBeDefined();
+    });
   });
 
   describe('server metadata', () => {
