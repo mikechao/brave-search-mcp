@@ -17,7 +17,7 @@ describe('brave search mcp server integration (mocked)', () => {
     manager = new MCPClientManager();
     await manager.connectToServer(serverName, {
       command: 'node',
-      args: ['dist/test/test-server.js'],
+      args: ['.test-build/test-server.js'],
     });
   }, 30000);
 
