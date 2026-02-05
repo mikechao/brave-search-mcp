@@ -6,9 +6,24 @@ import { ALL_UI_RESOURCE_URIS } from '../../src/ui-resources.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 
 describe('braveMcpServer', () => {
+  interface RegisteredToolState {
+    _meta?: Record<string, unknown>;
+    handler: (input: Record<string, unknown>) => Promise<unknown>;
+  }
+
   interface InternalServerState {
     _registeredResources: Record<string, unknown>;
-    _registeredTools: Record<string, { _meta?: Record<string, unknown> }>;
+    _registeredTools: Record<string, RegisteredToolState>;
+  }
+
+  interface ServerInfoState {
+    server: {
+      _serverInfo: {
+        name: string;
+        description: string;
+        version: string;
+      };
+    };
   }
 
   let mockBraveSearch: MockBraveSearch;
@@ -25,14 +40,27 @@ describe('braveMcpServer', () => {
   });
 
   describe('constructor', () => {
-    it('should create a server instance with injected BraveSearch', () => {
-      expect(server).toBeDefined();
-      expect(server.serverInstance).toBeDefined();
+    it('should retain the injected BraveSearch instance', () => {
+      const internals = server as unknown as { braveSearch: unknown };
+      expect(internals.braveSearch).toBe(mockBraveSearch);
     });
 
-    it('should use the injected BraveSearch instance', () => {
-      // The mock should be used, not a real BraveSearch instance
-      expect(mockBraveSearch.webSearch).not.toHaveBeenCalled();
+    it('should use the injected BraveSearch instance when executing tools', async () => {
+      const internals = server.serverInstance as unknown as InternalServerState;
+      const webTool = internals._registeredTools.brave_web_search;
+
+      expect(webTool).toBeDefined();
+      if (!webTool) {
+        throw new TypeError('Expected brave_web_search tool to be registered');
+      }
+
+      await webTool.handler({ query: 'dependency injection query' });
+
+      expect(mockBraveSearch.webSearch).toHaveBeenCalledTimes(1);
+      expect(mockBraveSearch.webSearch).toHaveBeenCalledWith(
+        'dependency injection query',
+        expect.objectContaining({ count: 10 }),
+      );
     });
 
     it('should register UI resources and UI tool metadata when isUI=true', () => {
@@ -76,8 +104,14 @@ describe('braveMcpServer', () => {
 
   describe('server metadata', () => {
     it('should have correct server name and version', () => {
-      const serverInfo = server.serverInstance;
-      expect(serverInfo).toBeDefined();
+      const mcpServer = server.serverInstance as unknown as ServerInfoState;
+      const serverInfo = mcpServer.server._serverInfo;
+
+      expect(serverInfo).toEqual({
+        name: 'Brave Search MCP Server',
+        description: 'A server that provides tools for searching the web, images, videos, and local businesses using the Brave Search API.',
+        version: '2.0.1',
+      });
     });
   });
 });
