@@ -19,3 +19,4 @@ package.json
 test/
 coverage/
 vitest.config.ts
+.test-build/
