@@ -16,3 +16,6 @@ AGENTS.md
 CHANGELOG.md
 components.json
 package.json
+test/
+coverage/
+vitest.config.ts
