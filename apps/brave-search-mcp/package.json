@@ -58,9 +58,12 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p ui/tsconfig.json && tsc --noEmit -p test/tsconfig.json",
     "check": "pnpm run lint:check && pnpm run typecheck",
     "build:test-server": "tsup test/test-server.ts --format esm --target node20 --outDir dist/test --no-splitting --shims",
-    "test": "pnpm run build:test-server && vitest run",
-    "test:watch": "pnpm run build:test-server && vitest",
-    "test:coverage": "pnpm run build:test-server && c8 --reporter=text --reporter=html vitest run",
+    "test": "pnpm run test:unit && pnpm run test:integration",
+    "test:unit": "vitest run test/unit",
+    "test:unit:watch": "vitest test/unit",
+    "test:integration": "pnpm run build:test-server && vitest run test/integration",
+    "test:integration:watch": "pnpm run build:test-server && vitest test/integration",
+    "test:coverage": "vitest run test/unit --coverage",
     "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
   "dependencies": {

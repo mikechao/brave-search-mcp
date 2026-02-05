@@ -1,8 +1,8 @@
 import type { BraveSearch } from 'brave-search';
-import type { MockBraveSearch } from './mocks/index.js';
+import type { MockBraveSearch } from '../mocks/index.js';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { BraveMcpServer } from '../src/server.js';
-import { createMockBraveSearch } from './mocks/index.js';
+import { BraveMcpServer } from '../../src/server.js';
+import { createMockBraveSearch } from '../mocks/index.js';
 
 describe('braveMcpServer', () => {
   let mockBraveSearch: MockBraveSearch;
