@@ -79,6 +79,121 @@ pnpm -C apps/brave-search-mcp build
 pnpm -C packages/brave-search build
 ```
 
+## Testing
+
+All test commands below are for the `apps/brave-search-mcp` workspace.
+
+### Quick Test Matrix
+
+| Test Type         | Command                                                                                                   | Notes |
+| ----------------- | --------------------------------------------------------------------------------------------------------- | ----- |
+| Unit tests        | `pnpm -C apps/brave-search-mcp run test:unit`                                                            | Fast, deterministic |
+| Unit watch mode   | `pnpm -C apps/brave-search-mcp run test:unit:watch`                                                      | Re-runs on file changes |
+| Integration tests | `pnpm -C apps/brave-search-mcp run test:integration`                                                     | Runs against built server + mocked test server |
+| Eval smoke        | `OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval:smoke`                             | Minimal iterations for quick validation |
+| Full eval         | `OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval`                                   | LLM tool-routing evals |
+| Eval watch mode   | `OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval:watch`                             | Useful while tuning prompts/eval thresholds |
+
+### Unit Tests
+
+Use unit tests for tool behavior, server utilities, and deterministic logic.
+
+```bash
+pnpm -C apps/brave-search-mcp run test:unit
+```
+
+### Integration Tests
+
+Integration tests verify MCP server wiring/tool registration and execution behavior.
+
+```bash
+pnpm -C apps/brave-search-mcp run test:integration
+```
+
+Notes:
+
+- `test:integration` builds and runs the local mocked test server automatically.
+- Integration tests also include a live-server suite.
+- Live API execution checks run only when `BRAVE_API_KEY` is set.
+
+Example with live API key:
+
+```bash
+BRAVE_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:integration
+```
+
+### Eval Tests (LLM Tool-Use Accuracy)
+
+Eval tests check whether an LLM chooses the expected Brave MCP tools.
+
+```bash
+OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval
+```
+
+Current eval defaults are defined in `test/eval/brave-search.eval.test.ts` and support runtime overrides:
+
+- `EVAL_MODEL` (default: `openai/gpt-5-mini`)
+- `EVAL_CONCURRENCY` (default: `2`)
+- `EVAL_ITERATIONS`
+- `EVAL_MULTI_TURN_ITERATIONS`
+- `EVAL_MIN_ACCURACY`
+- `EVAL_TIMEOUT_MS`
+- `EVAL_TEST_TIMEOUT_MS`
+
+Example with overrides:
+
+```bash
+OPENAI_API_KEY=your_key \
+EVAL_MODEL=openai/gpt-5.1 \
+EVAL_CONCURRENCY=2 \
+pnpm -C apps/brave-search-mcp run test:eval
+```
+
+Smoke eval (fast sanity check):
+
+```bash
+OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval:smoke
+```
+
+### Eval Troubleshooting
+
+If evals are flaky or slow, try these adjustments:
+
+- Use a stronger model for routing consistency:
+
+  ```bash
+  OPENAI_API_KEY=your_key EVAL_MODEL=openai/gpt-5.1 pnpm -C apps/brave-search-mcp run test:eval
+  ```
+
+- Increase concurrency to reduce wall-clock time:
+
+  ```bash
+  OPENAI_API_KEY=your_key EVAL_CONCURRENCY=2 pnpm -C apps/brave-search-mcp run test:eval
+  ```
+
+  If you see rate limits or unstable results, lower it back to `1`.
+
+- Increase sample size when accuracy is borderline:
+
+  ```bash
+  OPENAI_API_KEY=your_key EVAL_ITERATIONS=8 EVAL_MULTI_TURN_ITERATIONS=8 pnpm -C apps/brave-search-mcp run test:eval
+  ```
+
+- Keep a smoke-first workflow:
+  - Run `test:eval:smoke` first to verify configuration quickly.
+  - Run full `test:eval` only after smoke passes.
+
+- If evals fail with missing key errors, ensure `OPENAI_API_KEY` is set in the same shell session as the command.
+
+### Recommended CI/PR Check
+
+Before opening a PR, run:
+
+```bash
+pnpm check
+pnpm -C apps/brave-search-mcp run test
+```
+
 ## Code Style
 
 This project uses ESLint with [`@antfu/eslint-config`](https://github.com/antfu/eslint-config). Run `pnpm lint` to check for issues.
