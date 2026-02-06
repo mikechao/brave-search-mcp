@@ -63,6 +63,9 @@
     "test:unit:watch": "vitest test/unit",
     "test:integration": "pnpm run build:test-server && vitest run test/integration",
     "test:integration:watch": "pnpm run build:test-server && vitest test/integration",
+    "test:eval": "pnpm run build:test-server && vitest run test/eval",
+    "test:eval:smoke": "pnpm run build:test-server && EVAL_ITERATIONS=1 EVAL_MULTI_TURN_ITERATIONS=1 EVAL_MIN_ACCURACY=0 vitest run test/eval",
+    "test:eval:watch": "pnpm run build:test-server && vitest test/eval",
     "test:coverage": "shx rm -rf coverage && vitest run test/unit --coverage",
     "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
