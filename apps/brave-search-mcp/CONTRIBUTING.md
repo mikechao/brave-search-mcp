@@ -85,14 +85,14 @@ All test commands below are for the `apps/brave-search-mcp` workspace.
 
 ### Quick Test Matrix
 
-| Test Type         | Command                                                                                                   | Notes |
-| ----------------- | --------------------------------------------------------------------------------------------------------- | ----- |
-| Unit tests        | `pnpm -C apps/brave-search-mcp run test:unit`                                                            | Fast, deterministic |
-| Unit watch mode   | `pnpm -C apps/brave-search-mcp run test:unit:watch`                                                      | Re-runs on file changes |
-| Integration tests | `pnpm -C apps/brave-search-mcp run test:integration`                                                     | Runs against built server + mocked test server |
-| Eval smoke        | `OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval:smoke`                             | Minimal iterations for quick validation |
-| Full eval         | `OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval`                                   | LLM tool-routing evals |
-| Eval watch mode   | `OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval:watch`                             | Useful while tuning prompts/eval thresholds |
+| Test Type         | Command                                                                     | Notes                                          |
+| ----------------- | --------------------------------------------------------------------------- | ---------------------------------------------- |
+| Unit tests        | `pnpm -C apps/brave-search-mcp run test:unit`                               | Fast, deterministic                            |
+| Unit watch mode   | `pnpm -C apps/brave-search-mcp run test:unit:watch`                         | Re-runs on file changes                        |
+| Integration tests | `pnpm -C apps/brave-search-mcp run test:integration`                        | Runs against built server + mocked test server |
+| Eval smoke        | `OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval:smoke` | Minimal iterations for quick validation        |
+| Full eval         | `OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval`       | LLM tool-routing evals                         |
+| Eval watch mode   | `OPENAI_API_KEY=your_key pnpm -C apps/brave-search-mcp run test:eval:watch` | Useful while tuning prompts/eval thresholds    |
 
 ### Unit Tests
 

@@ -1,3 +1,4 @@
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch, LocalDescriptionsSearchApiResponse } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import type { BraveWebSearchTool } from './BraveWebSearchTool.js';
@@ -41,7 +42,7 @@ export const localSearchOutputSchema = z.object({
 
 export type BraveLocalSearchStructuredContent = z.infer<typeof localSearchOutputSchema>;
 
-export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema, any> {
+export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema> {
   public readonly name = 'brave_local_search';
   public readonly description = 'Searches for local businesses and places using Brave\'s Local Search API. '
     + 'Best for queries related to physical locations, businesses, restaurants, services, etc. '
@@ -63,18 +64,14 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     super();
   }
 
-  public async execute(input: z.infer<typeof localSearchInputSchema>) {
+  public async execute(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {
     try {
       return await this.executeCore(input);
     }
     catch (error) {
       console.error(`Error executing ${this.name}:`, error);
       const message = error instanceof Error ? error.message : String(error);
-      const result: {
-        content: Array<{ type: 'text'; text: string }>;
-        isError: true;
-        _meta?: { structuredContent: BraveLocalSearchStructuredContent };
-      } = {
+      const result: CallToolResult = {
         content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
         isError: true,
       };
@@ -96,7 +93,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     }
   }
 
-  public async executeCore(input: z.infer<typeof localSearchInputSchema>) {
+  public async executeCore(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {
     const { query, count, offset } = input;
     const requestedCount = count ?? 10;
     const results = await this.braveSearch.webSearch(query, {
@@ -215,10 +212,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     const texts = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
     if (texts.length === 0) {
       const text = `No local results found for "${query}"`;
-      const result = { content: [{ type: 'text' as const, text }] } as {
-        content: Array<{ type: 'text'; text: string }>;
-        _meta?: { structuredContent: BraveLocalSearchStructuredContent };
-      };
+      const result: CallToolResult = { content: [{ type: 'text', text }] };
       if (this.isUI) {
         result._meta = {
           structuredContent: {
@@ -251,10 +245,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       + 'then you will be able to see and discuss that place.'
       : combinedText;
 
-    const result = { content: [{ type: 'text' as const, text: contentText }] } as {
-      content: Array<{ type: 'text'; text: string }>;
-      _meta?: { structuredContent: BraveLocalSearchStructuredContent };
-    };
+    const result: CallToolResult = { content: [{ type: 'text', text: contentText }] };
 
     if (this.isUI) {
       result._meta = {

@@ -1,3 +1,4 @@
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import { z } from 'zod';
@@ -51,7 +52,7 @@ export const newsSearchOutputSchema = z.object({
 
 export type BraveNewsSearchStructuredContent = z.infer<typeof newsSearchOutputSchema>;
 
-export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, any> {
+export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> {
   public readonly name = 'brave_news_search';
   public readonly description = 'Searches for news articles using the Brave Search API. '
     + 'Use this for recent events, trending topics, or specific news stories. '
@@ -68,19 +69,15 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
     super();
   }
 
-  public async execute(input: z.infer<typeof newsSearchInputSchema>) {
+  public async execute(input: z.infer<typeof newsSearchInputSchema>): Promise<CallToolResult> {
     try {
       return await this.executeCore(input);
     }
     catch (error) {
       console.error(`Error executing ${this.name}:`, error);
       const message = error instanceof Error ? error.message : String(error);
-      const result: {
-        content: Array<{ type: 'text'; text: string }>;
-        isError: true;
-        _meta?: { structuredContent: BraveNewsSearchStructuredContent };
-      } = {
-        content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
+      const result: CallToolResult = {
+        content: [{ type: 'text' as const, text: `Error in ${this.name}: ${message}` }],
         isError: true,
       };
 
@@ -102,7 +99,7 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
     }
   }
 
-  public async executeCore(input: z.infer<typeof newsSearchInputSchema>) {
+  public async executeCore(input: z.infer<typeof newsSearchInputSchema>): Promise<CallToolResult> {
     const { query, count, offset, freshness } = input;
     const requestedCount = count ?? 10;
     const newsResult = await this.braveSearch.newsSearch(query, {
@@ -113,10 +110,7 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
     if (!newsResult.results || newsResult.results.length === 0) {
       this.braveMcpServer.log(`No news results found for "${query}"`);
       const text = `No news results found for "${query}"`;
-      const result = { content: [{ type: 'text' as const, text }] } as {
-        content: Array<{ type: 'text'; text: string }>;
-        _meta?: { structuredContent: BraveNewsSearchStructuredContent };
-      };
+      const result: CallToolResult = { content: [{ type: 'text' as const, text }] };
       if (this.isUI) {
         result._meta = {
           structuredContent: {
@@ -194,10 +188,7 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema, 
           ))
           .join('\n\n');
 
-    const result = { content: [{ type: 'text' as const, text: contentText }] } as {
-      content: Array<{ type: 'text'; text: string }>;
-      _meta?: { structuredContent: BraveNewsSearchStructuredContent };
-    };
+    const result: CallToolResult = { content: [{ type: 'text' as const, text: contentText }] };
 
     if (this.isUI) {
       result._meta = {

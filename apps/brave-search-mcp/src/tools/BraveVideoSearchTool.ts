@@ -1,3 +1,4 @@
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
@@ -80,7 +81,7 @@ function extractVimeoId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema, any> {
+export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema> {
   public readonly name = 'brave_video_search';
   public readonly description = 'Searches for videos using the Brave Search API. '
     + 'Use this for video content, tutorials, or any media-related queries. '
@@ -97,18 +98,14 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
     super();
   }
 
-  public async execute(input: z.infer<typeof videoSearchInputSchema>) {
+  public async execute(input: z.infer<typeof videoSearchInputSchema>): Promise<CallToolResult> {
     try {
       return await this.executeCore(input);
     }
     catch (error) {
       console.error(`Error executing ${this.name}:`, error);
       const message = error instanceof Error ? error.message : String(error);
-      const result: {
-        content: Array<{ type: 'text'; text: string }>;
-        isError: true;
-        _meta?: { structuredContent: BraveVideoSearchStructuredContent };
-      } = {
+      const result: CallToolResult = {
         content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
         isError: true,
       };
@@ -129,7 +126,7 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
     }
   }
 
-  public async executeCore(input: z.infer<typeof videoSearchInputSchema>) {
+  public async executeCore(input: z.infer<typeof videoSearchInputSchema>): Promise<CallToolResult> {
     const { query, count, offset, freshness } = input;
     const requestedCount = count ?? 10;
     const videoSearchResults = await this.braveSearch.videoSearch(query, {
@@ -142,10 +139,7 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
     if (!videoSearchResults.results || videoSearchResults.results.length === 0) {
       this.braveMcpServer.log(`No video results found for "${query}"`);
       const text = `No video results found for "${query}"`;
-      const result = { content: [{ type: 'text' as const, text }] } as {
-        content: Array<{ type: 'text'; text: string }>;
-        _meta?: { structuredContent: BraveVideoSearchStructuredContent };
-      };
+      const result: CallToolResult = { content: [{ type: 'text', text }] };
       if (this.isUI) {
         result._meta = {
           structuredContent: {
@@ -233,10 +227,7 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
           })
           .join('\n\n');
 
-    const result = { content: [{ type: 'text' as const, text: contentText }] } as {
-      content: Array<{ type: 'text'; text: string }>;
-      _meta?: { structuredContent: BraveVideoSearchStructuredContent };
-    };
+    const result: CallToolResult = { content: [{ type: 'text', text: contentText }] };
 
     if (this.isUI) {
       result._meta = {

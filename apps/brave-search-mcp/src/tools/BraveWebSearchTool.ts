@@ -1,3 +1,4 @@
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
@@ -50,7 +51,7 @@ export const webSearchOutputSchema = z.object({
 
 export type BraveWebSearchStructuredContent = z.infer<typeof webSearchOutputSchema>;
 
-export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, any> {
+export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
   public readonly name = 'brave_web_search';
   public readonly description = 'Performs a web search using the Brave Search API, ideal for general queries, and online content. '
     + 'Use this for broad information gathering, recent events, or when you need diverse web sources. '
@@ -66,18 +67,14 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
     super();
   }
 
-  public async execute(input: z.infer<typeof webSearchInputSchema>) {
+  public async execute(input: z.infer<typeof webSearchInputSchema>): Promise<CallToolResult> {
     try {
       return await this.executeCore(input);
     }
     catch (error) {
       console.error(`Error executing ${this.name}:`, error);
       const message = error instanceof Error ? error.message : String(error);
-      const result: {
-        content: Array<{ type: 'text'; text: string }>;
-        isError: true;
-        _meta?: { structuredContent: BraveWebSearchStructuredContent };
-      } = {
+      const result: CallToolResult = {
         content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
         isError: true,
       };
@@ -98,7 +95,7 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
     }
   }
 
-  public async executeCore(input: z.infer<typeof webSearchInputSchema>) {
+  public async executeCore(input: z.infer<typeof webSearchInputSchema>): Promise<CallToolResult> {
     const { query, count, offset, freshness } = input;
     const requestedCount = count ?? 10;
     const results = await this.braveSearch.webSearch(query, {
@@ -111,10 +108,7 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
     if (!results.web || results.web?.results.length === 0) {
       this.braveMcpServer.log(`No results found for "${query}"`, 'info');
       const text = `No results found for "${query}"`;
-      const result = { content: [{ type: 'text' as const, text }] } as {
-        content: Array<{ type: 'text'; text: string }>;
-        _meta?: { structuredContent: BraveWebSearchStructuredContent };
-      };
+      const result: CallToolResult = { content: [{ type: 'text', text }] };
       if (this.isUI) {
         result._meta = {
           structuredContent: {
@@ -175,10 +169,7 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema, an
           ))
           .join('\n\n');
 
-    const result = { content: [{ type: 'text' as const, text: contentText }] } as {
-      content: Array<{ type: 'text'; text: string }>;
-      _meta?: { structuredContent: BraveWebSearchStructuredContent };
-    };
+    const result: CallToolResult = { content: [{ type: 'text', text: contentText }] };
 
     if (this.isUI) {
       result._meta = {
