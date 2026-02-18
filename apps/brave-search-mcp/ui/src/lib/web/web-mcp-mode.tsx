@@ -27,14 +27,14 @@ export default function WebMcpAppMode() {
 
     // Register handlers before connection
     appInstance.ontoolinput = (params) => {
-      setToolInputs(params.arguments as Record<string, unknown>);
+      setToolInputs(params.arguments ?? null);
       setToolInputsPartial(null);
     };
     appInstance.ontoolinputpartial = (params) => {
-      setToolInputsPartial(params.arguments as Record<string, unknown>);
+      setToolInputsPartial(params.arguments ?? null);
     };
     appInstance.ontoolresult = (params) => {
-      setToolResult(params as CallToolResult);
+      setToolResult(params);
     };
     appInstance.onhostcontextchanged = (params) => {
       setHostContext(prev => ({ ...prev, ...params }));

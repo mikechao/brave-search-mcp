@@ -38,10 +38,9 @@ export default function NewsMcpAppMode() {
 
     // Register handlers before connecting to avoid missing early events.
     mcpApp.ontoolresult = (params) => {
-      const result = params as any;
-      const content = result?._meta?.structuredContent ?? result?.structuredContent;
+      const content = params?._meta?.structuredContent ?? params?.structuredContent;
       if (content) {
-        setToolResult({ structuredContent: content });
+        setToolResult({ structuredContent: content as NewsSearchData });
       }
     };
     mcpApp.onhostcontextchanged = (params) => {
@@ -104,10 +103,9 @@ export default function NewsMcpAppMode() {
         },
       });
 
-      const extendedResult = result as any;
-      const content = extendedResult?._meta?.structuredContent ?? extendedResult?.structuredContent;
+      const content = result?._meta?.structuredContent ?? result?.structuredContent;
       if (content) {
-        setToolResult({ structuredContent: content });
+        setToolResult({ structuredContent: content as NewsSearchData });
       }
     }
     catch (err) {
