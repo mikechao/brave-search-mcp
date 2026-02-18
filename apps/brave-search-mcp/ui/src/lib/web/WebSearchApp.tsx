@@ -7,6 +7,8 @@ import { useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { WebResultCard } from './WebResultCard';
 
+const EMPTY_CONTEXT_RESULTS: ContextResult[] = [];
+
 export interface WebSearchAppProps extends WidgetProps {
   /** Callback to load a different page of results */
   onLoadPage?: (offset: number) => Promise<void>;
@@ -33,7 +35,7 @@ export default function WebSearchApp({
   isLoading: externalIsLoading,
   isInitialLoading,
   loadingQuery,
-  contextResults = [],
+  contextResults = EMPTY_CONTEXT_RESULTS,
   onContextChange,
 }: WebSearchAppProps) {
   const [internalLoading, setInternalLoading] = useState(false);

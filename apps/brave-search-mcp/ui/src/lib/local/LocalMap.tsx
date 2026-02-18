@@ -7,6 +7,8 @@ import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
+const EMPTY_CONTEXT_PLACES: ContextPlace[] = [];
+
 // Fix for default marker icons in webpack/vite builds
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -144,7 +146,7 @@ interface LocalMapProps {
   contextPlaces?: ContextPlace[];
 }
 
-export function LocalMap({ items, selectedIndex, onSelectIndex, displayMode, contextPlaces = [] }: LocalMapProps) {
+export function LocalMap({ items, selectedIndex, onSelectIndex, displayMode, contextPlaces = EMPTY_CONTEXT_PLACES }: LocalMapProps) {
   const mapRef = useRef<L.Map | null>(null);
 
   // Helper to check if a place is in context

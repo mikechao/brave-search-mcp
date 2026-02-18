@@ -9,6 +9,7 @@ import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { LocalBusinessCard } from './LocalBusinessCard';
 
 const LocalMap = lazy(() => import('./LocalMap').then(module => ({ default: module.LocalMap })));
+const EMPTY_CONTEXT_PLACES: ContextPlace[] = [];
 
 export interface LocalSearchAppProps extends WidgetProps {
   /** Callback to load a different page of results */
@@ -36,7 +37,7 @@ export default function LocalSearchApp({
   isLoading: externalIsLoading,
   isInitialLoading,
   loadingQuery,
-  contextPlaces = [],
+  contextPlaces = EMPTY_CONTEXT_PLACES,
   onContextChange,
 }: LocalSearchAppProps) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);

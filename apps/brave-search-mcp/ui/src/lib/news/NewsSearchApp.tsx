@@ -7,6 +7,8 @@ import { useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { NewsCard } from './NewsCard';
 
+const EMPTY_CONTEXT_ARTICLES: ContextArticle[] = [];
+
 export interface NewsSearchAppProps extends WidgetProps {
   /** Callback to load a different page of results */
   onLoadPage?: (offset: number) => Promise<void>;
@@ -33,7 +35,7 @@ export default function NewsSearchApp({
   isLoading: externalIsLoading,
   isInitialLoading,
   loadingQuery,
-  contextArticles = [],
+  contextArticles = EMPTY_CONTEXT_ARTICLES,
   onContextChange,
 }: NewsSearchAppProps) {
   const [internalLoading, setInternalLoading] = useState(false);

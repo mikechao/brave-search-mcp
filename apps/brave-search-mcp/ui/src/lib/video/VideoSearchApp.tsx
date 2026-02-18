@@ -9,6 +9,8 @@ import { VideoCard } from './VideoCard';
 import { VideoEmbedModal } from './VideoEmbedModal';
 import { VideoPipView } from './VideoPipView';
 
+const EMPTY_CONTEXT_VIDEOS: ContextVideo[] = [];
+
 export interface VideoSearchAppProps extends WidgetProps {
   /** Callback to load a different page of results */
   onLoadPage?: (offset: number) => Promise<void>;
@@ -37,7 +39,7 @@ export default function VideoSearchApp({
   isLoading: externalIsLoading,
   isInitialLoading,
   loadingQuery,
-  contextVideos = [],
+  contextVideos = EMPTY_CONTEXT_VIDEOS,
   onContextChange,
   availableDisplayModes,
 }: VideoSearchAppProps) {
