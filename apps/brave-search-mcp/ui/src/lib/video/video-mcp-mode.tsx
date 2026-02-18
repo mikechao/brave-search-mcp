@@ -3,8 +3,7 @@
  * Uses ext-apps SDK with manual App creation to disable autoResize
  */
 import type { McpUiHostContext } from '@modelcontextprotocol/ext-apps';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { WidgetProps } from '../../widget-props';
+import type { ToolResult, WidgetProps } from '../../widget-props';
 import { App, PostMessageTransport } from '@modelcontextprotocol/ext-apps';
 import { useCallback, useEffect, useState } from 'react';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -17,7 +16,7 @@ export default function VideoMcpAppMode() {
   const [error, setError] = useState<Error | null>(null);
   const [toolInputs, setToolInputs] = useState<Record<string, unknown> | null>(null);
   const [toolInputsPartial, setToolInputsPartial] = useState<Record<string, unknown> | null>(null);
-  const [toolResult, setToolResult] = useState<CallToolResult | null>(null);
+  const [toolResult, setToolResult] = useState<ToolResult | null>(null);
   const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
   useAppTheme(hostContext?.theme);
 
@@ -81,8 +80,7 @@ export default function VideoMcpAppMode() {
   const requestDisplayMode = useCallback(
     async (mode: 'inline' | 'fullscreen' | 'pip') => {
       const result = await app!.requestDisplayMode({ mode });
-      // Return the actual mode that was set (may differ from requested)
-      return result?.mode as 'inline' | 'fullscreen' | 'pip' | undefined;
+      return result.mode;
     },
     [app],
   );

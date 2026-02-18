@@ -137,7 +137,6 @@ export default function NewsChatGPTMode() {
     }
   }, []);
 
-  const noop = async () => ({ isError: false });
   const noopLog = async () => { };
 
   // Derive initial loading state: tool invoked (has input) but no result yet
@@ -148,12 +147,10 @@ export default function NewsChatGPTMode() {
   const props: NewsSearchAppProps = {
     toolInputs: null,
     toolInputsPartial: null,
-    toolResult: currentData ? { structuredContent: currentData } as any : null,
+    toolResult: currentData ? { structuredContent: currentData } : null,
     hostContext,
-    callServerTool: noop as any,
-    sendMessage: noop as any,
     openLink: handleOpenLink,
-    sendLog: noopLog as any,
+    sendLog: noopLog,
     displayMode: displayMode ?? 'inline',
     requestDisplayMode: handleRequestDisplayMode,
     onLoadPage: window.openai?.callTool ? handleLoadPage : undefined,

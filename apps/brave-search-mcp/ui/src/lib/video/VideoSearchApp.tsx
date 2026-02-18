@@ -53,8 +53,7 @@ export default function VideoSearchApp({
   const supportsPip = availableDisplayModes?.includes('pip') ?? false;
 
   // Access structured content from _meta (new location) or top-level (legacy)
-  const rawData = toolResult as any;
-  const data = (rawData?._meta?.structuredContent ?? rawData?.structuredContent) as VideoSearchData | undefined;
+  const data = (toolResult?._meta?.structuredContent ?? toolResult?.structuredContent) as VideoSearchData | undefined;
 
   const items = data?.items ?? [];
   const error = data?.error;

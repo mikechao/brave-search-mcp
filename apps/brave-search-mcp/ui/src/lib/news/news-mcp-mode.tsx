@@ -138,13 +138,11 @@ export default function NewsMcpAppMode() {
   const props: NewsSearchAppProps = {
     toolInputs: null,
     toolInputsPartial: null,
-    toolResult: toolResult as any,
-    hostContext: null,
-    callServerTool: app?.callServerTool.bind(app) as any,
-    sendMessage: app?.sendMessage.bind(app) as any,
+    toolResult,
+    hostContext,
     openLink: handleOpenLink,
-    sendLog: app?.sendLog.bind(app) as any,
-    displayMode: 'inline', // We could sync this with host context if needed
+    sendLog: app ? params => app.sendLog(params) : async () => {},
+    displayMode: hostContext?.displayMode ?? 'inline',
     requestDisplayMode: handleRequestDisplayMode,
     onLoadPage: app ? handleLoadPage : undefined,
     isLoading,

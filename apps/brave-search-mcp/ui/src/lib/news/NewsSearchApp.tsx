@@ -40,8 +40,7 @@ export default function NewsSearchApp({
   const isLoading = externalIsLoading ?? internalLoading;
 
   // Access structured content from _meta (new location) or top-level (legacy)
-  const rawData = toolResult as any;
-  const data = (rawData?._meta?.structuredContent ?? rawData?.structuredContent) as NewsSearchData | undefined;
+  const data = (toolResult?._meta?.structuredContent ?? toolResult?.structuredContent) as NewsSearchData | undefined;
 
   const items = data?.items ?? [];
   const error = data?.error;

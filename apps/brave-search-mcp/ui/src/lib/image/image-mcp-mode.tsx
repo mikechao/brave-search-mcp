@@ -4,8 +4,7 @@
  * (Carousels don't work well with auto-resize causing container dimension changes)
  */
 import type { McpUiHostContext } from '@modelcontextprotocol/ext-apps';
-import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { WidgetProps } from '../../widget-props';
+import type { ToolResult, WidgetProps } from '../../widget-props';
 import { App, PostMessageTransport } from '@modelcontextprotocol/ext-apps';
 import { useCallback, useEffect, useState } from 'react';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -18,7 +17,7 @@ export default function ImageMcpAppMode() {
   const [error, setError] = useState<Error | null>(null);
   const [toolInputs, setToolInputs] = useState<Record<string, unknown> | null>(null);
   const [toolInputsPartial, setToolInputsPartial] = useState<Record<string, unknown> | null>(null);
-  const [toolResult, setToolResult] = useState<CallToolResult | null>(null);
+  const [toolResult, setToolResult] = useState<ToolResult | null>(null);
   const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
   useAppTheme(hostContext?.theme);
 

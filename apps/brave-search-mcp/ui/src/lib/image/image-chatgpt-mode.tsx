@@ -57,7 +57,6 @@ export default function ImageChatGPTMode() {
     return undefined;
   };
 
-  const noop = async () => ({ isError: false });
   const noopLog = async () => { };
 
   // Derive initial loading state: tool invoked (has input) but no result yet
@@ -68,12 +67,10 @@ export default function ImageChatGPTMode() {
   const props: WidgetProps = {
     toolInputs: null,
     toolInputsPartial: null,
-    toolResult: toolOutput ? { structuredContent: toolOutput } as any : null,
+    toolResult: toolOutput ? { structuredContent: toolOutput } : null,
     hostContext,
-    callServerTool: noop as any,
-    sendMessage: noop as any,
     openLink: handleOpenLink,
-    sendLog: noopLog as any,
+    sendLog: noopLog,
     displayMode: displayMode ?? 'inline',
     requestDisplayMode: handleRequestDisplayMode,
   };

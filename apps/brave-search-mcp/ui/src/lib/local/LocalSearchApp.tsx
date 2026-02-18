@@ -45,8 +45,7 @@ export default function LocalSearchApp({
   const isLoading = externalIsLoading ?? internalLoading;
 
   // Access structured content from _meta (new location) or top-level (legacy)
-  const rawData = toolResult as any;
-  const data = (rawData?._meta?.structuredContent ?? rawData?.structuredContent) as LocalSearchData | undefined;
+  const data = (toolResult?._meta?.structuredContent ?? toolResult?.structuredContent) as LocalSearchData | undefined;
 
   const items = data?.items ?? [];
   const error = data?.error;
