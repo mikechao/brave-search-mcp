@@ -4,6 +4,25 @@ import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveWebSearchTool } from '../../src/tools/BraveWebSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
+import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
+
+interface WebStructuredContent {
+  query: string;
+  count: number;
+  pageSize?: number;
+  returnedCount?: number;
+  offset?: number;
+  items: Array<{
+    title: string;
+    url: string;
+    description: string;
+    domain: string;
+    favicon?: string;
+    age?: string;
+    thumbnail?: { src: string; height?: number; width?: number };
+  }>;
+  error?: string;
+}
 
 function createServerStub() {
   return {
@@ -64,10 +83,11 @@ describe('braveWebSearchTool', () => {
       safesearch: SafeSearchLevel.Strict,
       freshness: 'pm',
     });
-    expect(result.content[0].text).toContain('1: Title: Result A');
-    expect(result.content[0].text).toContain('2: Title: Result B');
-    expect(result.content[0].text).toContain('URL: https://example.com/a');
-    expect(result.content[0].text).toContain('Description: Beta result');
+    const text = getFirstTextContent(result);
+    expect(text).toContain('1: Title: Result A');
+    expect(text).toContain('2: Title: Result B');
+    expect(text).toContain('URL: https://example.com/a');
+    expect(text).toContain('Description: Beta result');
   });
 
   it('returns UI guidance text and structured metadata', async () => {
@@ -105,10 +125,12 @@ describe('braveWebSearchTool', () => {
 
     const result = await tool.executeCore({ query: 'open source', count: 10, offset: 0 });
 
-    expect(result.content[0].text).toContain('Found 1 web results for "open source".');
-    expect(result.content[0].text).toContain('You CANNOT see the result titles');
-    expect(result.content[0].text).toContain('click the + icon');
-    expect(result._meta?.structuredContent).toEqual({
+    const text = getFirstTextContent(result);
+    expect(text).toContain('Found 1 web results for "open source".');
+    expect(text).toContain('You CANNOT see the result titles');
+    expect(text).toContain('click the + icon');
+    const structured = getMetaStructuredContent<WebStructuredContent>(result);
+    expect(structured).toEqual({
       query: 'open source',
       offset: 0,
       count: 10,
@@ -148,8 +170,9 @@ describe('braveWebSearchTool', () => {
 
     const result = await tool.executeCore({ query: 'none', count: 5, offset: 2 });
 
-    expect(result.content[0].text).toBe('No results found for "none"');
-    expect(result._meta?.structuredContent).toEqual({
+    expect(getFirstTextContent(result)).toBe('No results found for "none"');
+    const structured = getMetaStructuredContent<WebStructuredContent>(result);
+    expect(structured).toEqual({
       query: 'none',
       offset: 2,
       count: 5,

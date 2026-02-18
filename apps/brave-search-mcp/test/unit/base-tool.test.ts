@@ -1,15 +1,18 @@
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { BaseTool } from '../../src/tools/BaseTool.js';
 
-class TestTool extends BaseTool<z.ZodObject<{ value: z.ZodString }>, { ok: boolean; value: string }> {
+const testInputSchema = z.object({
+  value: z.string(),
+});
+
+class TestTool extends BaseTool<typeof testInputSchema> {
   public readonly name = 'test_tool';
   public readonly description = 'Test tool for base class behavior';
-  public readonly inputSchema = z.object({
-    value: z.string(),
-  });
+  public readonly inputSchema = testInputSchema;
 
-  constructor(private readonly impl: (input: { value: string }) => Promise<{ ok: boolean; value: string }>) {
+  constructor(private readonly impl: (input: { value: string }) => Promise<CallToolResult>) {
     super();
   }
 
@@ -20,13 +23,14 @@ class TestTool extends BaseTool<z.ZodObject<{ value: z.ZodString }>, { ok: boole
 
 describe('baseTool', () => {
   it('returns executeCore result when no error occurs', async () => {
-    const tool = new TestTool(async input => ({ ok: true, value: input.value }));
+    const tool = new TestTool(async input => ({
+      content: [{ type: 'text', text: input.value }],
+    }));
 
     const result = await tool.execute({ value: 'hello' });
 
     expect(result).toEqual({
-      ok: true,
-      value: 'hello',
+      content: [{ type: 'text', text: 'hello' }],
     });
   });
 

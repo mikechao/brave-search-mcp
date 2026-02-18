@@ -3,6 +3,27 @@ import type { BraveMcpServer } from '../../src/server.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveNewsSearchTool } from '../../src/tools/BraveNewsSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
+import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
+
+interface NewsStructuredContent {
+  query: string;
+  count: number;
+  pageSize?: number;
+  returnedCount?: number;
+  offset?: number;
+  items: Array<{
+    title: string;
+    url: string;
+    description: string;
+    source: string;
+    age: string;
+    pageAge?: string;
+    breaking: boolean;
+    thumbnail?: { src: string; height?: number; width?: number };
+    favicon?: string;
+  }>;
+  error?: string;
+}
 
 function createServerStub() {
   return {
@@ -60,7 +81,7 @@ describe('braveNewsSearchTool', () => {
       freshness: 'pw',
     });
 
-    const text = result.content[0].text;
+    const text = getFirstTextContent(result);
     expect(text).toContain('1: Title: Newest story');
     expect(text).toContain('2: Title: Older story');
     expect(text.indexOf('Newest story')).toBeLessThan(text.indexOf('Older story'));
@@ -114,13 +135,15 @@ describe('braveNewsSearchTool', () => {
       offset: 0,
     });
 
-    expect(result.content[0].text).toContain('Found 2 news articles for "tech".');
-    expect(result.content[0].text).toContain('You CANNOT see the article titles');
-    expect(result.content[0].text).toContain('click the + icon');
-    expect(result._meta?.structuredContent.returnedCount).toBe(2);
-    expect(result._meta?.structuredContent.items[0].title).toBe('First');
-    expect(result._meta?.structuredContent.items[0].source).toBe('a.example.com');
-    expect(result._meta?.structuredContent.items[1].source).toBe('b.example.com');
+    const text = getFirstTextContent(result);
+    expect(text).toContain('Found 2 news articles for "tech".');
+    expect(text).toContain('You CANNOT see the article titles');
+    expect(text).toContain('click the + icon');
+    const structured = getMetaStructuredContent<NewsStructuredContent>(result);
+    expect(structured.returnedCount).toBe(2);
+    expect(structured.items[0].title).toBe('First');
+    expect(structured.items[0].source).toBe('a.example.com');
+    expect(structured.items[1].source).toBe('b.example.com');
   });
 
   it('returns no-results response and UI metadata when empty', async () => {
@@ -136,8 +159,9 @@ describe('braveNewsSearchTool', () => {
 
     const result = await tool.executeCore({ query: 'none', count: 5, offset: 1 });
 
-    expect(result.content[0].text).toBe('No news results found for "none"');
-    expect(result._meta?.structuredContent).toEqual({
+    expect(getFirstTextContent(result)).toBe('No news results found for "none"');
+    const structured = getMetaStructuredContent<NewsStructuredContent>(result);
+    expect(structured).toEqual({
       query: 'none',
       offset: 1,
       count: 5,

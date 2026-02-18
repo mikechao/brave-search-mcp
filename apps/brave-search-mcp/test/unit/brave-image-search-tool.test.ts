@@ -4,6 +4,7 @@ import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveImageSearchTool } from '../../src/tools/BraveImageSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
+import { getFirstTextContent } from './tool-result-helpers.js';
 
 function createServerStub() {
   return {
@@ -62,12 +63,13 @@ describe('braveImageSearchTool', () => {
       count: 5,
       safesearch: SafeSearchLevel.Strict,
     });
-    expect(result.content[0].text).toContain('1: Title: Cat One');
-    expect(result.content[0].text).toContain('URL: https://example.com/cat-1');
-    expect(result.content[0].text).toContain('Image URL: https://imgs.search.brave.com/cat-1.jpg');
-    expect(result.content[0].text).toContain('Confidence: high');
-    expect(result.content[0].text).toContain('Width: 640');
-    expect(result.content[0].text).toContain('Height: 480');
+    const text = getFirstTextContent(result);
+    expect(text).toContain('1: Title: Cat One');
+    expect(text).toContain('URL: https://example.com/cat-1');
+    expect(text).toContain('Image URL: https://imgs.search.brave.com/cat-1.jpg');
+    expect(text).toContain('Confidence: high');
+    expect(text).toContain('Width: 640');
+    expect(text).toContain('Height: 480');
     expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
       'Searching for images of "cats" with count 5',
       'debug',
@@ -91,7 +93,7 @@ describe('braveImageSearchTool', () => {
 
     const result = await tool.executeCore({ searchTerm: 'unknown', count: 3 });
 
-    expect(result.content[0].text).toBe('No image results found for "unknown"');
+    expect(getFirstTextContent(result)).toBe('No image results found for "unknown"');
     expect(result).toHaveProperty('structuredContent');
     expect(result.structuredContent).toEqual({
       searchTerm: 'unknown',
@@ -168,8 +170,9 @@ describe('braveImageSearchTool', () => {
 
     const result = await tool.executeCore({ searchTerm: 'landscape', count: 10 });
 
-    expect(result.content[0].text).toContain('Found 1 image results for "landscape".');
-    expect(result.content[0].text).toContain('CRITICAL RULES');
+    const text = getFirstTextContent(result);
+    expect(text).toContain('Found 1 image results for "landscape".');
+    expect(text).toContain('CRITICAL RULES');
     expect(result.structuredContent).toEqual({
       searchTerm: 'landscape',
       count: 1,

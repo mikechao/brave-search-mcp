@@ -4,6 +4,31 @@ import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveVideoSearchTool } from '../../src/tools/BraveVideoSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
+import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
+
+interface VideoStructuredContent {
+  query: string;
+  count: number;
+  pageSize?: number;
+  returnedCount?: number;
+  offset?: number;
+  items: Array<{
+    title: string;
+    url: string;
+    description: string;
+    thumbnail?: { src: string; height?: number; width?: number };
+    duration: string;
+    views: string;
+    creator: string;
+    age: string;
+    tags?: string[];
+    requiresSubscription?: boolean;
+    favicon?: string;
+    embedId?: string;
+    embedType?: 'youtube' | 'vimeo';
+  }>;
+  error?: string;
+}
 
 function createServerStub() {
   return {
@@ -73,7 +98,7 @@ describe('braveVideoSearchTool', () => {
       freshness: 'pm',
     });
 
-    const text = result.content[0].text;
+    const text = getFirstTextContent(result);
     expect(text).toContain('1: Title: Advanced TypeScript');
     expect(text).toContain('Requires subscription');
     expect(text).toContain('Tags: typescript, advanced');
@@ -127,16 +152,18 @@ describe('braveVideoSearchTool', () => {
 
     const result = await tool.executeCore({ query: 'music videos', count: 10, offset: 0 });
 
-    expect(result.content[0].text).toContain('Found 2 videos for "music videos".');
-    expect(result.content[0].text).toContain('You CANNOT see the video titles');
-    expect(result.content[0].text).toContain('click the + icon');
-    expect(result._meta?.structuredContent.returnedCount).toBe(2);
-    expect(result._meta?.structuredContent.items[0]).toMatchObject({
+    const text = getFirstTextContent(result);
+    expect(text).toContain('Found 2 videos for "music videos".');
+    expect(text).toContain('You CANNOT see the video titles');
+    expect(text).toContain('click the + icon');
+    const structured = getMetaStructuredContent<VideoStructuredContent>(result);
+    expect(structured.returnedCount).toBe(2);
+    expect(structured.items[0]).toMatchObject({
       title: 'YT clip',
       embedType: 'youtube',
       embedId: 'ABCDEFGHIJK',
     });
-    expect(result._meta?.structuredContent.items[1]).toMatchObject({
+    expect(structured.items[1]).toMatchObject({
       title: 'Vimeo clip',
       embedType: 'vimeo',
       embedId: '123456789',
@@ -156,8 +183,9 @@ describe('braveVideoSearchTool', () => {
 
     const result = await tool.executeCore({ query: 'none', count: 4, offset: 2 });
 
-    expect(result.content[0].text).toBe('No video results found for "none"');
-    expect(result._meta?.structuredContent).toEqual({
+    expect(getFirstTextContent(result)).toBe('No video results found for "none"');
+    const structured = getMetaStructuredContent<VideoStructuredContent>(result);
+    expect(structured).toEqual({
       query: 'none',
       offset: 2,
       count: 4,

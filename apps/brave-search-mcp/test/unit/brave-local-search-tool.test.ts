@@ -5,6 +5,32 @@ import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveLocalSearchTool } from '../../src/tools/BraveLocalSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
+import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
+
+interface LocalStructuredContent {
+  query: string;
+  count: number;
+  pageSize?: number;
+  returnedCount?: number;
+  offset?: number;
+  items: Array<{
+    id?: string;
+    name: string;
+    address: string;
+    coordinates?: [number, number];
+    phone?: string;
+    email?: string;
+    priceRange?: string;
+    rating?: number;
+    reviewCount?: number;
+    cuisine?: string[];
+    todayHours?: string;
+    weeklyHours?: string;
+    description?: string;
+  }>;
+  fallbackToWeb?: boolean;
+  error?: string;
+}
 
 function createServerStub() {
   return {
@@ -96,8 +122,9 @@ describe('braveLocalSearchTool', () => {
       offset: 2,
     });
 
-    expect(result.content[0].text).toBe('fallback content');
-    expect(result._meta?.structuredContent).toEqual({
+    expect(getFirstTextContent(result)).toBe('fallback content');
+    const structured = getMetaStructuredContent<LocalStructuredContent>(result);
+    expect(structured).toEqual({
       query: 'brunch',
       count: 2,
       pageSize: 2,
@@ -166,9 +193,11 @@ describe('braveLocalSearchTool', () => {
 
     expect(mockBraveSearch.localPoiSearch).toHaveBeenCalledWith(['loc-2']);
     expect(mockBraveSearch.localDescriptionsSearch).toHaveBeenCalledWith(['loc-2']);
-    expect(result.content[0].text).toContain('Found 1 local places for "coffee seattle".');
-    expect(result.content[0].text).toContain('You CANNOT see the business names');
-    expect(result._meta?.structuredContent.items[0]).toEqual({
+    const text = getFirstTextContent(result);
+    expect(text).toContain('Found 1 local places for "coffee seattle".');
+    expect(text).toContain('You CANNOT see the business names');
+    const structured = getMetaStructuredContent<LocalStructuredContent>(result);
+    expect(structured.items[0]).toEqual({
       id: 'loc-2',
       name: 'Cafe Prime',
       address: '123 Pike St, Seattle, WA',
@@ -226,8 +255,9 @@ describe('braveLocalSearchTool', () => {
 
     const result = await tool.executeCore({ query: 'library', count: 3, offset: 0 });
 
-    expect(result.content[0].text).toContain('1: Name: City Library');
-    expect(result.content[0].text).toContain('Description: No description found');
+    const text = getFirstTextContent(result);
+    expect(text).toContain('1: Name: City Library');
+    expect(text).toContain('Description: No description found');
     expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
       'Error: descriptions unavailable',
       'error',
@@ -263,8 +293,9 @@ describe('braveLocalSearchTool', () => {
 
     const result = await tool.executeCore({ query: 'museum', count: 5, offset: 1 });
 
-    expect(result.content[0].text).toBe('No local results found for "museum"');
-    expect(result._meta?.structuredContent).toEqual({
+    expect(getFirstTextContent(result)).toBe('No local results found for "museum"');
+    const structured = getMetaStructuredContent<LocalStructuredContent>(result);
+    expect(structured).toEqual({
       query: 'museum',
       count: 5,
       pageSize: 5,
