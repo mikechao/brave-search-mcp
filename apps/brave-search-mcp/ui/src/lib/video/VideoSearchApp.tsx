@@ -3,7 +3,7 @@
  */
 import type { DisplayMode, WidgetProps } from '../../widget-props';
 import type { ContextVideo, VideoItem, VideoSearchData } from './types';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { VideoCard } from './VideoCard';
 import { VideoEmbedModal } from './VideoEmbedModal';
@@ -71,7 +71,7 @@ export default function VideoSearchApp({
   const canPaginate = Boolean(onLoadPage) && hasData && !error;
 
   // Context selection helpers
-  const contextUrls = new Set(contextVideos.map(v => v.url));
+  const contextUrls = useMemo(() => new Set(contextVideos.map(v => v.url)), [contextVideos]);
   const isInContext = (url: string) => contextUrls.has(url);
   const hasContextSupport = Boolean(onContextChange);
 

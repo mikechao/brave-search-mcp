@@ -3,7 +3,7 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { ContextArticle, NewsItem, NewsSearchData } from './types';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { NewsCard } from './NewsCard';
 
@@ -58,7 +58,7 @@ export default function NewsSearchApp({
   const canPaginate = Boolean(onLoadPage) && hasData && !error;
 
   // Context selection helpers
-  const contextUrls = new Set(contextArticles.map(a => a.url));
+  const contextUrls = useMemo(() => new Set(contextArticles.map(a => a.url)), [contextArticles]);
   const isInContext = (url: string) => contextUrls.has(url);
   const hasContextSupport = Boolean(onContextChange);
 
