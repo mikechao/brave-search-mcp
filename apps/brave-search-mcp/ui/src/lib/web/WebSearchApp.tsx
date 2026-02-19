@@ -3,11 +3,12 @@
  */
 import type { WidgetProps } from '../../widget-props';
 import type { ContextResult, WebResultItem, WebSearchData } from './types';
-import { useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
 import { WebResultCard } from './WebResultCard';
 
 const EMPTY_CONTEXT_RESULTS: ContextResult[] = [];
+const EMPTY_WEB_ITEMS: WebResultItem[] = [];
 
 export interface WebSearchAppProps extends WidgetProps {
   /** Callback to load a different page of results */
@@ -40,11 +41,13 @@ export default function WebSearchApp({
 }: WebSearchAppProps) {
   const [internalLoading, setInternalLoading] = useState(false);
   const isLoading = externalIsLoading ?? internalLoading;
+  const contextResultsRef = useRef(contextResults);
+  contextResultsRef.current = contextResults;
 
   // Access structured content from _meta (new location) or top-level (legacy)
   const data = (toolResult?._meta?.structuredContent ?? toolResult?.structuredContent) as WebSearchData | undefined;
 
-  const items = data?.items ?? [];
+  const items = data?.items ?? EMPTY_WEB_ITEMS;
   const error = data?.error;
   const hasData = Boolean(data);
   const currentOffset = data?.offset ?? 0;
@@ -58,11 +61,10 @@ export default function WebSearchApp({
   const canPaginate = Boolean(onLoadPage) && hasData && !error;
 
   // Context selection helpers
-  const contextUrls = new Set(contextResults.map(r => r.url));
-  const isInContext = (url: string) => contextUrls.has(url);
+  const contextUrls = useMemo(() => new Set(contextResults.map(r => r.url)), [contextResults]);
   const hasContextSupport = Boolean(onContextChange);
 
-  const handleOpenLink = async (url: string) => {
+  const handleOpenLink = useCallback(async (url: string) => {
     try {
       const { isError } = await openLink({ url });
       if (isError) {
@@ -75,9 +77,9 @@ export default function WebSearchApp({
         data: `Open link failed: ${e instanceof Error ? e.message : String(e)}`,
       });
     }
-  };
+  }, [openLink, sendLog]);
 
-  const handlePrevious = async () => {
+  const handlePrevious = useCallback(async () => {
     if (!onLoadPage || isLoading || !hasPrevious)
       return;
     setInternalLoading(true);
@@ -87,9 +89,9 @@ export default function WebSearchApp({
     finally {
       setInternalLoading(false);
     }
-  };
+  }, [hasPrevious, isLoading, onLoadPage, currentOffset]);
 
-  const handleNext = async () => {
+  const handleNext = useCallback(async () => {
     if (!onLoadPage || isLoading || !hasNext)
       return;
     setInternalLoading(true);
@@ -99,35 +101,38 @@ export default function WebSearchApp({
     finally {
       setInternalLoading(false);
     }
-  };
+  }, [hasNext, isLoading, onLoadPage, currentOffset]);
 
-  const handleToggleContext = (item: WebResultItem) => {
+  const handleToggleContext = useCallback((item: WebResultItem) => {
     if (!onContextChange)
       return;
+    const latestContextResults = contextResultsRef.current;
+    const isAlreadyInContext = latestContextResults.some(result => result.url === item.url);
 
-    const result: ContextResult = {
-      title: item.title,
-      url: item.url,
-      description: item.description,
-      domain: item.domain,
-    };
-
-    if (isInContext(item.url)) {
+    if (isAlreadyInContext) {
       // Remove from context
-      onContextChange(contextResults.filter(r => r.url !== item.url));
+      onContextChange(latestContextResults.filter(r => r.url !== item.url));
     }
     else {
       // Add to context
-      onContextChange([...contextResults, result]);
+      const result: ContextResult = {
+        title: item.title,
+        url: item.url,
+        description: item.description,
+        domain: item.domain,
+      };
+      onContextChange([...latestContextResults, result]);
     }
-  };
+  }, [onContextChange]);
 
-  const handleAddAllToContext = () => {
+  const handleAddAllToContext = useCallback(() => {
     if (!onContextChange)
       return;
+    const latestContextResults = contextResultsRef.current;
+    const latestContextUrls = new Set(latestContextResults.map(r => r.url));
 
     const newResults: ContextResult[] = items
-      .filter(item => !isInContext(item.url))
+      .filter(item => !latestContextUrls.has(item.url))
       .map(item => ({
         title: item.title,
         url: item.url,
@@ -135,8 +140,11 @@ export default function WebSearchApp({
         domain: item.domain,
       }));
 
-    onContextChange([...contextResults, ...newResults]);
-  };
+    if (newResults.length === 0)
+      return;
+
+    onContextChange([...latestContextResults, ...newResults]);
+  }, [items, onContextChange]);
 
   const pageNumber = currentOffset + 1;
 
@@ -172,7 +180,7 @@ export default function WebSearchApp({
         ? {
             count: contextResults.length,
             onAddAll: handleAddAllToContext,
-            addAllDisabled: items.every(item => isInContext(item.url)),
+            addAllDisabled: items.every(item => contextUrls.has(item.url)),
           }
         : undefined}
     >
@@ -183,7 +191,7 @@ export default function WebSearchApp({
             item={item}
             index={index}
             onOpenLink={handleOpenLink}
-            isInContext={isInContext(item.url)}
+            isInContext={contextUrls.has(item.url)}
             onToggleContext={hasContextSupport ? handleToggleContext : undefined}
           />
         ))}

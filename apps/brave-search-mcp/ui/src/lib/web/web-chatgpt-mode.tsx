@@ -64,7 +64,7 @@ export default function WebChatGPTMode() {
     }
   }, [hostQuery, pagedOutput]);
 
-  const handleOpenLink = async ({ url }: { url: string }) => {
+  const handleOpenLink = useCallback(async ({ url }: { url: string }) => {
     // Access directly from window.openai since functions are set at init, not via events
     try {
       if (window.openai?.openExternal) {
@@ -75,16 +75,16 @@ export default function WebChatGPTMode() {
     catch {
       return { isError: true };
     }
-  };
+  }, []);
 
-  const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
+  const handleRequestDisplayMode = useCallback(async (mode: 'inline' | 'fullscreen' | 'pip') => {
     // Access directly from window.openai since functions are set at init, not via events
     if (window.openai?.requestDisplayMode) {
       await window.openai.requestDisplayMode({ mode });
       return mode; // OpenAI API doesn't return the mode, so return the requested mode
     }
     return undefined;
-  };
+  }, []);
 
   // Pagination handler - calls the web search tool with new offset
   const handleLoadPage = useCallback(async (offset: number) => {
@@ -136,7 +136,7 @@ export default function WebChatGPTMode() {
     }
   }, []);
 
-  const noopLog = async () => { };
+  const noopLog = useCallback(async () => { }, []);
 
   // Derive initial loading state: tool invoked (has input) but no result yet
   const hasData = Boolean(currentData);

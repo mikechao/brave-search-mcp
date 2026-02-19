@@ -3,7 +3,7 @@
  */
 import type { WebResultItem } from './types';
 import { Check, Globe, Plus } from '@openai/apps-sdk-ui/components/Icon';
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { sanitizeHtml, stripHtml } from '../shared/sanitize';
 
 interface WebResultCardProps {
@@ -14,7 +14,9 @@ interface WebResultCardProps {
   onToggleContext?: (item: WebResultItem) => void;
 }
 
-export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleContext }: WebResultCardProps) {
+const ALLOWED_DESCRIPTION_TAGS = new Set(['strong', 'em', 'b', 'i', 'u', 'mark', 'span', 'p']);
+
+function WebResultCardComponent({ item, index, onOpenLink, isInContext, onToggleContext }: WebResultCardProps) {
   const handleClick = () => {
     onOpenLink(item.url);
   };
@@ -50,8 +52,7 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
       if (tagName === 'br')
         return <br key={key} />;
 
-      const allowedTags = new Set(['strong', 'em', 'b', 'i', 'u', 'mark', 'span', 'p']);
-      if (!allowedTags.has(tagName))
+      if (!ALLOWED_DESCRIPTION_TAGS.has(tagName))
         return element.textContent;
 
       const Tag = (tagName === 'p' ? 'span' : tagName) as React.ElementType;
@@ -120,3 +121,6 @@ export function WebResultCard({ item, index, onOpenLink, isInContext, onToggleCo
     </article>
   );
 }
+
+export const WebResultCard = memo(WebResultCardComponent);
+WebResultCard.displayName = 'WebResultCard';
