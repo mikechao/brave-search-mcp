@@ -11,6 +11,16 @@
 export type ResultFilter = string;
 
 /**
+ * The relevance filtering threshold mode for LLM context results.
+ *
+ * - `disabled` — No relevance filtering applied.
+ * - `strict` — Only highly relevant snippets are included.
+ * - `lenient` — More loosely relevant snippets are included.
+ * - `balanced` — A balanced relevance threshold (default).
+ */
+export type ContextThresholdMode = 'disabled' | 'strict' | 'lenient' | 'balanced';
+
+/**
  * Options for configuring a web search requests to the Brave Search API.
  */
 export interface BraveSearchOptions {
@@ -145,6 +155,86 @@ export interface SummarizerOptions {
   entity_info?: boolean;
 }
 
+/**
+ * Options for configuring an LLM Context request to the Brave Search API.
+ *
+ * The LLM Context endpoint returns pre-extracted web content optimized for
+ * AI agents, LLM grounding, and RAG pipelines.
+ */
+export interface LLMContextOptions {
+  /**
+   * The search query. Maximum 400 characters and 50 words.
+   * @type {string}
+   */
+  q: string;
+  /**
+   * The search query country, where the results come from.
+   * @type {string}
+   * @default "us"
+   */
+  country?: string;
+  /**
+   * The search language preference.
+   * @type {string}
+   * @default "en"
+   */
+  search_lang?: string;
+  /**
+   * The maximum number of search results considered.
+   * @type {number}
+   * @default 20
+   */
+  count?: number;
+  /**
+   * The maximum number of URLs to include in the response.
+   * @type {number}
+   * @default 20
+   */
+  maximum_number_of_urls?: number;
+  /**
+   * The approximate maximum number of tokens in the returned context.
+   * @type {number}
+   * @default 8192
+   */
+  maximum_number_of_tokens?: number;
+  /**
+   * The maximum number of snippets across all URLs.
+   * @type {number}
+   * @default 50
+   */
+  maximum_number_of_snippets?: number;
+  /**
+   * The maximum number of tokens per URL.
+   * @type {number}
+   * @default 4096
+   */
+  maximum_number_of_tokens_per_url?: number;
+  /**
+   * The maximum number of snippets per URL.
+   * @type {number}
+   * @default 50
+   */
+  maximum_number_of_snippets_per_url?: number;
+  /**
+   * The relevance filtering threshold mode.
+   * @type {ContextThresholdMode}
+   * @default "balanced"
+   */
+  context_threshold_mode?: ContextThresholdMode;
+  /**
+   * Whether to enable local recall. When null, local recall is auto-detected from request headers.
+   * @type {boolean | null}
+   * @default null
+   */
+  enable_local?: boolean | null;
+  /**
+   * A Goggle URL or inline definition to apply custom re-ranking.
+   * @type {string | string[] | null}
+   * @default null
+   */
+  goggles?: string | string[] | null;
+}
+
 // Response types
 
 /**
@@ -247,6 +337,116 @@ export interface SummarizerSearchApiResponse {
    * @type {Record<string, SummaryEntityInfo>}
    */
   entities_infos?: { [key: string]: SummaryEntityInfo };
+}
+
+/**
+ * Response from the Brave Search LLM Context API.
+ *
+ * Contains pre-extracted web content optimized for AI agents, LLM grounding,
+ * and RAG pipelines.
+ */
+export interface LLMContextApiResponse {
+  /**
+   * Container for all grounding content organized by type.
+   * @type {LLMContextGrounding}
+   */
+  grounding: LLMContextGrounding;
+  /**
+   * Metadata for all referenced URLs, keyed by URL string.
+   * @type {Record<string, LLMContextSource>}
+   */
+  sources: Record<string, LLMContextSource>;
+}
+
+/**
+ * Container for grounding content in an LLM Context response.
+ */
+export interface LLMContextGrounding {
+  /**
+   * Main grounding data — extracted web content relevant to the query.
+   * @type {LLMContextGenericItem[]}
+   */
+  generic: LLMContextGenericItem[];
+  /**
+   * Point of interest data. Only present when local recall is enabled.
+   * @type {LLMContextPoiItem | null}
+   */
+  poi?: LLMContextPoiItem | null;
+  /**
+   * Map/place results. Only present when local recall is enabled.
+   * @type {LLMContextMapItem[]}
+   */
+  map?: LLMContextMapItem[];
+}
+
+/**
+ * Base interface for a grounding item in an LLM Context response.
+ */
+export interface LLMContextGroundingItem {
+  /**
+   * The source URL.
+   * @type {string}
+   */
+  url: string;
+  /**
+   * The page title.
+   * @type {string}
+   */
+  title: string;
+  /**
+   * Extracted text chunks relevant to the query. May contain plain text or
+   * JSON-serialized structured data (tables, schemas, code blocks).
+   * @type {string[]}
+   */
+  snippets: string[];
+}
+
+/**
+ * A generic grounding item from web search results.
+ */
+export interface LLMContextGenericItem extends LLMContextGroundingItem {}
+
+/**
+ * A point-of-interest grounding item from local recall.
+ */
+export interface LLMContextPoiItem extends LLMContextGroundingItem {
+  /**
+   * The business or place name.
+   * @type {string}
+   */
+  name: string;
+}
+
+/**
+ * A map/place grounding item from local recall.
+ */
+export interface LLMContextMapItem extends LLMContextGroundingItem {
+  /**
+   * The place name.
+   * @type {string}
+   */
+  name: string;
+}
+
+/**
+ * Metadata for a source URL in an LLM Context response.
+ */
+export interface LLMContextSource {
+  /**
+   * The page title.
+   * @type {string}
+   */
+  title: string;
+  /**
+   * The source hostname.
+   * @type {string}
+   */
+  hostname: string;
+  /**
+   * Page modification dates, when available.
+   * @type {string[] | null}
+   */
+  age?: string[] | null;
 }
 
 /**
