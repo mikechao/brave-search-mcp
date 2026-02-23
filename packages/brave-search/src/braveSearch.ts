@@ -20,6 +20,8 @@ import {
   BraveSearchOptions,
   ImageSearchApiResponse,
   ImageSearchOptions,
+  LLMContextApiResponse,
+  LLMContextOptions,
   LocalDescriptionsSearchApiResponse,
   LocalPoiSearchApiResponse,
   NewsSearchApiResponse,
@@ -165,6 +167,38 @@ class BraveSearch {
       return { webSearch: webSearchResponse, summary: summaryPromise };
     } catch (error) {
       throw this.handleApiError(error);
+    }
+  }
+
+  /**
+   * Retrieves pre-extracted web content optimized for AI agents, LLM grounding,
+   * and RAG pipelines.
+   * @param query The search query string. Maximum 400 characters and 50 words.
+   * @param options Optional settings to configure the LLM context request.
+   * @param signal Optional AbortSignal to cancel the request.
+   * @returns A promise that resolves to the LLM context results.
+   */
+  async llmContextSearch(
+    query: string,
+    options: LLMContextOptions = {},
+    signal?: AbortSignal,
+  ): Promise<LLMContextApiResponse> {
+    try {
+      const response = await axios.get<LLMContextApiResponse>(
+        `${this.baseUrl}/llm/context`,
+        {
+          params: {
+            q: query,
+            ...this.formatOptions(options),
+          },
+          headers: this.getHeaders(),
+          signal,
+        },
+      );
+      return response.data;
+    } catch (error) {
+      const handledError = this.handleApiError(error);
+      throw handledError;
     }
   }
 
@@ -341,4 +375,6 @@ export {
   type NewsSearchOptions,
   type VideoSearchApiResponse,
   type VideoSearchOptions,
+  type LLMContextApiResponse,
+  type LLMContextOptions,
 };

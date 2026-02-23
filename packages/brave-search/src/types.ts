@@ -163,11 +163,6 @@ export interface SummarizerOptions {
  */
 export interface LLMContextOptions {
   /**
-   * The search query. Maximum 400 characters and 50 words.
-   * @type {string}
-   */
-  q: string;
-  /**
    * The search query country, where the results come from.
    * @type {string}
    * @default "us"
