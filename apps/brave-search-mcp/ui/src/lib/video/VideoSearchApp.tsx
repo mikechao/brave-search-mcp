@@ -49,7 +49,7 @@ export default function VideoSearchApp({
   const isLoading = externalIsLoading ?? internalLoading;
 
   // Track previous display mode to detect host-initiated PiP exit
-  const prevDisplayMode = useRef(displayMode);
+  const prevDisplayModeRef = useRef(displayMode);
 
   // Check if host supports PiP mode
   const supportsPip = availableDisplayModes?.includes('pip') ?? false;
@@ -93,9 +93,9 @@ export default function VideoSearchApp({
   // Handle host-initiated PiP exit (user dismissed PiP via host controls)
   // We need to clear activeVideo when host exits PiP mode
   useEffect(() => {
-    const wasInPip = prevDisplayMode.current === 'pip';
+    const wasInPip = prevDisplayModeRef.current === 'pip';
     const exitedPip = wasInPip && displayMode !== 'pip';
-    prevDisplayMode.current = displayMode;
+    prevDisplayModeRef.current = displayMode;
 
     if (exitedPip && activeVideo) {
       // Host exited PiP mode, close the video
