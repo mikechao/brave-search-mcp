@@ -6,6 +6,7 @@ import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@model
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
 import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
+import { BraveLLMContextSearchTool } from './tools/BraveLLMContextSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
@@ -26,6 +27,7 @@ export class BraveMcpServer {
   private localSearchTool: BraveLocalSearchTool;
   private newsSearchTool: BraveNewsSearchTool;
   private videoSearchTool: BraveVideoSearchTool;
+  private llmContextSearchTool: BraveLLMContextSearchTool;
 
   /**
    * Creates a new BraveMcpServer instance.
@@ -58,6 +60,7 @@ export class BraveMcpServer {
     this.localSearchTool = new BraveLocalSearchTool(this, this.braveSearch, this.webSearchTool, this.isUI);
     this.newsSearchTool = new BraveNewsSearchTool(this, this.braveSearch, this.isUI);
     this.videoSearchTool = new BraveVideoSearchTool(this, this.braveSearch, this.isUI);
+    this.llmContextSearchTool = new BraveLLMContextSearchTool(this, this.braveSearch, this.isUI);
     this.setupTools();
   }
 
@@ -69,6 +72,7 @@ export class BraveMcpServer {
       this.setupDualResourceVideoTools();
       this.setupDualResourceWebTools();
       this.setupDualResourceLocalTools();
+      this.setupLLMContextSearchTool();
     }
     else {
       this.setupImageSearchTool();
@@ -76,6 +80,7 @@ export class BraveMcpServer {
       this.setupVideoSearchTool();
       this.setupWebSearchTool();
       this.setupLocalSearchTool();
+      this.setupLLMContextSearchTool();
     }
   }
 
@@ -564,6 +569,22 @@ export class BraveMcpServer {
         },
       },
       this.localSearchTool.execute.bind(this.localSearchTool),
+    );
+  }
+
+  private setupLLMContextSearchTool(): void {
+    this.server.registerTool(
+      this.llmContextSearchTool.name,
+      {
+        description: this.llmContextSearchTool.description,
+        inputSchema: this.llmContextSearchTool.inputSchema,
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          openWorldHint: true,
+        },
+      },
+      this.llmContextSearchTool.execute.bind(this.llmContextSearchTool),
     );
   }
 
