@@ -21,8 +21,8 @@ importers:
   apps/brave-search-mcp:
     dependencies:
       '@modelcontextprotocol/ext-apps':
-        specifier: ^1.0.1
-        version: 1.0.1(@modelcontextprotocol/sdk@1.26.0(zod@4.3.6))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@4.3.6)
+        specifier: ^1.1.0
+        version: 1.1.0(@modelcontextprotocol/sdk@1.26.0(zod@4.3.6))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@4.3.6)
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
         version: 1.26.0(zod@4.3.6)
@@ -801,8 +801,8 @@ packages:
     resolution: {integrity: sha512-chY46gNKD/tCd1YyX1e6rFDQiI9vhuTk8Iwvc/gMQ0UhSYqsTuMrcWzLNKayVF4hOtJgRBf2sEWzLT3KQKwGLg==}
     engines: {node: '>=18.0.0'}
 
-  '@modelcontextprotocol/ext-apps@1.0.1':
-    resolution: {integrity: sha512-rAPzBbB5GNgYk216paQjGKUgbNXSy/yeR95c0ni6Y4uvhWI2AeF+ztEOqQFLBMQy/MPM+02pbVK1HaQmQjMwYQ==}
+  '@modelcontextprotocol/ext-apps@1.1.0':
+    resolution: {integrity: sha512-o65O+sHHKP4h1kWMEz9sFKVIzF1BYZj/Oi5WM34g3IIqbwGxGZEailWiMqv360TWyL4HkdgLL6cXDtXebddaDQ==}
     peerDependencies:
       '@modelcontextprotocol/sdk': ^1.24.0
       react: ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -5599,7 +5599,7 @@ snapshots:
       - '@cfworker/json-schema'
       - supports-color
 
-  '@modelcontextprotocol/ext-apps@1.0.1(@modelcontextprotocol/sdk@1.26.0(zod@4.3.6))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@4.3.6)':
+  '@modelcontextprotocol/ext-apps@1.1.0(@modelcontextprotocol/sdk@1.26.0(zod@4.3.6))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)(zod@4.3.6)':
     dependencies:
       '@modelcontextprotocol/sdk': 1.26.0(zod@4.3.6)
       zod: 4.3.6
