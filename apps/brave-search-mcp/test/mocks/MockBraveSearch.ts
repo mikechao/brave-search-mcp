@@ -1,5 +1,6 @@
 import type {
   ImageSearchApiResponse,
+  LLMContextApiResponse,
   LocalDescriptionsSearchApiResponse,
   LocalPoiSearchApiResponse,
   NewsSearchApiResponse,
@@ -17,6 +18,7 @@ export class MockBraveSearch {
   imageSearch = vi.fn();
   newsSearch = vi.fn();
   videoSearch = vi.fn();
+  llmContextSearch = vi.fn();
   localPoiSearch = vi.fn();
   localDescriptionsSearch = vi.fn();
   getSummarizedAnswer = vi.fn();
@@ -30,6 +32,7 @@ export class MockBraveSearch {
     this.imageSearch.mockReset();
     this.newsSearch.mockReset();
     this.videoSearch.mockReset();
+    this.llmContextSearch.mockReset();
     this.localPoiSearch.mockReset();
     this.localDescriptionsSearch.mockReset();
     this.getSummarizedAnswer.mockReset();
@@ -121,6 +124,14 @@ export function createMockBraveSearch(): MockBraveSearch {
       },
     ],
   } as VideoSearchApiResponse);
+
+  mock.llmContextSearch.mockResolvedValue({
+    grounding: {
+      generic: [],
+      map: [],
+    },
+    sources: {},
+  } as LLMContextApiResponse);
 
   mock.localPoiSearch.mockResolvedValue({
     type: 'local_pois',

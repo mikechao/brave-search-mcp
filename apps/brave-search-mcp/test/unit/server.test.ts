@@ -105,10 +105,17 @@ describe('braveMcpServer', () => {
 
         expect(resourceUris).toHaveLength(ALL_UI_RESOURCE_URIS.length);
         expect(resourceUris).toEqual(expect.arrayContaining(ALL_UI_RESOURCE_URIS));
-        expect(tools).toHaveLength(5);
+        expect(tools).toHaveLength(6);
+
+        const uiTools = tools.filter((tool) => {
+          const meta = tool._meta as Record<string, unknown> | undefined;
+          const uiMeta = meta?.ui as { resourceUri?: string } | undefined;
+          return typeof uiMeta?.resourceUri === 'string' && typeof meta?.['openai/outputTemplate'] === 'string';
+        });
+        expect(uiTools).toHaveLength(5);
 
         const resourceUriSet = new Set(resourceUris);
-        for (const tool of tools) {
+        for (const tool of uiTools) {
           const meta = tool._meta;
           const ui = meta?.ui as { resourceUri?: string } | undefined;
           const mcpAppUri = ui?.resourceUri;
