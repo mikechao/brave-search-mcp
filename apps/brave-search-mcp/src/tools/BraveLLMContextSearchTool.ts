@@ -49,8 +49,9 @@ const llmContextSearchInputSchema = z.object({
 
 export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchInputSchema> {
   public readonly name = 'brave_llm_context_search';
-  public readonly description = 'Retrieves pre-extracted web content optimized for AI agents, LLM grounding, and RAG pipelines. '
-    + 'Use this to get relevant web context for answering questions with grounded, sourced information. '
+  public readonly description = 'Fetches and extracts full web page content optimized for deep research and grounding. '
+    + 'Unlike web search (which returns titles and descriptions), this tool returns the actual text from web pages — '
+    + 'making it best for questions that require reading and synthesizing sources, such as "how does X work", "explain Y", or "what are the tradeoffs of Z". '
     + 'Defaults to compact mode for concise model context, with full mode available for raw output.';
 
   public readonly inputSchema = llmContextSearchInputSchema;
