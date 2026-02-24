@@ -53,9 +53,9 @@ export type BraveWebSearchStructuredContent = z.infer<typeof webSearchOutputSche
 
 export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
   public readonly name = 'brave_web_search';
-  public readonly description = 'Performs a web search using the Brave Search API, ideal for general queries, and online content. '
-    + 'Use this for broad information gathering, recent events, or when you need diverse web sources. '
-    + 'Maximum 20 results per request ';
+  public readonly description = 'Performs a web search and returns titles, URLs, and short descriptions — not the full content of the pages. '
+    + 'Use this to discover sources or get an overview of what is available on a topic. '
+    + 'Maximum 20 results per request.';
 
   public readonly inputSchema = webSearchInputSchema;
 

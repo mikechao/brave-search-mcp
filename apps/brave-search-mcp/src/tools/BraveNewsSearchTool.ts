@@ -54,9 +54,8 @@ export type BraveNewsSearchStructuredContent = z.infer<typeof newsSearchOutputSc
 
 export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> {
   public readonly name = 'brave_news_search';
-  public readonly description = 'Searches for news articles using the Brave Search API. '
-    + 'Use this for recent events, trending topics, or specific news stories. '
-    + 'Returns a list of articles with titles, URLs, and descriptions. '
+  public readonly description = 'Searches for news articles and returns titles, URLs, and short descriptions — not the full article content. '
+    + 'Use this to find recent events or trending topics. '
     + 'Maximum 20 results per request.';
 
   public readonly inputSchema = newsSearchInputSchema;
