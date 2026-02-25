@@ -1,6 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
-import react from '@vitejs/plugin-react-swc';
+import preact from '@preact/preset-vite';
 import { defineConfig } from 'vite';
 import { viteSingleFile } from 'vite-plugin-singlefile';
 
@@ -11,15 +11,22 @@ if (!INPUT) {
 
 const isDevelopment = process.env.NODE_ENV === 'development';
 const rootDir = path.resolve(process.cwd(), 'ui');
+const srcDir = path.resolve(rootDir, 'src');
 const inputPath = path.isAbsolute(INPUT) ? INPUT : path.resolve(rootDir, INPUT);
+const reactShimPath = path.resolve(srcDir, 'shims/react-compat.js');
 
 export default defineConfig({
   root: rootDir,
-  plugins: [react(), viteSingleFile()],
+  plugins: [preact({ reactAliasesEnabled: false }), viteSingleFile()],
   resolve: {
-    alias: {
-      '@': path.resolve(rootDir, 'src'),
-    },
+    alias: [
+      { find: /^@\//, replacement: `${srcDir}/` },
+      { find: 'react-dom/test-utils', replacement: 'preact/test-utils' },
+      { find: 'react-dom', replacement: 'preact/compat' },
+      { find: 'react/jsx-runtime', replacement: 'preact/jsx-runtime' },
+      { find: 'react/jsx-dev-runtime', replacement: 'preact/jsx-dev-runtime' },
+      { find: /^react$/, replacement: reactShimPath },
+    ],
   },
   build: {
     sourcemap: isDevelopment ? 'inline' : undefined,

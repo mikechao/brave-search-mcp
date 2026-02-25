@@ -1,4 +1,6 @@
-import type { WidgetProps } from '../../widget-props';
+import type { ToolResult, WidgetProps } from '../../widget-props';
+import type { LocalSearchData } from './types';
+import { useCallback, useState } from 'react';
 import { useMcpApp } from '../../hooks/useMcpApp';
 import LocalSearchApp from './LocalSearchApp';
 
@@ -18,6 +20,39 @@ export default function LocalMcpAppMode() {
     sendLog,
     requestDisplayMode,
   } = useMcpApp({ appInfo: APP_INFO });
+  const [pagedToolResult, setPagedToolResult] = useState<ToolResult | null>(null);
+  const [pagedQuery, setPagedQuery] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const currentQuery = (toolInputs?.query as string) ?? null;
+  const currentResult = pagedToolResult && pagedQuery === currentQuery
+    ? pagedToolResult
+    : toolResult;
+  const currentData = (currentResult?._meta?.structuredContent ?? currentResult?.structuredContent) as LocalSearchData | undefined;
+
+  const handleLoadPage = useCallback(async (offset: number) => {
+    if (!currentData)
+      return;
+
+    setIsLoading(true);
+    try {
+      const result = await callServerTool({
+        name: 'brave_local_search',
+        arguments: {
+          query: currentData.query,
+          count: currentData.pageSize ?? currentData.count ?? 10,
+          offset,
+        },
+      });
+      setPagedToolResult(result as ToolResult);
+      setPagedQuery(currentData.query);
+    }
+    catch (err) {
+      console.error('Failed to load page:', err);
+    }
+    finally {
+      setIsLoading(false);
+    }
+  }, [callServerTool, currentData]);
 
   if (error) {
     return (
@@ -33,7 +68,7 @@ export default function LocalMcpAppMode() {
   const props: WidgetProps = {
     toolInputs,
     toolInputsPartial,
-    toolResult,
+    toolResult: currentResult,
     hostContext,
     callServerTool,
     sendMessage,
@@ -44,8 +79,16 @@ export default function LocalMcpAppMode() {
   };
 
   // Derive initial loading state: tool invoked but no result yet
-  const isInitialLoading = toolInputs !== null && toolResult === null;
+  const isInitialLoading = toolInputs !== null && !currentResult;
   const loadingQuery = (toolInputs?.query as string) ?? undefined;
 
-  return <LocalSearchApp {...props} isInitialLoading={isInitialLoading} loadingQuery={loadingQuery} />;
+  return (
+    <LocalSearchApp
+      {...props}
+      onLoadPage={handleLoadPage}
+      isLoading={isLoading}
+      isInitialLoading={isInitialLoading}
+      loadingQuery={loadingQuery}
+    />
+  );
 }
