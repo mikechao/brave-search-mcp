@@ -30,7 +30,8 @@
   "files": [
     "LICENSE",
     "README.md",
-    "dist"
+    "dist/index.js",
+    "dist/ui/**/*"
   ],
   "publishConfig": {
     "access": "public"
