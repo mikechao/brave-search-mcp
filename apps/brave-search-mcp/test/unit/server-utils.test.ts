@@ -1,12 +1,7 @@
-import type { Request, Response } from 'express';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { startServer, startStdioServer, startStreamableHttpServer } from '../../src/server-utils.js';
 
 const mockState = vi.hoisted(() => {
-  const createMcpExpressAppMock = vi.fn();
-  const corsMiddleware = vi.fn();
-  const corsMock = vi.fn(() => corsMiddleware);
-
   const stdioCtorMock = vi.fn();
   const stdioInstances: unknown[] = [];
   class MockStdioServerTransport {
@@ -16,43 +11,75 @@ const mockState = vi.hoisted(() => {
     }
   }
 
-  const streamableCtorMock = vi.fn();
-  const streamableInstances: Array<{
+  const webStandardCtorMock = vi.fn();
+  const webStandardInstances: Array<{
     handleRequest: ReturnType<typeof vi.fn>;
     close: ReturnType<typeof vi.fn>;
   }> = [];
-  class MockStreamableHTTPServerTransport {
-    handleRequest = vi.fn().mockResolvedValue(undefined);
+  class MockWebStandardStreamableHTTPServerTransport {
+    handleRequest = vi.fn().mockResolvedValue(new Response('ok'));
     close = vi.fn().mockResolvedValue(undefined);
 
     constructor(options: unknown) {
-      streamableCtorMock(options);
-      streamableInstances.push(this);
+      webStandardCtorMock(options);
+      webStandardInstances.push(this);
     }
   }
 
+  // Capture the route handler registered via app.all('/mcp', ...)
+  let mcpHandler: ((c: any) => Promise<Response>) | undefined;
+  const honoUseMock = vi.fn();
+  const honoAllMock = vi.fn((path: string, handler: (c: any) => Promise<Response>) => {
+    if (path === '/mcp') {
+      mcpHandler = handler;
+    }
+  });
+  const honoFetchMock = vi.fn();
+
+  const mockHonoInstance = {
+    use: honoUseMock,
+    all: honoAllMock,
+    fetch: honoFetchMock,
+  };
+
+  class MockHono {
+    use = honoUseMock;
+    all = honoAllMock;
+    fetch = honoFetchMock;
+    constructor() {
+      Object.assign(this, mockHonoInstance);
+    }
+  }
+
+  const corsMock = vi.fn(() => vi.fn());
+
+  let _serveCallback: (() => void) | undefined;
+  const mockHttpServer = {
+    close: vi.fn((cb?: () => void) => cb?.()),
+  };
+  const serveMock = vi.fn((options: any, callback?: () => void) => {
+    _serveCallback = callback;
+    // Call callback immediately to simulate server start
+    callback?.();
+    return mockHttpServer;
+  });
+
   return {
-    createMcpExpressAppMock,
-    corsMiddleware,
-    corsMock,
     stdioCtorMock,
     stdioInstances,
     MockStdioServerTransport,
-    streamableCtorMock,
-    streamableInstances,
-    MockStreamableHTTPServerTransport,
-  };
-});
-
-vi.mock('@modelcontextprotocol/sdk/server/express.js', () => {
-  return {
-    createMcpExpressApp: mockState.createMcpExpressAppMock,
-  };
-});
-
-vi.mock('cors', () => {
-  return {
-    default: mockState.corsMock,
+    webStandardCtorMock,
+    webStandardInstances,
+    MockWebStandardStreamableHTTPServerTransport,
+    MockHono,
+    honoUseMock,
+    honoAllMock,
+    honoFetchMock,
+    corsMock,
+    serveMock,
+    mockHttpServer,
+    getMcpHandler: () => mcpHandler,
+    resetMcpHandler: () => { mcpHandler = undefined; },
   };
 });
 
@@ -62,9 +89,27 @@ vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => {
   };
 });
 
-vi.mock('@modelcontextprotocol/sdk/server/streamableHttp.js', () => {
+vi.mock('@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js', () => {
   return {
-    StreamableHTTPServerTransport: mockState.MockStreamableHTTPServerTransport,
+    WebStandardStreamableHTTPServerTransport: mockState.MockWebStandardStreamableHTTPServerTransport,
+  };
+});
+
+vi.mock('hono', () => {
+  return {
+    Hono: mockState.MockHono,
+  };
+});
+
+vi.mock('hono/cors', () => {
+  return {
+    cors: mockState.corsMock,
+  };
+});
+
+vi.mock('@hono/node-server', () => {
+  return {
+    serve: mockState.serveMock,
   };
 });
 
@@ -78,33 +123,6 @@ function createServerLike(overrides?: Partial<ServerLike>): ServerLike {
     connect: vi.fn().mockResolvedValue(undefined),
     close: vi.fn().mockResolvedValue(undefined),
     ...overrides,
-  };
-}
-
-function setupMockExpressApp() {
-  let routeHandler: ((req: Request, res: Response) => Promise<void>) | undefined;
-  const httpServer = {
-    close: vi.fn((cb?: () => void) => cb?.()),
-  };
-
-  const app = {
-    use: vi.fn(),
-    all: vi.fn((route: string, handler: (req: Request, res: Response) => Promise<void>) => {
-      if (route === '/mcp') {
-        routeHandler = handler;
-      }
-    }),
-    listen: vi.fn((_: number, cb: (err?: Error) => void) => {
-      cb();
-      return httpServer;
-    }),
-  };
-
-  mockState.createMcpExpressAppMock.mockReturnValue(app);
-  return {
-    app,
-    httpServer,
-    getRouteHandler: () => routeHandler,
   };
 }
 
@@ -125,7 +143,8 @@ describe('server-utils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockState.stdioInstances.length = 0;
-    mockState.streamableInstances.length = 0;
+    mockState.webStandardInstances.length = 0;
+    mockState.resetMcpHandler();
 
     restoreEnvVar('PORT', originalPort);
     restoreEnvVar('HOST', originalHost);
@@ -158,19 +177,17 @@ describe('server-utils', () => {
 
     expect(createServer).toHaveBeenCalledTimes(1);
     expect(server.connect).toHaveBeenCalledTimes(1);
-    expect(mockState.createMcpExpressAppMock).not.toHaveBeenCalled();
+    expect(mockState.serveMock).not.toHaveBeenCalled();
   });
 
   it('startServer routes to streamable http when isHttp=true', async () => {
     const server = createServerLike();
     const createServer = vi.fn(() => server as never);
-    const { app } = setupMockExpressApp();
     const processOnSpy = vi.spyOn(process, 'on').mockReturnValue(process);
 
     await startServer(createServer, true);
 
-    expect(mockState.createMcpExpressAppMock).toHaveBeenCalledTimes(1);
-    expect(app.listen).toHaveBeenCalledTimes(1);
+    expect(mockState.serveMock).toHaveBeenCalledTimes(1);
     expect(processOnSpy).toHaveBeenCalledWith('SIGINT', expect.any(Function));
     expect(processOnSpy).toHaveBeenCalledWith('SIGTERM', expect.any(Function));
     expect(createServer).not.toHaveBeenCalled();
@@ -194,10 +211,7 @@ describe('server-utils', () => {
 
   it('startStreamableHttpServer configures app and handles request lifecycle', async () => {
     process.env.PORT = '4567';
-    process.env.HOST = '127.0.0.1';
-    process.env.ALLOWED_HOSTS = 'example.com, local.test';
 
-    const { app, getRouteHandler, httpServer } = setupMockExpressApp();
     const server = createServerLike();
     const createServer = vi.fn(() => server as never);
     const signalHandlers = new Map<string, () => void>();
@@ -209,58 +223,59 @@ describe('server-utils', () => {
 
     await startStreamableHttpServer(createServer);
 
-    expect(mockState.createMcpExpressAppMock).toHaveBeenCalledWith({
-      host: '127.0.0.1',
-      allowedHosts: ['example.com', 'local.test'],
-    });
+    // Verify cors middleware was registered
     expect(mockState.corsMock).toHaveBeenCalledTimes(1);
-    expect(app.use).toHaveBeenCalledWith(mockState.corsMiddleware);
-    expect(app.listen).toHaveBeenCalledWith(4567, expect.any(Function));
+    expect(mockState.honoUseMock).toHaveBeenCalled();
+
+    // Verify serve was called with correct port
+    expect(mockState.serveMock).toHaveBeenCalledWith(
+      expect.objectContaining({ port: 4567 }),
+      expect.any(Function),
+    );
     expect(processOnSpy).toHaveBeenCalledWith('SIGINT', expect.any(Function));
     expect(processOnSpy).toHaveBeenCalledWith('SIGTERM', expect.any(Function));
 
-    const handler = getRouteHandler();
+    // Invoke the /mcp route handler
+    const handler = mockState.getMcpHandler();
     expect(handler).toBeTypeOf('function');
     if (!handler) {
       throw new TypeError('Expected /mcp route handler');
     }
 
-    const closeHandlers: Array<() => void> = [];
-    const req = { body: { ping: 'pong' } } as Request;
-    const res = {
-      headersSent: false,
-      on: vi.fn((event: string, cb: () => void) => {
-        if (event === 'close')
-          closeHandlers.push(cb);
-        return res;
-      }),
-      status: vi.fn().mockReturnThis(),
-      json: vi.fn(),
-    } as unknown as Response;
+    // Create a mock Hono context with AbortController for lifecycle testing
+    const abortController = new AbortController();
+    const mockContext = {
+      req: { raw: new Request('http://localhost:4567/mcp', { method: 'POST', signal: abortController.signal }) },
+      json: vi.fn((body: any, status?: number) => new Response(JSON.stringify(body), { status: status ?? 200 })),
+    };
 
-    await handler(req, res);
+    await handler(mockContext);
 
     expect(createServer).toHaveBeenCalledTimes(1);
-    expect(mockState.streamableCtorMock).toHaveBeenCalledWith({
+    expect(mockState.webStandardCtorMock).toHaveBeenCalledWith({
       sessionIdGenerator: undefined,
     });
-    const transport = mockState.streamableInstances[0];
+    const transport = mockState.webStandardInstances[0];
     expect(server.connect).toHaveBeenCalledWith(transport as never);
-    expect(transport.handleRequest).toHaveBeenCalledWith(req, res, req.body);
-    expect(closeHandlers).toHaveLength(1);
+    expect(transport.handleRequest).toHaveBeenCalledWith(mockContext.req.raw);
 
-    closeHandlers[0]();
+    // Cleanup should NOT have been called yet (deferred to client disconnect)
+    expect(transport.close).not.toHaveBeenCalled();
+    expect(server.close).not.toHaveBeenCalled();
+
+    // Simulate client disconnect
+    abortController.abort();
     await Promise.resolve();
     expect(transport.close).toHaveBeenCalledTimes(1);
     expect(server.close).toHaveBeenCalledTimes(1);
 
+    // Test shutdown signal
     signalHandlers.get('SIGINT')?.();
-    expect(httpServer.close).toHaveBeenCalledTimes(1);
+    expect(mockState.mockHttpServer.close).toHaveBeenCalledTimes(1);
     expect(exitSpy).toHaveBeenCalledWith(0);
   });
 
-  it('startStreamableHttpServer returns 500 JSON when request handling throws and headers not sent', async () => {
-    const { getRouteHandler } = setupMockExpressApp();
+  it('startStreamableHttpServer returns 500 JSON when request handling throws', async () => {
     const error = new Error('connect failed');
     const server = createServerLike({
       connect: vi.fn().mockRejectedValue(error),
@@ -270,55 +285,26 @@ describe('server-utils', () => {
     vi.spyOn(process, 'on').mockReturnValue(process);
 
     await startStreamableHttpServer(createServer);
-    const handler = getRouteHandler();
+    const handler = mockState.getMcpHandler();
     if (!handler) {
       throw new TypeError('Expected /mcp route handler');
     }
 
-    const req = { body: {} } as Request;
-    const res = {
-      headersSent: false,
-      on: vi.fn().mockReturnThis(),
-      status: vi.fn().mockReturnThis(),
-      json: vi.fn(),
-    } as unknown as Response;
+    const mockContext = {
+      req: { raw: new Request('http://localhost:3001/mcp', { method: 'POST' }) },
+      json: vi.fn((body: any, status?: number) => new Response(JSON.stringify(body), { status: status ?? 200 })),
+    };
 
-    await handler(req, res);
+    const _response = await handler(mockContext);
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('MCP error:', error);
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({
-      jsonrpc: '2.0',
-      error: { code: -32603, message: 'Internal server error' },
-      id: null,
-    });
-  });
-
-  it('startStreamableHttpServer does not write 500 response when headers already sent', async () => {
-    const { getRouteHandler } = setupMockExpressApp();
-    const server = createServerLike({
-      connect: vi.fn().mockRejectedValue(new Error('late failure')),
-    });
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.spyOn(process, 'on').mockReturnValue(process);
-
-    await startStreamableHttpServer(() => server as never);
-    const handler = getRouteHandler();
-    if (!handler) {
-      throw new TypeError('Expected /mcp route handler');
-    }
-
-    const req = { body: {} } as Request;
-    const res = {
-      headersSent: true,
-      on: vi.fn().mockReturnThis(),
-      status: vi.fn().mockReturnThis(),
-      json: vi.fn(),
-    } as unknown as Response;
-
-    await handler(req, res);
-
-    expect(res.status).not.toHaveBeenCalled();
-    expect(res.json).not.toHaveBeenCalled();
+    expect(mockContext.json).toHaveBeenCalledWith(
+      {
+        jsonrpc: '2.0',
+        error: { code: -32603, message: 'Internal server error' },
+        id: null,
+      },
+      500,
+    );
   });
 });
