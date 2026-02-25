@@ -1,8 +1,8 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import VideoChatGPTMode from './video-chatgpt-mode.tsx';
 import '../../global.css';
 import './video.css';
-import VideoChatGPTMode from './video-chatgpt-mode.tsx';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
