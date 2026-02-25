@@ -183,23 +183,11 @@ class BraveSearch {
     options: LLMContextOptions = {},
     signal?: AbortSignal,
   ): Promise<LLMContextApiResponse> {
-    try {
-      const response = await axios.get<LLMContextApiResponse>(
-        `${this.baseUrl}/llm/context`,
-        {
-          params: {
-            q: query,
-            ...this.formatOptions(options),
-          },
-          headers: this.getHeaders(),
-          signal,
-        },
-      );
-      return response.data;
-    } catch (error) {
-      const handledError = this.handleApiError(error);
-      throw handledError;
-    }
+    return this.getJson<LLMContextApiResponse>(
+      `${this.baseUrl}/llm/context`,
+      { q: query, ...this.formatOptions(options) },
+      signal,
+    );
   }
 
   /**
