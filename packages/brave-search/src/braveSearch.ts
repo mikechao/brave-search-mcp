@@ -13,8 +13,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import axios from "axios";
-
 const DEFAULT_POLLING_INTERVAL = 500;
 const DEFAULT_MAX_POLL_ATTEMPTS = 20;
 
@@ -85,23 +83,11 @@ class BraveSearch {
     options: BraveSearchOptions = {},
     signal?: AbortSignal,
   ): Promise<WebSearchApiResponse> {
-    try {
-      const response = await axios.get<WebSearchApiResponse>(
-        `${this.baseUrl}/web/search`,
-        {
-          params: {
-            q: query,
-            ...this.formatOptions(options),
-          },
-          headers: this.getHeaders(),
-          signal,
-        },
-      );
-      return response.data;
-    } catch (error) {
-      const handledError = this.handleApiError(error);
-      throw handledError;
-    }
+    return this.getJson<WebSearchApiResponse>(
+      `${this.baseUrl}/web/search`,
+      { q: query, ...this.formatOptions(options) },
+      signal,
+    );
   }
 
   /**
@@ -115,47 +101,23 @@ class BraveSearch {
     options: ImageSearchOptions = {},
     signal?: AbortSignal,
   ): Promise<ImageSearchApiResponse> {
-    try {
-      const response = await axios.get<ImageSearchApiResponse>(
-        `${this.baseUrl}/images/search`,
-        {
-          params: {
-            q: query,
-            ...this.formatOptions(options),
-          },
-          headers: this.getHeaders(),
-          signal,
-        }
-      )
-      return response.data;
-    } catch (error) {
-      const handledError = this.handleApiError(error);
-      throw handledError;
-    }
+    return this.getJson<ImageSearchApiResponse>(
+      `${this.baseUrl}/images/search`,
+      { q: query, ...this.formatOptions(options) },
+      signal,
+    );
   }
 
   async newsSearch(
     query: string,
     options: NewsSearchOptions = {},
     signal?: AbortSignal,
-  ) : Promise<NewsSearchApiResponse> {
-    try {
-      const response = await axios.get<NewsSearchApiResponse>(
-        `${this.baseUrl}/news/search?`,
-        {
-          params: {
-            q: query,
-            ...this.formatOptions(options),
-          },
-          headers: this.getHeaders(),
-          signal,
-        },
-      );
-      return response.data;
-    } catch (error) {
-      const handledError = this.handleApiError(error);
-      throw handledError;
-    }
+  ): Promise<NewsSearchApiResponse> {
+    return this.getJson<NewsSearchApiResponse>(
+      `${this.baseUrl}/news/search`,
+      { q: query, ...this.formatOptions(options) },
+      signal,
+    );
   }
 
   async videoSearch(
@@ -163,23 +125,11 @@ class BraveSearch {
     options: VideoSearchOptions = {},
     signal?: AbortSignal,
   ): Promise<VideoSearchApiResponse> {
-    try {
-      const response = await axios.get<VideoSearchApiResponse>(
-        `${this.baseUrl}/videos/search?`,
-        {
-          params: {
-            q: query,
-            ...this.formatOptions(options),
-          },
-          headers: this.getHeaders(),
-          signal,
-        },
-      );
-      return response.data;
-    } catch (error) {
-      const handledError = this.handleApiError(error);
-      throw handledError;
-    }
+    return this.getJson<VideoSearchApiResponse>(
+      `${this.baseUrl}/videos/search`,
+      { q: query, ...this.formatOptions(options) },
+      signal,
+    );
   }
 
   /**
@@ -224,15 +174,14 @@ class BraveSearch {
    * @returns A promise that resolves to the search results.
    */
   async localPoiSearch(ids: string[], signal?: AbortSignal): Promise<LocalPoiSearchApiResponse> {
+    const url = `${this.baseUrl}/local/pois?${this.formatIdsQuery(ids)}`;
     try {
-      const response = await axios.get<LocalPoiSearchApiResponse>(
-        `${this.baseUrl}/local/pois?${this.formatIdsQuery(ids)}`,
-        {
-          headers: this.getHeaders(),
-          signal,
-        },
-      );
-      return response.data;
+      const response = await fetch(url, { headers: this.getHeaders(), signal });
+      if (!response.ok) {
+        const data = await response.json().catch(() => undefined);
+        throw this.buildApiError(response.status, response.statusText, data);
+      }
+      return response.json() as Promise<LocalPoiSearchApiResponse>;
     } catch (error) {
       throw this.handleApiError(error);
     }
@@ -247,15 +196,14 @@ class BraveSearch {
     ids: string[],
     signal?: AbortSignal,
   ): Promise<LocalDescriptionsSearchApiResponse> {
+    const url = `${this.baseUrl}/local/descriptions?${this.formatIdsQuery(ids)}`;
     try {
-      const response = await axios.get<LocalDescriptionsSearchApiResponse>(
-        `${this.baseUrl}/local/descriptions?${this.formatIdsQuery(ids)}`,
-        {
-          headers: this.getHeaders(),
-          signal,
-        },
-      );
-      return response.data;
+      const response = await fetch(url, { headers: this.getHeaders(), signal });
+      if (!response.ok) {
+        const data = await response.json().catch(() => undefined);
+        throw this.buildApiError(response.status, response.statusText, data);
+      }
+      return response.json() as Promise<LocalDescriptionsSearchApiResponse>;
     } catch (error) {
       throw this.handleApiError(error);
     }
@@ -304,27 +252,37 @@ class BraveSearch {
     options: SummarizerOptions,
     signal?: AbortSignal,
   ): Promise<SummarizerSearchApiResponse> {
+    return this.getJson<SummarizerSearchApiResponse>(
+      `${this.baseUrl}/summarizer/search`,
+      { key, ...this.formatOptions(options) },
+      signal,
+    );
+  }
+
+  /**
+   * Performs a GET request to the given URL with query params and returns parsed JSON.
+   */
+  private async getJson<T>(
+    url: string,
+    params: Record<string, string>,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    const fullUrl = `${url}?${new URLSearchParams(params)}`;
     try {
-      const response = await axios.get<SummarizerSearchApiResponse>(
-        `${this.baseUrl}/summarizer/search`,
-        {
-          params: {
-            key,
-            ...this.formatOptions(options),
-          },
-          headers: this.getHeaders(),
-          signal,
-        },
-      );
-      return response.data;
+      const response = await fetch(fullUrl, { headers: this.getHeaders(), signal });
+      if (!response.ok) {
+        const data = await response.json().catch(() => undefined);
+        throw this.buildApiError(response.status, response.statusText, data);
+      }
+      return response.json() as Promise<T>;
     } catch (error) {
       throw this.handleApiError(error);
     }
   }
 
-  private getHeaders() {
+  private getHeaders(): Record<string, string> {
     return {
-      Accept: "application/json",
+      "Accept": "application/json",
       "Accept-Encoding": "gzip",
       "X-Subscription-Token": this.apiKey,
     };
@@ -346,21 +304,25 @@ class BraveSearch {
     return ids.map((id) => `ids=${encodeURIComponent(id)}`).join("&");
   }
 
-  private handleApiError(error: any): BraveSearchError {
-    if (axios.isAxiosError(error)) {
-      const status = error.response?.status;
-      const message = error.response?.data?.message || error.message;
-      const responseData = error.response?.data;
-
-      if (status === 429) {
-        return new BraveSearchError(`Rate limit exceeded: ${message}`, responseData);
-      } else if (status === 401) {
-        return new BraveSearchError(`Authentication error: ${message}`, responseData);
-      } else {
-        return new BraveSearchError(`API error (${status}): ${message}`, responseData);
-      }
+  /**
+   * Builds a BraveSearchError from an HTTP error response.
+   */
+  private buildApiError(status: number, statusText: string, responseData?: any): BraveSearchError {
+    const message = responseData?.message || statusText;
+    if (status === 429) {
+      return new BraveSearchError(`Rate limit exceeded: ${message}`, responseData);
+    } else if (status === 401) {
+      return new BraveSearchError(`Authentication error: ${message}`, responseData);
+    } else {
+      return new BraveSearchError(`API error (${status}): ${message}`, responseData);
     }
-    return new BraveSearchError(`Unexpected error: ${error.message}`);
+  }
+
+  private handleApiError(error: any): BraveSearchError {
+    if (error instanceof BraveSearchError) {
+      return error;
+    }
+    return new BraveSearchError(`Unexpected error: ${error?.message ?? String(error)}`);
   }
 }
 
