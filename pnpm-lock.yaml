@@ -51,7 +51,7 @@ importers:
         specifier: ^1.9.4
         version: 1.9.4
       preact:
-        specifier: ^10.27.2
+        specifier: ^10.28.4
         version: 10.28.4
       react-leaflet:
         specifier: ^5.0.0
@@ -79,7 +79,7 @@ importers:
         specifier: ^0.8.2
         version: 0.8.2
       '@preact/preset-vite':
-        specifier: ^2.10.2
+        specifier: ^2.10.3
         version: 2.10.3(@babel/core@7.28.6)(preact@10.28.4)(rollup@4.55.1)(vite@7.3.1(@types/node@22.19.3)(jiti@2.6.1)(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2))
       '@tailwindcss/postcss':
         specifier: ^4.1.18
