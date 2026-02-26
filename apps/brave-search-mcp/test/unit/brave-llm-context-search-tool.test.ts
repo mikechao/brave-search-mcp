@@ -168,4 +168,77 @@ describe('braveLLMContextSearchTool', () => {
     expect(parsed.snippets[0]).toEqual({ foo: 'bar' });
     expect(parsed.snippets[1]).toBe('plain text snippet');
   });
+
+  it('combines query and url for retrieval and filters to exact URL matches', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const server = createServerStub();
+    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+
+    mockBraveSearch.llmContextSearch.mockResolvedValue({
+      grounding: {
+        generic: [
+          {
+            title: 'Target page',
+            url: 'https://example.com/target',
+            snippets: ['Target snippet one.'],
+          },
+          {
+            title: 'Other page',
+            url: 'https://example.com/other',
+            snippets: ['Other snippet one.'],
+          },
+        ],
+      },
+      sources: {},
+    } as Awaited<ReturnType<BraveSearch['llmContextSearch']>>);
+
+    const result = await tool.executeCore({
+      query: 'banana ripening',
+      url: 'https://example.com/target',
+    });
+
+    expect(mockBraveSearch.llmContextSearch).toHaveBeenCalledWith('banana ripening https://example.com/target', {
+      count: 8,
+      maximum_number_of_urls: 8,
+      maximum_number_of_tokens: 2048,
+      maximum_number_of_snippets: 16,
+      maximum_number_of_tokens_per_url: 512,
+      maximum_number_of_snippets_per_url: 2,
+      context_threshold_mode: 'strict',
+    });
+
+    const text = getFirstTextContent(result);
+    const lines = text.split('\n');
+    expect(lines).toHaveLength(1);
+    const parsed = JSON.parse(lines[0]);
+    expect(parsed.url).toBe('https://example.com/target');
+    expect(parsed.title).toBe('Target page');
+    expect(parsed.snippets).toEqual(['Target snippet one.']);
+  });
+
+  it('returns explicit message when url filter has no matches', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const server = createServerStub();
+    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+
+    mockBraveSearch.llmContextSearch.mockResolvedValue({
+      grounding: {
+        generic: [
+          {
+            title: 'Other page',
+            url: 'https://example.com/other',
+            snippets: ['Other snippet one.'],
+          },
+        ],
+      },
+      sources: {},
+    } as Awaited<ReturnType<BraveSearch['llmContextSearch']>>);
+
+    const result = await tool.executeCore({
+      query: 'banana ripening',
+      url: 'https://example.com/target',
+    });
+
+    expect(getFirstTextContent(result)).toBe('No context snippets found for URL "https://example.com/target" with query "banana ripening"');
+  });
 });

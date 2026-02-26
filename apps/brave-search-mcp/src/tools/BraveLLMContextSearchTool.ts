@@ -35,6 +35,7 @@ const boilerplateSignals = [
 
 const llmContextSearchInputSchema = z.object({
   query: z.string().max(400).describe('The search query. Maximum 400 characters and 50 words.'),
+  url: z.url().optional().describe('Optional URL to target. When provided, query and URL are combined for retrieval, and only snippets from this exact URL are returned.'),
   count: z.number().min(1).max(50).default(COMPACT_DEFAULTS.count).optional().describe(`The maximum number of search results considered. Minimum 1, maximum 50. Default ${COMPACT_DEFAULTS.count} in compact mode, up to 50 in full mode.`),
   maximumNumberOfUrls: z.number().min(1).max(50).default(COMPACT_DEFAULTS.maximumNumberOfUrls).optional().describe(`The maximum number of URLs to include in the response. Minimum 1, maximum 50. Default ${COMPACT_DEFAULTS.maximumNumberOfUrls} in compact mode, up to 50 in full mode.`),
   maximumNumberOfTokens: z.number().min(1024).max(32768).default(COMPACT_DEFAULTS.maximumNumberOfTokens).optional().describe(`The approximate maximum number of tokens in the returned context. Minimum 1024, maximum 32768. Default ${COMPACT_DEFAULTS.maximumNumberOfTokens} in compact mode, up to 32768 in full mode.`),
@@ -52,7 +53,8 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
   public readonly description = 'Fetches and extracts full web page content optimized for deep research and grounding. '
     + 'Unlike web search (which returns titles and descriptions), this tool returns the actual text from web pages — '
     + 'making it best for questions that require reading and synthesizing sources, such as "how does X work", "explain Y", or "what are the tradeoffs of Z". '
-    + 'Defaults to compact mode for concise model context, with full mode available for raw output.';
+    + 'Defaults to compact mode for concise model context, with full mode available for raw output. '
+    + 'Supports optional URL targeting: when url is provided, query and URL are combined for retrieval and results are filtered to that exact URL.';
 
   public readonly inputSchema = llmContextSearchInputSchema;
 
@@ -67,6 +69,7 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
   public async executeCore(input: z.infer<typeof llmContextSearchInputSchema>): Promise<CallToolResult> {
     const {
       query,
+      url,
       count,
       maximumNumberOfUrls,
       maximumNumberOfTokens,
@@ -97,8 +100,9 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
       ? Math.min(maximumNumberOfSnippetsPerUrl ?? COMPACT_DEFAULTS.maximumNumberOfSnippetsPerUrl, COMPACT_DEFAULTS.maximumNumberOfSnippetsPerUrl)
       : maximumNumberOfSnippetsPerUrl;
     const effectiveContextThresholdMode = contextThresholdMode ?? (isCompact ? COMPACT_DEFAULTS.contextThresholdMode : undefined);
+    const combinedQuery = url ? `${query} ${url}` : query;
 
-    const results = await this.braveSearch.llmContextSearch(query, {
+    const results = await this.braveSearch.llmContextSearch(combinedQuery, {
       count: effectiveCount,
       maximum_number_of_urls: effectiveMaximumNumberOfUrls,
       maximum_number_of_tokens: effectiveMaximumNumberOfTokens,
@@ -108,14 +112,23 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
       ...(effectiveContextThresholdMode ? { context_threshold_mode: effectiveContextThresholdMode } : {}),
     });
 
-    if (!results.grounding?.generic || results.grounding.generic.length === 0) {
+    const genericItems = url
+      ? (results.grounding?.generic ?? []).filter(item => item.url === url)
+      : results.grounding?.generic ?? [];
+
+    if (genericItems.length === 0) {
+      if (url) {
+        this.braveMcpServer.log(`No LLM context snippets found for URL "${url}" with query "${query}"`, 'info');
+        return {
+          content: [{ type: 'text', text: `No context snippets found for URL "${url}" with query "${query}"` }],
+        };
+      }
+
       this.braveMcpServer.log(`No LLM context results found for "${query}"`, 'info');
       return {
         content: [{ type: 'text', text: `No context results found for "${query}"` }],
       };
     }
-
-    const genericItems = results.grounding.generic;
 
     if (!isCompact) {
       const contentText = genericItems
