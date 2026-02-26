@@ -11,7 +11,8 @@ export default defineConfig({
   splitting: false,
   dts: false,
   shims: true,
-  noExternal: [/.*/],
+  noExternal: [/^(?!zod(?:\/.*)?$).+/],
+  external: [/^zod(?:\/.*)?$/],
   banner: {
     js: 'import { createRequire as __createRequire } from "module";\nconst require = __createRequire(import.meta.url);',
   },
