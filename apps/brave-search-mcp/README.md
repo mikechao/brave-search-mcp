@@ -288,6 +288,7 @@ brave-search:
 ## Contributing
 
 Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, monorepo structure, and release instructions.
+For UI build workflow details, including the entrypoint orchestrator, see [UI Build Orchestrator](CONTRIBUTING.md#ui-build-orchestrator).
 
 ## Disclaimer
 

@@ -79,6 +79,30 @@ pnpm -C apps/brave-search-mcp build
 pnpm -C packages/brave-search build
 ```
 
+### UI Build Orchestrator
+
+UI entrypoint builds are managed by `scripts/build-ui.js` in the `apps/brave-search-mcp` workspace.
+
+Build all discovered UI entrypoints:
+
+```bash
+pnpm -C apps/brave-search-mcp run build:ui
+```
+
+List discovered entrypoints without building:
+
+```bash
+pnpm -C apps/brave-search-mcp run build:ui -- --list
+```
+
+Entrypoints are auto-discovered from:
+
+- `ui/src/lib/*/mcp-app.html`
+- `ui/src/lib/*/chatgpt-app.html`
+
+To add a new UI route, add one or both entrypoint HTML files under `ui/src/lib/<route>/`.
+No `package.json` script updates are required.
+
 ## Testing
 
 All test commands below are for the `apps/brave-search-mcp` workspace.

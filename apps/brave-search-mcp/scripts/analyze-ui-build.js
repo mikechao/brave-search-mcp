@@ -95,11 +95,10 @@ const byExtension = Object.entries(
     };
     return acc;
   }, {}),
-).sort((a, b) => b[1].rawBytes - a[1].rawBytes)
-  .map(([extension, summary]) => ({
-    extension,
-    ...summary,
-  }));
+).sort((a, b) => b[1].rawBytes - a[1].rawBytes).map(([extension, summary]) => ({
+  extension,
+  ...summary,
+}));
 
 const byVariant = Object.entries(
   files.reduce((acc, item) => {
@@ -111,11 +110,10 @@ const byVariant = Object.entries(
     };
     return acc;
   }, {}),
-).sort((a, b) => b[1].rawBytes - a[1].rawBytes)
-  .map(([variant, summary]) => ({
-    variant,
-    ...summary,
-  }));
+).sort((a, b) => b[1].rawBytes - a[1].rawBytes).map(([variant, summary]) => ({
+  variant,
+  ...summary,
+}));
 
 const routePairs = Object.entries(
   files.reduce((acc, item) => {
