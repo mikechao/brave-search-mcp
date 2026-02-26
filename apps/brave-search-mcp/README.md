@@ -13,6 +13,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 - **News Search**: Search the web for news
 - **Video Search**: Search the web for videos
 - **Local Points of Interest Search**: Search for local physical locations, businesses, restaurants, services, etc
+- **LLM Context Search**: Fetch and extract full web page content optimized for reading and synthesizing sources
 
 ## Tools
 
@@ -72,6 +73,22 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
         - pm: Discovered within the last 31 Days.
         - py: Discovered within the last 365 Days
         - YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)
+
+- **brave_llm_context_search**
+  - Pre-extracted web content optimized for AI agents, LLM grounding, and RAG pipelines. Best for questions requiring reading and synthesizing sources — use `brave_web_search` for simple factual lookups.
+  - Inputs:
+    - `query` (string): The search query. Maximum 400 characters and 50 words.
+    - `url` (string, optional): Optional URL to target. When provided, query and URL are combined for retrieval and only snippets from this exact URL are returned.
+    - `count` (number, optional, default 8): The maximum number of search results considered. Minimum 1, maximum 50.
+    - `maximumNumberOfUrls` (number, optional, default 8): The maximum number of URLs to include in the response. Minimum 1, maximum 50.
+    - `maximumNumberOfTokens` (number, optional, default 2048): The approximate maximum number of tokens in the returned context. Minimum 1024, maximum 32768.
+    - `maximumNumberOfSnippets` (number, optional, default 16): The maximum number of snippets across all URLs. Minimum 1, maximum 100.
+    - `maximumNumberOfTokensPerUrl` (number, optional, default 512): The maximum number of tokens per URL. Minimum 512, maximum 8192.
+    - `maximumNumberOfSnippetsPerUrl` (number, optional, default 2): The maximum number of snippets per URL. Minimum 1, maximum 100.
+    - `contextThresholdMode` (enum, optional): Controls relevance filtering. Supported values: `disabled`, `strict`, `lenient`, `balanced`. Defaults to `strict` in compact mode.
+    - `responseMode` (enum, optional, default `compact`): `compact` returns filtered/truncated context optimized for model consumption. `full` returns all raw snippets without filtering or truncation.
+    - `maxSnippetChars` (number, optional, default 400): Maximum characters per snippet in compact mode. Minimum 80, maximum 4000.
+    - `maxOutputChars` (number, optional, default 8000): Approximate maximum serialized response size in compact mode. Minimum 1000, maximum 100000.
 
 ## OpenAI Apps & MCP Apps Support
 
