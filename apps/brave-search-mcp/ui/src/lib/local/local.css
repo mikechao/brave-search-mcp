@@ -49,9 +49,15 @@
 }
 
 .local-map-container {
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  inset: 0;
   z-index: 0;
+}
+
+/* pigeon-maps creates its own inner div — make it fill the wrapper */
+.local-map-container > div {
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .local-map-empty {
@@ -396,6 +402,21 @@ html[data-theme='dark'] .local-card--selected {
 .local-map-popup {
   font-size: 12px;
   line-height: 1.4;
+}
+
+/* Popup rendered as a pigeon-maps Overlay - float above the anchor point */
+.local-map-popup--overlay {
+  background: var(--bg-card, #fff);
+  border: 1px solid var(--border, #ddd);
+  border-radius: 6px;
+  padding: 8px 10px;
+  min-width: 140px;
+  max-width: 220px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transform: translate(-50%, calc(-100% - 14px));
+  pointer-events: none;
+  white-space: normal;
+  z-index: 10;
 }
 
 .local-map-popup strong {

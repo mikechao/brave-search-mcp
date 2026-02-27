@@ -46,6 +46,7 @@ Each file inlines all JS, CSS, and dependencies, causing heavy duplication.
 - [x] Switch from React to Preact
 - [x] Switch from react-markdown to snarkdown
 - [x] Repliace DOMPurify with custom
+- [x] Replace Leaflet/react-leaflet with pigeon-maps
 
 ---
 
@@ -118,28 +119,26 @@ This can be replaced with:
 **Files to change:**
 - `ui/src/lib/shared/sanitize.ts` — replace DOMPurify with custom implementation
 
-### Plan 3: Reduce Leaflet/react-leaflet footprint in local search
+### Plan 3: Reduce Leaflet/react-leaflet footprint in local search (*Done*)
 
 **Effort:** Medium
 **Est. savings:** ~300 KB off 2 local files (~600 KB total)
+**Actual savings:** −244 KB (`local/mcp-app.html`: 835 → 591 KB) + −253 KB (`local/chatgpt-app.html`: 462 → 209 KB) = **−497 KB total**
 
-Leaflet + react-leaflet account for the ~300 KB delta between `local/mcp-app.html`
-(835 KB) and other MCP routes (~530 KB). Includes Leaflet JS, CSS, and the react-leaflet
-wrapper with a Preact compatibility shim.
+Replaced `leaflet` + `react-leaflet` (~300 KB bundled) with
+[`pigeon-maps`](https://pigeon-maps.js.org/) (~15 KB). Uses the same OpenStreetMap
+tile provider. Custom markers rendered as Preact JSX children inside `<Marker>`;
+popups rendered as `<Overlay>` components anchored to lat/lng. Fit-to-bounds zoom
+calculated with standard OSM tile math (no external library). The `MapResizeHandler`
+and `MapBoundsUpdater` Leaflet-internal helpers were deleted entirely (pigeon-maps
+uses `ResizeObserver` internally). The `use()` shim in `react-compat.js` was also
+removed since it existed solely for `react-leaflet@5`.
 
-**Options:**
-- **Load Leaflet from CDN** — add the CDN URL to the widget's CSP `resourceDomains` and
-  use `<script src="...">` / `<link href="...">` instead of inlining. Requires confirming
-  the MCP host's iframe allows external script loading.
-- **Replace with a static map image** — use a tile server URL to render a static `<img>`
-  with markers. Zero JS needed. Loses interactivity (pan/zoom).
-- **Replace with a lighter map library** — e.g., `maplibre-gl` (but it's also heavy) or
-  a minimal canvas-based renderer.
-
-**Files to change:**
-- `ui/src/lib/local/LocalMap.tsx` — replace Leaflet implementation
-- `ui/src/shims/react-compat.js` — may no longer need `use()` shim if react-leaflet is
-  removed
+**Files changed:**
+- `ui/src/lib/local/LocalMap.tsx` — replaced Leaflet with pigeon-maps
+- `ui/src/shims/react-compat.js` — removed `use()` shim, now re-exports `preact/compat` only
+- `ui/src/lib/local/local.css` — added `.local-map-popup--overlay` positioning rule
+- `package.json` — removed `leaflet`, `react-leaflet`, `@types/leaflet`; added `pigeon-maps`
 
 ---
 
@@ -149,9 +148,9 @@ wrapper with a Preact compatibility shim.
 |---|--------|-------------|--------|--------|
 | 1 | Replace react-markdown | ~200 KB | Low | Planned |
 | 2 | Replace DOMPurify | ~300 KB | Low | Planned |
-| 3 | Reduce Leaflet footprint | ~600 KB | Medium | Planned |
+| 3 | Reduce Leaflet footprint | ~497 KB (actual) | Medium | Done |
 | — | Shared chunks | ~2.5 MB | — | Ruled out (iframe constraint) |
 | — | Pre-compress HTML | ~3 MB | — | Ruled out (MCP transport) |
 | — | Tree-shake ext-apps | ~200 KB | — | Ruled out (not tree-shakeable) |
 
-**Total actionable savings: ~1.1 MB** (from 4.7 MB → ~3.6 MB)
+**Total actionable savings: ~997 KB actual** (from 4.7 MB → ~3.7 MB)

@@ -1,141 +1,57 @@
 /**
- * LocalMap - Leaflet map component with business markers and persistent context pins
+ * LocalMap - pigeon-maps component with business markers and persistent context pins
  */
 import type { ContextPlace, LocalBusinessItem } from './types';
-import L from 'leaflet';
-import { useEffect, useMemo, useRef } from 'react';
-import { MapContainer, Marker, Popup, TileLayer, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
+import { Map, Marker, Overlay } from 'pigeon-maps';
+import { useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 
 const EMPTY_CONTEXT_PLACES: ContextPlace[] = [];
 
-// Fix for default marker icons in webpack/vite builds
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-});
-
-// Create numbered markers for current page items
-function createNumberedIcon(number: number, isSelected: boolean, isInContext: boolean) {
-  const contextClass = isInContext ? 'local-map-marker--context' : '';
-  return L.divIcon({
-    className: `local-map-marker ${isSelected ? 'local-map-marker--selected' : ''} ${contextClass}`,
-    html: `<div class="local-map-marker-inner">${number}</div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
-  });
-}
-
-// Create context-only markers (for places not on current page but in context)
-function createContextIcon() {
-  return L.divIcon({
-    className: 'local-map-marker local-map-marker--context-only',
-    html: '<div class="local-map-marker-inner">✓</div>',
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
-  });
-}
-
-interface MapBoundsUpdaterProps {
-  items: LocalBusinessItem[];
-  contextPlaces: ContextPlace[];
-}
-
-function MapBoundsUpdater({ items, contextPlaces }: MapBoundsUpdaterProps) {
-  const map = useMap();
-
-  useEffect(() => {
-    // Include both current page items and context places in bounds
-    const itemCoords = items
-      .filter(item => item.coordinates)
-      .map(item => item.coordinates as [number, number]);
-
-    const contextCoords = contextPlaces
-      .filter(p => p.coordinates)
-      .map(p => p.coordinates as [number, number]);
-
-    const allCoords = [...itemCoords, ...contextCoords];
-
-    if (allCoords.length > 0) {
-      const bounds = L.latLngBounds(allCoords.map(([lat, lng]) => [lat, lng]));
-      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
-    }
-  }, [items, contextPlaces, map]);
-
-  return null;
-}
-
 /**
- * Fix for Leaflet not rendering properly in dynamically-sized iframes.
- * Invalidates map size after mount and periodically to ensure tiles load.
+ * Calculate center and zoom level to fit a set of coordinates into view.
+ * Uses standard OSM tile math: at zoom Z, width covers 360/2^Z degrees.
+ * Assumes ~600px map width and adds 1 level of padding.
  */
-function MapResizeHandler({ displayMode }: { displayMode?: string }) {
-  const map = useMap();
+function fitBoundsToCoords(coords: [number, number][]): { center: [number, number]; zoom: number } {
+  if (coords.length === 0)
+    return { center: [37.7749, -122.4194], zoom: 11 };
+  if (coords.length === 1)
+    return { center: coords[0], zoom: 14 };
 
-  useEffect(() => {
-    // Invalidate size immediately and after a short delay
-    const timer0 = setTimeout(() => {
-      map.invalidateSize();
-    }, 0);
-    const timer1 = setTimeout(() => {
-      map.invalidateSize();
-    }, 100);
-    const timer2 = setTimeout(() => {
-      map.invalidateSize();
-    }, 300);
-    const timer3 = setTimeout(() => {
-      map.invalidateSize();
-    }, 500);
-    const timer4 = setTimeout(() => {
-      map.invalidateSize();
-    }, 1000);
+  const lats = coords.map(([lat]) => lat);
+  const lngs = coords.map(([, lng]) => lng);
+  const minLat = Math.min(...lats);
+  const maxLat = Math.max(...lats);
+  const minLng = Math.min(...lngs);
+  const maxLng = Math.max(...lngs);
 
-    // Also listen for window resize
-    const handleResize = () => map.invalidateSize();
-    window.addEventListener('resize', handleResize);
+  const center: [number, number] = [(minLat + maxLat) / 2, (minLng + maxLng) / 2];
+  const latSpan = maxLat - minLat || 0.005;
+  const lngSpan = maxLng - minLng || 0.005;
 
-    return () => {
-      clearTimeout(timer0);
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-      clearTimeout(timer4);
-      window.removeEventListener('resize', handleResize);
-    };
-  }, [map]);
+  // Approx map size 600×400 px; use the more constrained axis
+  const zoomLng = Math.log2(600 / 256 * 360 / lngSpan);
+  const zoomLat = Math.log2(400 / 256 * 180 / latSpan);
+  const zoom = Math.min(15, Math.max(1, Math.floor(Math.min(zoomLng, zoomLat)) - 1));
 
-  // Invalidate size when display mode changes (e.g., fullscreen toggle)
-  useEffect(() => {
-    if (!displayMode)
-      return;
+  return { center, zoom };
+}
 
-    // Delay to allow CSS transition to complete
-    const timer0 = setTimeout(() => {
-      map.invalidateSize();
-    }, 0);
-    const timer1 = setTimeout(() => {
-      map.invalidateSize();
-    }, 100);
-    const timer2 = setTimeout(() => {
-      map.invalidateSize();
-    }, 300);
-    const timer3 = setTimeout(() => {
-      map.invalidateSize();
-    }, 500);
+interface MapState {
+  openPopupKey: string | null;
+}
 
-    return () => {
-      clearTimeout(timer0);
-      clearTimeout(timer1);
-      clearTimeout(timer2);
-      clearTimeout(timer3);
-    };
-  }, [displayMode, map]);
+type MapAction
+  = | { type: 'openPopup'; key: string }
+    | { type: 'closePopup' };
 
-  return null;
+function mapReducer(_state: MapState, action: MapAction): MapState {
+  switch (action.type) {
+    case 'openPopup':
+      return { openPopupKey: action.key };
+    case 'closePopup':
+      return { openPopupKey: null };
+  }
 }
 
 interface LocalMapProps {
@@ -146,13 +62,40 @@ interface LocalMapProps {
   contextPlaces?: ContextPlace[];
 }
 
-export function LocalMap({ items, selectedIndex, onSelectIndex, displayMode, contextPlaces = EMPTY_CONTEXT_PLACES }: LocalMapProps) {
-  const mapRef = useRef<L.Map | null>(null);
+export function LocalMap({ items, selectedIndex, onSelectIndex, contextPlaces = EMPTY_CONTEXT_PLACES }: LocalMapProps) {
+  const [{ openPopupKey }, dispatch] = useReducer(mapReducer, { openPopupKey: null });
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
 
-  // Helper to check if a place is in context
-  const isInContext = (name: string, address: string) => {
-    return contextPlaces.some(p => `${p.name}-${p.address}` === `${name}-${address}`);
-  };
+  useLayoutEffect(() => {
+    if (!containerRef.current)
+      return;
+
+    // Fallback synchronous measurement for initial render if ResizeObserver is late
+    const rect = containerRef.current.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0 && !dimensions) {
+      setDimensions({ width: rect.width, height: rect.height });
+    }
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setDimensions((prev) => {
+            // Avoid unnecessary re-renders if dimensions are very similar (e.g. 0.Xpx difference)
+            if (prev && Math.abs(prev.width - width) < 1 && Math.abs(prev.height - height) < 1) {
+              return prev;
+            }
+            return { width, height };
+          });
+        }
+      }
+    });
+
+    resizeObserver.observe(containerRef.current);
+
+    return () => resizeObserver.disconnect();
+  }, [dimensions]);
 
   const itemKeySet = useMemo(() => {
     return new Set(items.map(item => `${item.name}-${item.address}`));
@@ -163,30 +106,26 @@ export function LocalMap({ items, selectedIndex, onSelectIndex, displayMode, con
     return contextPlaces.filter(p => p.coordinates && !itemKeySet.has(`${p.name}-${p.address}`));
   }, [contextPlaces, itemKeySet]);
 
-  // Calculate center and bounds
-  const { center, hasCoordinates } = useMemo(() => {
-    const itemCoords = items
-      .filter(item => item.coordinates)
-      .map(item => item.coordinates as [number, number]);
-
-    const contextCoords = offPageContextPlaces
-      .filter(p => p.coordinates)
-      .map(p => p.coordinates as [number, number]);
-
-    const allCoords = [...itemCoords, ...contextCoords];
-
-    if (allCoords.length === 0) {
-      return { center: [37.7749, -122.4194] as [number, number], hasCoordinates: false };
+  const allCoords = useMemo(() => {
+    const coords: [number, number][] = [];
+    for (const item of items) {
+      if (item.coordinates)
+        coords.push(item.coordinates);
     }
-
-    // Calculate center as average of all points
-    const avgLat = allCoords.reduce((sum, [lat]) => sum + lat, 0) / allCoords.length;
-    const avgLng = allCoords.reduce((sum, [, lng]) => sum + lng, 0) / allCoords.length;
-
-    return { center: [avgLat, avgLng] as [number, number], hasCoordinates: true };
+    for (const p of offPageContextPlaces) {
+      if (p.coordinates)
+        coords.push(p.coordinates);
+    }
+    return coords;
   }, [items, offPageContextPlaces]);
 
-  if (!hasCoordinates && items.length === 0) {
+  const initialFit = useMemo(() => fitBoundsToCoords(allCoords), [allCoords]);
+  const coordsKey = allCoords.map(c => c.join(',')).join('|');
+
+  const isInContext = (name: string, address: string) =>
+    contextPlaces.some(p => `${p.name}-${p.address}` === `${name}-${address}`);
+
+  if (allCoords.length === 0 && items.length === 0) {
     return (
       <div className="local-map-empty">
         <p>No location data available</p>
@@ -195,82 +134,107 @@ export function LocalMap({ items, selectedIndex, onSelectIndex, displayMode, con
   }
 
   return (
-    <MapContainer
-      ref={mapRef}
-      center={center}
-      zoom={13}
-      className="local-map-container"
-      scrollWheelZoom={true}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <MapBoundsUpdater items={items} contextPlaces={contextPlaces} />
-      <MapResizeHandler displayMode={displayMode} />
+    <div className="local-map-container" ref={containerRef}>
+      {!!dimensions && (
+        <Map
+          key={coordsKey}
+          width={dimensions.width}
+          height={dimensions.height}
+          defaultCenter={initialFit.center}
+          defaultZoom={initialFit.zoom}
+          onClick={() => dispatch({ type: 'closePopup' })}
+        >
+          {/* Current page items */}
+          {items.flatMap((item, index) => {
+            if (!item.coordinates)
+              return [];
+            const [lat, lng] = item.coordinates;
+            const isSelected = selectedIndex === index;
+            const inContext = isInContext(item.name, item.address);
+            const popupKey = `current-${item.id ?? `${item.name}-${item.address}`}`;
 
-      {/* Current page items */}
-      {items.map((item, index) => {
-        if (!item.coordinates)
-          return null;
-        const [lat, lng] = item.coordinates;
-        const isSelected = selectedIndex === index;
-        const inContext = isInContext(item.name, item.address);
+            const marker = (
+              <Marker
+                key={`marker-${popupKey}`}
+                anchor={[lat, lng]}
+                onClick={() => {
+                  onSelectIndex(index);
+                  dispatch({ type: 'openPopup', key: popupKey });
+                }}
+              >
+                <div className={[
+                  'local-map-marker',
+                  isSelected ? 'local-map-marker--selected' : '',
+                  inContext ? 'local-map-marker--context' : '',
+                ].filter(Boolean).join(' ')}
+                >
+                  <div className="local-map-marker-inner">{index + 1}</div>
+                </div>
+              </Marker>
+            );
 
-        return (
-          <Marker
-            key={`current-${item.id ?? `${item.name}-${item.address}`}`}
-            position={[lat, lng]}
-            icon={createNumberedIcon(index + 1, isSelected, inContext)}
-            eventHandlers={{
-              click: () => onSelectIndex(index),
-            }}
-          >
-            <Popup>
-              <div className="local-map-popup">
-                <strong>{item.name}</strong>
-                {item.rating && (
-                  <div>
-                    ★
-                    {item.rating.toFixed(1)}
-                  </div>
-                )}
-                <div>{item.address}</div>
-                {inContext && <div className="local-map-popup-context">✓ In context</div>}
-              </div>
-            </Popup>
-          </Marker>
-        );
-      })}
+            const overlay = openPopupKey === popupKey
+              ? (
+                  <Overlay key={`overlay-${popupKey}`} anchor={[lat, lng]} offset={[0, 0]}>
+                    <div className="local-map-popup local-map-popup--overlay">
+                      <strong>{item.name}</strong>
+                      {item.rating && (
+                        <div>
+                          ★
+                          {item.rating.toFixed(1)}
+                        </div>
+                      )}
+                      <div>{item.address}</div>
+                      {inContext && <div className="local-map-popup-context">✓ In context</div>}
+                    </div>
+                  </Overlay>
+                )
+              : null;
 
-      {/* Context places that are NOT on the current page */}
-      {offPageContextPlaces.map((place) => {
-        if (!place.coordinates)
-          return null;
-        const [lat, lng] = place.coordinates;
+            return [marker, overlay];
+          })}
 
-        return (
-          <Marker
-            key={`context-${place.name}-${place.address}`}
-            position={[lat, lng]}
-            icon={createContextIcon()}
-          >
-            <Popup>
-              <div className="local-map-popup">
-                <strong>{place.name}</strong>
-                {place.rating && (
-                  <div>
-                    ★
-                    {place.rating.toFixed(1)}
-                  </div>
-                )}
-                <div>{place.address}</div>
-                <div className="local-map-popup-context">✓ In context</div>
-              </div>
-            </Popup>
-          </Marker>
-        );
-      })}
-    </MapContainer>
+          {/* Context places NOT on the current page */}
+          {offPageContextPlaces.flatMap((place) => {
+            if (!place.coordinates)
+              return [];
+            const [lat, lng] = place.coordinates;
+            const popupKey = `context-${place.name}-${place.address}`;
+
+            const marker = (
+              <Marker
+                key={`marker-${popupKey}`}
+                anchor={[lat, lng]}
+                onClick={() => dispatch({ type: 'openPopup', key: popupKey })}
+              >
+                <div className="local-map-marker local-map-marker--context-only">
+                  <div className="local-map-marker-inner">✓</div>
+                </div>
+              </Marker>
+            );
+
+            const overlay = openPopupKey === popupKey
+              ? (
+                  <Overlay key={`overlay-${popupKey}`} anchor={[lat, lng]} offset={[0, 0]}>
+                    <div className="local-map-popup local-map-popup--overlay">
+                      <strong>{place.name}</strong>
+                      {place.rating && (
+                        <div>
+                          ★
+                          {place.rating.toFixed(1)}
+                        </div>
+                      )}
+                      <div>{place.address}</div>
+                      <div className="local-map-popup-context">✓ In context</div>
+                    </div>
+                  </Overlay>
+                )
+              : null;
+
+            return [marker, overlay];
+          })}
+        </Map>
+      )}
+    </div>
   );
 }

@@ -494,10 +494,10 @@ export class BraveMcpServer {
           'src/lib/local/mcp-app.html',
           {
             resourceDomains: [
+              'https://tile.openstreetmap.org',
               'https://a.tile.openstreetmap.org',
               'https://b.tile.openstreetmap.org',
               'https://c.tile.openstreetmap.org',
-              'https://cdnjs.cloudflare.com',
               OPENAI_CDN_RESOURCE_DOMAIN,
             ],
           },
@@ -522,7 +522,6 @@ export class BraveMcpServer {
               'https://a.tile.openstreetmap.org',
               'https://b.tile.openstreetmap.org',
               'https://c.tile.openstreetmap.org',
-              'https://cdnjs.cloudflare.com',
               OPENAI_CDN_RESOURCE_DOMAIN,
             ],
           },
