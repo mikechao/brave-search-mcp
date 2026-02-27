@@ -50,8 +50,7 @@ const llmContextSearchInputSchema = z.object({
 
 export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchInputSchema> {
   public readonly name = 'brave_llm_context_search';
-  public readonly description =
-    'Best for questions that require reading and synthesizing web page content, '
+  public readonly description = 'Best for questions that require reading and synthesizing web page content, '
     + 'such as "how does X work", "explain Y in detail", or "what are the tradeoffs of Z". '
     + 'Returns extracted text from web pages rather than just titles and descriptions. '
     + 'Not needed for simple factual lookups — use brave_web_search for those.';

@@ -44,6 +44,7 @@ Each file inlines all JS, CSS, and dependencies, causing heavy duplication.
 - [x] Switch from axios to native fetch
 - [x] Switch from Express to Hono
 - [x] Switch from React to Preact
+- [x] Switch from react-markdown to snarkdown
 
 ---
 
@@ -81,7 +82,7 @@ high-maintenance. Wait for upstream to ship tree-shakeable ESM exports.
 
 ## Actionable Plans
 
-### Plan 1: Replace `react-markdown` with a lighter Markdown renderer
+### Plan 1: Replace `react-markdown` with a lighter Markdown renderer (*Done*)
 
 **Effort:** Low
 **Est. savings:** ~100 KB × 2 local files (~200 KB total)
