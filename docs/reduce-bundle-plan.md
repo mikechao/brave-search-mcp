@@ -45,6 +45,7 @@ Each file inlines all JS, CSS, and dependencies, causing heavy duplication.
 - [x] Switch from Express to Hono
 - [x] Switch from React to Preact
 - [x] Switch from react-markdown to snarkdown
+- [x] Repliace DOMPurify with custom
 
 ---
 
@@ -100,7 +101,7 @@ descriptions.
 **Files to change:**
 - `ui/src/lib/local/LocalBusinessDescription.tsx` — replace `ReactMarkdown` import
 
-### Plan 2: Replace `DOMPurify` with a tiny custom sanitizer
+### Plan 2: Replace `DOMPurify` with a tiny custom sanitizer (*Done*)
 
 **Effort:** Low
 **Est. savings:** ~30 KB × 10 files (~300 KB total)
