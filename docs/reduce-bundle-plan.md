@@ -47,6 +47,7 @@ Each file inlines all JS, CSS, and dependencies, causing heavy duplication.
 - [x] Switch from react-markdown to snarkdown
 - [x] Repliace DOMPurify with custom
 - [x] Replace Leaflet/react-leaflet with pigeon-maps
+- [x] Remove KaTeX css
 
 ---
 
@@ -140,7 +141,7 @@ removed since it existed solely for `react-leaflet@5`.
 - `ui/src/lib/local/local.css` — added `.local-map-popup--overlay` positioning rule
 - `package.json` — removed `leaflet`, `react-leaflet`, `@types/leaflet`; added `pigeon-maps`
 
-### Plan 4: Remove KaTeX CSS from `@openai/apps-sdk-ui` global import
+### Plan 4: Remove KaTeX CSS from `@openai/apps-sdk-ui` global import (*done*)
 
 **Effort:** Low
 **Est. savings:** ~25 KB × 10 files = ~250 KB

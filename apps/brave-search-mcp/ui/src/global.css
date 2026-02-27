@@ -1,9 +1,12 @@
 @import 'tailwindcss';
-@import '@openai/apps-sdk-ui/css';
+@import '../../node_modules/@openai/apps-sdk-ui/dist/es/styles/base.css';
+@import '../../node_modules/@openai/apps-sdk-ui/dist/es/styles/variables-primitive.css';
+@import '../../node_modules/@openai/apps-sdk-ui/dist/es/styles/variables-semantic.css';
+@import '../../node_modules/@openai/apps-sdk-ui/dist/es/styles/variables-components.css';
+@import '../../node_modules/@openai/apps-sdk-ui/dist/es/styles/globals.css';
 
 /* Tailwind v4 CSS-first configuration */
 @source "../**/*.{ts,tsx,html}";
-@source "../../node_modules/@openai/apps-sdk-ui";
 
 @theme {
   /* Font - use system fonts per ChatGPT UI guidelines */
