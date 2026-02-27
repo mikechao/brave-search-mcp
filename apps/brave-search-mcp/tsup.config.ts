@@ -5,7 +5,11 @@ export default defineConfig({
   format: ['esm'],
   target: 'node20',
   platform: 'node',
-  minify: true,
+  minify: 'terser',
+  terserOptions: {
+    compress: { passes: 2 },
+    mangle: { toplevel: true },
+  },
   sourcemap: false,
   clean: true,
   splitting: false,

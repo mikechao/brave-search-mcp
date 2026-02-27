@@ -48,6 +48,7 @@ Each file inlines all JS, CSS, and dependencies, causing heavy duplication.
 - [x] Repliace DOMPurify with custom
 - [x] Replace Leaflet/react-leaflet with pigeon-maps
 - [x] Remove KaTeX css
+- [x] Use Terser for minification
 
 ---
 
@@ -239,7 +240,7 @@ Run a CI script to check if the upstream version has advanced and alert.
 - `package.json` — `@modelcontextprotocol/ext-apps` can be kept as a dev-only
   dep (it still must be installed for the server)
 
-### Plan 7: Switch server bundle to Terser minification
+### Plan 7: Switch server bundle to Terser minification (*done*)
 
 **Effort:** Very low
 **Est. savings:** ~30–60 KB (5–10% of 606 KB server bundle)
