@@ -4,10 +4,23 @@
  */
 import type { ReactNode } from 'react';
 import type { WidgetProps } from '../../widget-props';
-import { Button } from '@openai/apps-sdk-ui/components/Button';
-import { ArrowLeftSm, ArrowRightSm } from '@openai/apps-sdk-ui/components/Icon';
-import { LoadingIndicator } from '@openai/apps-sdk-ui/components/Indicator';
 import { FullscreenButton } from './FullscreenButton';
+import { PaginationButton } from './PaginationButton';
+
+interface SpinnerProps {
+  size: number;
+  strokeWidth: number;
+}
+
+function Spinner({ size, strokeWidth }: SpinnerProps) {
+  return (
+    <span
+      className="inline-block animate-spin rounded-full border-solid border-[var(--grid-line-strong)] border-t-[var(--accent)]"
+      style={{ width: size, height: size, borderWidth: strokeWidth }}
+      aria-hidden="true"
+    />
+  );
+}
 
 export interface PaginationConfig {
   pageNumber: number;
@@ -115,6 +128,10 @@ export function SearchAppLayout({
   const pageInfo = pagination ? ` · Page ${pagination.pageNumber}` : '';
   const contextInfo = context && context.count > 0 ? ` · ${context.count} in context` : '';
   const isPaginationLoading = Boolean(pagination?.isLoading && hasData && !isEmpty);
+  const isAddAllDisabled = Boolean(context?.addAllDisabled || isPaginationLoading);
+  const addAllButtonStateClass = isAddAllDisabled
+    ? 'cursor-not-allowed border-[var(--color-border-disabled)] bg-[var(--color-background-disabled)] text-[var(--color-text-disabled)]'
+    : 'hover:bg-[var(--color-background-secondary-soft-alpha-hover)] active:bg-[var(--color-background-secondary-soft-alpha-active)]';
 
   return (
     <main className={`app ${variant}-app`} style={containerStyle} data-display-mode={displayMode}>
@@ -136,16 +153,14 @@ export function SearchAppLayout({
           </div>
           <div className="header-actions">
             {context && (
-              <Button
+              <button
                 type="button"
-                color="secondary"
-                variant="soft"
-                size="sm"
+                className={`inline-flex h-8 items-center justify-center rounded-full border border-transparent bg-[var(--color-background-secondary-soft-alpha)] px-3 text-[13px] font-medium text-[var(--color-text-secondary-soft)] transition-colors duration-150 ease-out ${addAllButtonStateClass}`}
                 onClick={context.onAddAll}
-                disabled={context.addAllDisabled || isPaginationLoading}
+                disabled={isAddAllDisabled}
               >
                 Add All
-              </Button>
+              </button>
             )}
             {requestDisplayMode && (
               <FullscreenButton
@@ -173,7 +188,7 @@ export function SearchAppLayout({
 
       {isInitialLoading && !hasData && (
         <section className="loading-state">
-          <LoadingIndicator size="32px" strokeWidth={3} />
+          <Spinner size={32} strokeWidth={3} />
           <p>
             Searching for
             {' '}
@@ -208,7 +223,7 @@ export function SearchAppLayout({
             ? (
                 <div className="results-loading-overlay" role="status" aria-label="Loading page results">
                   <div className="results-loading-content">
-                    <LoadingIndicator size="28px" strokeWidth={3} />
+                    <Spinner size={28} strokeWidth={3} />
                     <span>Loading results...</span>
                   </div>
                 </div>
@@ -223,33 +238,21 @@ export function SearchAppLayout({
           style={footerStyle}
         >
           <nav className="pagination" aria-label="Pagination">
-            <Button
-              type="button"
-              color="secondary"
-              variant="outline"
-              size="sm"
+            <PaginationButton
+              direction="previous"
               onClick={pagination.onPrevious}
               disabled={!pagination.hasPrevious || pagination.isLoading}
               aria-label="Previous page"
-            >
-              <ArrowLeftSm width={14} height={14} />
-              Previous
-            </Button>
+            />
             <span className="pagination-info">
               {pagination.isLoading ? 'Loading...' : `Page ${pagination.pageNumber}`}
             </span>
-            <Button
-              type="button"
-              color="secondary"
-              variant="outline"
-              size="sm"
+            <PaginationButton
+              direction="next"
               onClick={pagination.onNext}
               disabled={!pagination.hasNext || pagination.isLoading}
               aria-label="Next page"
-            >
-              Next
-              <ArrowRightSm width={14} height={14} />
-            </Button>
+            />
           </nav>
         </footer>
       )}
