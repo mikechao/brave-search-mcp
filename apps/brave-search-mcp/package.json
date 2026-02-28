@@ -75,7 +75,6 @@
     "pigeon-maps": "^0.22.1",
     "preact": "^10.28.4",
     "snarkdown": "^2.0.0",
-    "tailwindcss-animate": "^1.0.7",
     "zod": "^4.3.6"
   },
   "devDependencies": {

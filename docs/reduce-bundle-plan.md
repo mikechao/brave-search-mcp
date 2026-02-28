@@ -2,7 +2,7 @@
 
 Analysis of `apps/brave-search-mcp` dist directory (4.7 MB total: 608 KB server + 4.1 MB UI).
 
-## Current State
+## Original State (baseline before any plans)
 
 ### Server bundle (`dist/index.js` — 608 KB)
 
@@ -33,6 +33,47 @@ Each file inlines all JS, CSS, and dependencies, causing heavy duplication.
 | `video/chatgpt-app.html` | 168 KB |
 | `news/chatgpt-app.html` | 166 KB |
 | `image/chatgpt-app.html` | 159 KB |
+
+---
+
+## Current State (after plans 1–5, 7)
+
+### Server bundle (`dist/index.js` — 560 KB)
+
+Notes: the build report shows 1.01 MB because tsup's esbuild metafile records
+pre-Terser input sizes; the actual minified output on disk is 560 KB.
+
+| Package | Notes |
+|---------|-------|
+| `@modelcontextprotocol/ext-apps` | ~38% of output, single non-tree-shakeable blob |
+| `@modelcontextprotocol/sdk` | Core dependency, includes `experimental/tasks` via static import in `server/mcp.js` |
+| `ajv` + `ajv-formats` + `fast-uri` | Transitive via ext-apps, unavoidable |
+| `hono` + `@hono/node-server` | HTTP framework, minimal |
+
+### UI bundle (`dist/ui/` — 2.89 MB, gzip ~716 KB)
+
+| File | Size |
+|------|------|
+| `local/mcp-app.html` | 522 KB |
+| `video/mcp-app.html` | 474 KB |
+| `web/mcp-app.html` | 473 KB |
+| `news/mcp-app.html` | 472 KB |
+| `image/mcp-app.html` | 466 KB |
+| `local/chatgpt-app.html` | 151 KB |
+| `video/chatgpt-app.html` | 103 KB |
+| `web/chatgpt-app.html` | 102 KB |
+| `news/chatgpt-app.html` | 101 KB |
+| `image/chatgpt-app.html` | 94 KB |
+
+The ~370 KB delta between MCP and ChatGPT variants on every route is entirely
+`@modelcontextprotocol/ext-apps` (unavoidable without vendoring).
+
+Remaining base cost per ChatGPT file (~94 KB) breaks down roughly as:
+- Preact runtime: ~15–20 KB
+- `@openai/apps-sdk-ui` CSS variable sheets imported via `global.css`: ~56 KB raw
+  (5 files: `base`, `variables-primitive`, `variables-semantic`, `variables-components`, `globals`)
+- Tailwind-generated utility CSS + route-specific CSS: ~5–10 KB
+- Component + hook code: ~10–15 KB
 
 ---
 
@@ -82,6 +123,13 @@ doesn't define.
 high-maintenance. Wait for upstream to ship tree-shakeable ESM exports.
 
 **Potential savings:** ~200 KB from server bundle.
+
+### ~~Vendor `App` + `PostMessageTransport` for UI (was Plan 6)~~
+
+**Why not:** Would require re-syncing with every `@modelcontextprotocol/ext-apps` release
+and maintaining a vendored copy of SDK internals. Not worth the maintenance burden.
+
+**Potential savings:** ~370 KB × 5 MCP files ≈ 1.85 MB.
 
 ---
 
@@ -213,34 +261,6 @@ inlined as a Tailwind component would replace it at near-zero cost.
   CSS spinner
 - Create `ui/src/lib/shared/PaginationButton.tsx` (optional thin wrapper)
 
-### Plan 6: Vendor `App` + `PostMessageTransport` from `@modelcontextprotocol/ext-apps` (UI only)
-
-**Effort:** High
-**Est. savings:** ~370 KB × 5 MCP UI files = ~1.85 MB
-
-`@modelcontextprotocol/ext-apps` is shipped as a single non-tree-shakeable
-284 KB bundle. The server ruling (see Ruled Out above) applies to
-`registerAppResource`, `registerAppTool`, and `RESOURCE_MIME_TYPE` — complex
-infrastructure that's hard to vendor safely.
-
-The UI side is different: `useMcpApp.ts` only imports two things:
-- `App` — the client-side widget ↔ host communication class
-- `PostMessageTransport` — the postMessage channel implementation
-
-If these two classes could be extracted (vendored) into the repo, every one of
-the 5 MCP HTML files would shrink by ~370 KB. The upstream package is open
-source so this is feasible, but must be re-synced on every ext-apps release.
-
-**Viable approach:** Copy just `App` + `PostMessageTransport` source into
-`ui/src/vendor/mcp-app/` and import from there instead of the npm package.
-Run a CI script to check if the upstream version has advanced and alert.
-
-**Files to change:**
-- `ui/src/vendor/mcp-app/` — vendored App + PostMessageTransport
-- `ui/src/hooks/useMcpApp.ts` — update import path
-- `package.json` — `@modelcontextprotocol/ext-apps` can be kept as a dev-only
-  dep (it still must be installed for the server)
-
 ### Plan 7: Switch server bundle to Terser minification (*done*)
 
 **Effort:** Very low
@@ -265,6 +285,67 @@ since the server runs in Node.
 **Files to change:**
 - `apps/brave-search-mcp/tsup.config.ts`
 
+### Plan 8: Prune `@openai/apps-sdk-ui` CSS variable sheets
+
+**Effort:** Medium
+**Est. savings:** ~30–40 KB × 10 files = ~300–400 KB
+
+After plans 4 and 5, all `@openai/apps-sdk-ui` JS imports have been eliminated.
+The only remaining cost from the package is 5 CSS variable sheet imports in
+`global.css`, totalling **56 KB raw** per HTML file:
+
+| File | Size |
+|------|------|
+| `variables-semantic.css` | 31 KB |
+| `variables-primitive.css` | 11.3 KB |
+| `variables-components.css` | 10.6 KB |
+| `base.css` | 2.2 KB |
+| `globals.css` | 1 KB |
+
+These files define CSS custom properties (`--color-background-primary-solid`,
+`--color-text-*`, etc.) used as design tokens. The widgets reference only
+**57 unique CSS custom properties** across all UI source, but the sheets define
+hundreds of tokens (each duplicated for `:root` and `[data-theme="dark"]`).
+
+Cannot be tree-shaken by Tailwind or any standard CSS tool — CSS custom property
+definitions are always preserved.
+
+**Approach:** Create `ui/src/styles/openai-tokens.css` containing only the
+custom properties actually referenced in source (audit via grep + a one-time
+extraction script). Replace the 5 `@import` lines in `global.css` with the
+single pruned file. Add a CI check that re-runs the extraction on every
+`@openai/apps-sdk-ui` version bump.
+
+**Files to change:**
+- `ui/src/global.css` — replace 5 @openai CSS imports with single pruned file
+- `ui/src/styles/openai-tokens.css` — new vendored/pruned CSS variable file
+
+### Plan 9: Remove unused `tailwindcss-animate` dependency (*done*)
+
+**Effort:** Trivial
+**Est. savings:** 0 KB (no bundle impact — it's never imported)
+
+`tailwindcss-animate` is listed in `dependencies` but is not imported anywhere —
+not in CSS files, not in `global.css`, not in any TS/TSX file. It's a Tailwind
+plugin that generates `animate-*` utility classes, but since it's never
+configured as a plugin, no classes are generated and nothing is emitted to the
+bundle. Safe to remove.
+
+**Files to change:**
+- `apps/brave-search-mcp/package.json` — remove `tailwindcss-animate` from dependencies
+
+---
+
+## Upstream: MCP SDK `experimental/tasks` static import
+
+The MCP SDK's `server/mcp.js` does a **static import** of
+`../experimental/tasks/mcp-server.js` even when the app never uses the
+`experimental` feature. This pulls ~7.7 KB of input into the server bundle.
+
+Not actionable in this repo, but worth filing an upstream issue with
+`@modelcontextprotocol/sdk` to make the experimental tasks import lazy or
+tree-shakeable.
+
 ---
 
 ## Impact Summary
@@ -274,12 +355,16 @@ since the server runs in Node.
 | 1 | Replace react-markdown | ~200 KB | Low | Done |
 | 2 | Replace DOMPurify | ~300 KB | Low | Done |
 | 3 | Reduce Leaflet footprint | ~497 KB (actual) | Medium | Done |
-| 4 | Remove KaTeX CSS + SDK Tailwind source scan | ~250 KB | Low | Planned |
-| 5 | Replace Button + LoadingIndicator | ~600 KB | Medium | Planned |
-| 6 | Vendor App + PostMessageTransport (UI) | ~1.85 MB | High | Planned |
-| 7 | Terser for server bundle | ~30–60 KB | Very low | Planned |
+| 4 | Remove KaTeX CSS + SDK Tailwind source scan | ~250 KB | Low | Done |
+| 5 | Replace Button + LoadingIndicator | ~600 KB | Medium | Done |
+| 7 | Terser for server bundle | ~46 KB (actual) | Very low | Done |
+| 8 | Prune @openai CSS variable sheets | ~300–400 KB | Medium | Planned |
+| 9 | Remove tailwindcss-animate dep | 0 KB | Trivial | Planned |
 | — | Shared chunks | ~2.5 MB | — | Ruled out (iframe constraint) |
 | — | Pre-compress HTML | ~3 MB | — | Ruled out (MCP transport) |
 | — | Tree-shake ext-apps (server) | ~200 KB | — | Ruled out (not tree-shakeable) |
+| — | Vendor App + PostMessageTransport (UI) | ~1.85 MB | — | Ruled out (maintenance burden) |
 
-**Total actionable savings remaining: ~2.73–2.76 MB** (plans 4–7)
+**Net reduction achieved: ~1.69 MB** (4.7 MB → 3.01 MB: 560 KB server + 2.89 MB UI — before plan 8)
+
+**Remaining actionable: ~300–400 KB** (plan 8 only — everything else is at the practical floor)
