@@ -3,7 +3,7 @@
  */
 import type { ContextPlace, LocalBusinessItem } from './types';
 import { Map, Marker, Overlay } from 'pigeon-maps';
-import { useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 
 const EMPTY_CONTEXT_PLACES: ContextPlace[] = [];
 
@@ -67,15 +67,24 @@ export function LocalMap({ items, selectedIndex, onSelectIndex, contextPlaces = 
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState<{ width: number; height: number } | null>(null);
 
+  const handleContainerRef = useCallback((node: HTMLDivElement | null) => {
+    containerRef.current = node;
+    if (!node)
+      return;
+
+    const rect = node.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) {
+      setDimensions((prev) => {
+        if (prev)
+          return prev;
+        return { width: rect.width, height: rect.height };
+      });
+    }
+  }, []);
+
   useLayoutEffect(() => {
     if (!containerRef.current)
       return;
-
-    // Fallback synchronous measurement for initial render if ResizeObserver is late
-    const rect = containerRef.current.getBoundingClientRect();
-    if (rect.width > 0 && rect.height > 0 && !dimensions) {
-      setDimensions({ width: rect.width, height: rect.height });
-    }
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
@@ -95,7 +104,7 @@ export function LocalMap({ items, selectedIndex, onSelectIndex, contextPlaces = 
     resizeObserver.observe(containerRef.current);
 
     return () => resizeObserver.disconnect();
-  }, [dimensions]);
+  }, []);
 
   const itemKeySet = useMemo(() => {
     return new Set(items.map(item => `${item.name}-${item.address}`));
@@ -134,7 +143,7 @@ export function LocalMap({ items, selectedIndex, onSelectIndex, contextPlaces = 
   }
 
   return (
-    <div className="local-map-container" ref={containerRef}>
+    <div className="local-map-container" ref={handleContainerRef}>
       {!!dimensions && (
         <Map
           key={coordsKey}
