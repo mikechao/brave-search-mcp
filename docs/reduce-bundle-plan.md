@@ -49,6 +49,7 @@ Each file inlines all JS, CSS, and dependencies, causing heavy duplication.
 - [x] Replace Leaflet/react-leaflet with pigeon-maps
 - [x] Remove KaTeX css
 - [x] Use Terser for minification
+- [x] Replace openai button with custom button
 
 ---
 
@@ -180,7 +181,7 @@ unused utilities to every file.
 - `ui/src/global.css` — replace monolithic import with selective imports;
   remove `@source` directive for the SDK
 
-### Plan 5: Replace `@openai/apps-sdk-ui/components/Button` with an inline component
+### Plan 5: Replace `@openai/apps-sdk-ui/components/Button` with an inline component (*done*)
 
 **Effort:** Medium
 **Est. savings:** ~60 KB × 10 files = ~600 KB
