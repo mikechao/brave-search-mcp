@@ -72,7 +72,7 @@
     "@openai/apps-sdk-ui": "^0.2.1",
     "brave-search": "workspace:*",
     "hono": "^4.7.0",
-    "pigeon-maps": "^0.21.6",
+    "pigeon-maps": "^0.22.1",
     "preact": "^10.28.4",
     "snarkdown": "^2.0.0",
     "tailwindcss-animate": "^1.0.7",
