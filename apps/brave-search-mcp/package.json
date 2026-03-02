@@ -8,7 +8,7 @@
   "homepage": "https://github.com/mikechao/brave-search-mcp",
   "repository": {
     "type": "git",
-    "url": "https://github.com/mikechao/brave-search-mcp.git"
+    "url": "git+https://github.com/mikechao/brave-search-mcp.git"
   },
   "bugs": {
     "url": "https://github.com/mikechao/brave-search-mcp/issues"
