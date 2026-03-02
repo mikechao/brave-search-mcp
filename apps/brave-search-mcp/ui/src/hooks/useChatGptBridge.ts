@@ -1,6 +1,6 @@
 import type { McpUiHostContext } from '@modelcontextprotocol/ext-apps';
 import type { Dispatch, SetStateAction } from 'react';
-import type { OpenAIWidgetState } from '../openai.d';
+import type { OpenAIWidgetState, UploadFileResult } from '../openai.d';
 import type { DisplayMode, WidgetProps } from '../widget-props';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDisplayMode, useSafeArea } from './useOpenAiGlobal';
@@ -22,9 +22,11 @@ interface UseChatGptBridgeResult<TData extends QueryData> {
   noopLog: WidgetProps['sendLog'];
   canCallTool: boolean;
   canSetWidgetState: boolean;
+  canUploadFile: boolean;
   canRequestDisplayMode: boolean;
   callTool: (name: string, args: Record<string, unknown>) => Promise<unknown>;
   setWidgetState: (state: OpenAIWidgetState) => void;
+  uploadFile: (file: File) => Promise<UploadFileResult | null>;
   currentData: TData | null;
   hostQuery: string | null;
   isLoading: boolean;
@@ -119,6 +121,12 @@ export function useChatGptBridge<TData extends QueryData = QueryData>({
     window.openai?.setWidgetState?.(state);
   }, []);
 
+  const uploadFile = useCallback(async (file: File) => {
+    if (!window.openai?.uploadFile)
+      return null;
+    return window.openai.uploadFile(file);
+  }, []);
+
   return {
     displayMode,
     hostContext,
@@ -127,9 +135,11 @@ export function useChatGptBridge<TData extends QueryData = QueryData>({
     noopLog,
     canCallTool: Boolean(window.openai?.callTool),
     canSetWidgetState: Boolean(window.openai?.setWidgetState),
+    canUploadFile: Boolean(window.openai?.uploadFile),
     canRequestDisplayMode: Boolean(window.openai?.requestDisplayMode),
     callTool,
     setWidgetState,
+    uploadFile,
     currentData,
     hostQuery,
     isLoading,

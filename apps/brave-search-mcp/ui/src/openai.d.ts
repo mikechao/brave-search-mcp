@@ -63,9 +63,9 @@ interface OpenAIToolResponseMetadata {
  */
 interface OpenAIWidgetState {
   /** Content visible to the model */
-  modelContent?: Record<string, unknown>;
+  modelContent?: string | Record<string, unknown> | null;
   /** Content NOT visible to the model */
-  privateContent?: Record<string, unknown>;
+  privateContent?: Record<string, unknown> | null;
   /** Image IDs for follow-up turns */
   imageIds?: string[];
   [key: string]: unknown;
@@ -305,4 +305,5 @@ export {
   OpenAIWidgetState,
   SafeArea,
   SafeAreaInsets,
+  UploadFileResult,
 };

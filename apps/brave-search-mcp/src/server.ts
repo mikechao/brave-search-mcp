@@ -101,7 +101,10 @@ export class BraveMcpServer {
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
           'src/lib/image/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
+          {
+            connectDomains: ['https://imgs.search.brave.com'],
+            resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+          },
         );
       },
     );
@@ -117,7 +120,10 @@ export class BraveMcpServer {
           CHATGPT_MIME_TYPE,
           'src/lib/image/chatgpt-app.html',
           undefined,
-          { resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
+          {
+            connect_domains: ['https://imgs.search.brave.com'],
+            resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+          },
           'mc-brave-search-mcp',
         );
       },

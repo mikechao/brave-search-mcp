@@ -12,6 +12,16 @@ export interface ImageItem {
   height?: number;
 }
 
+export interface ContextImage {
+  title: string;
+  source: string;
+  pageUrl: string;
+  imageUrl: string;
+  confidence?: string;
+  width?: number;
+  height?: number;
+}
+
 export interface ImageSearchData {
   searchTerm: string;
   count: number;

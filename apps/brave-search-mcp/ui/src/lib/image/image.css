@@ -19,10 +19,16 @@
   max-height: none;
 }
 
+/* Thumbnail wrapper for context action */
+.image-thumbnail-shell {
+  position: relative;
+}
+
 /* Individual thumbnail card */
 .image-thumbnail {
   position: relative;
   aspect-ratio: 1;
+  border: 1px solid var(--card-border);
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -45,9 +51,27 @@ html[data-theme='dark'] .image-thumbnail:hover {
   box-shadow: var(--card-shadow-hover);
 }
 
-.image-thumbnail:focus {
+.image-thumbnail:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+.image-thumbnail--in-context {
+  border-color: var(--accent);
+}
+
+.image-thumbnail--in-context:hover {
+  border-color: var(--accent);
+}
+
+/* Place context button at top-right */
+.image-thumbnail-shell .context-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 10;
+  width: 26px;
+  height: 26px;
 }
 
 /* Thumbnail image */
@@ -71,6 +95,11 @@ html[data-theme='dark'] .image-thumbnail:hover {
 }
 
 .image-thumbnail:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-thumbnail:focus-visible .image-overlay,
+.image-thumbnail--in-context .image-overlay {
   opacity: 1;
 }
 
