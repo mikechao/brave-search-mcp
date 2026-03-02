@@ -34,7 +34,7 @@ const boilerplateSignals = [
 ];
 
 const llmContextSearchInputSchema = z.object({
-  query: z.string().max(400).describe('The search query. Maximum 400 characters and 50 words.'),
+  query: z.string().max(400).describe('The search query. Maximum 400 characters and 50 words. When combined with a url, use a short keyword phrase rather than a full question.'),
   url: z.url().optional().describe('Optional URL to target. When provided, query and URL are combined for retrieval, and only snippets from this exact URL are returned.'),
   count: z.number().min(1).max(50).default(COMPACT_DEFAULTS.count).optional().describe(`The maximum number of search results considered. Minimum 1, maximum 50. Default ${COMPACT_DEFAULTS.count} in compact mode, up to 50 in full mode.`),
   maximumNumberOfUrls: z.number().min(1).max(50).default(COMPACT_DEFAULTS.maximumNumberOfUrls).optional().describe(`The maximum number of URLs to include in the response. Minimum 1, maximum 50. Default ${COMPACT_DEFAULTS.maximumNumberOfUrls} in compact mode, up to 50 in full mode.`),
@@ -53,6 +53,7 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
   public readonly description = 'Best for questions that require reading and synthesizing web page content, '
     + 'such as "how does X work", "explain Y in detail", or "what are the tradeoffs of Z". '
     + 'Returns extracted text from web pages rather than just titles and descriptions. '
+    + 'Also useful for extracting text from a specific URL that matches the query. '
     + 'Not needed for simple factual lookups — use brave_web_search for those.';
 
   public readonly inputSchema = llmContextSearchInputSchema;
