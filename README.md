@@ -1,6 +1,6 @@
 # Brave Search MCP Server
 
-An MCP Server implementation that integrates the [Brave Search API](https://brave.com/search/api/), providing, Web Search, Local Points of Interest Search, Video Search, Image Search and News Search capabilities
+An MCP Server implementation that integrates the [Brave Search API](https://brave.com/search/api/), providing, Web Search, Local Points of Interest Search, Video Search, Image Search, News Search and LLM Context Search capabilities
 
 <a href="https://glama.ai/mcp/servers/@mikechao/brave-search-mcp">
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@mikechao/brave-search-mcp/badge" alt="Brave Search MCP server" />
@@ -53,7 +53,6 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 
 - **brave_local_search**
   - Search for local businesses, services and points of interest
-  - **REQUIRES** subscription to the Pro api plan for location results
   - Falls back to brave_web_search if no location results are found
   - Inputs:
     - `query` (string): Local search term
@@ -75,7 +74,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
         - YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)
 
 - **brave_llm_context_search**
-  - Pre-extracted web content optimized for AI agents, LLM grounding, and RAG pipelines. Best for questions requiring reading and synthesizing sources — use `brave_web_search` for simple factual lookups.
+  - Pre-extracted web content optimized for AI agents, LLM grounding, and RAG pipelines.
   - Inputs:
     - `query` (string): The search query. Maximum 400 characters and 50 words.
     - `url` (string, optional): Optional URL to target. When provided, query and URL are combined for retrieval and only snippets from this exact URL are returned.
@@ -107,7 +106,7 @@ There is now support for [OpenAI Apps](https://developers.openai.com/apps-sdk/) 
 ### Getting an API Key
 
 1. Sign up for a [Brave Search API account](https://brave.com/search/api/)
-2. Choose a plan (Free tier available with 2,000 queries/month)
+2. Choose a plan
 3. Generate your API key [from the developer dashboard](https://api.search.brave.com/app/keys)
 
 ### Streamable HTTP mode
