@@ -1,5 +1,12 @@
 # brave-search-mcp
 
+## 2.1.0
+
+### Minor Changes
+
+- Reduced bundle size
+  Include LLM Context Search
+
 ## 2.0.1
 
 ### Patch Changes
