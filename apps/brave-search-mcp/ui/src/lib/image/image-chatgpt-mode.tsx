@@ -85,28 +85,37 @@ export default function ImageChatGPTMode() {
     if (!canSetWidgetState)
       return;
 
-    const selectedImages = images
-      .map((image, idx) => ({
-        index: idx + 1,
-        title: image.title,
-        source: image.source,
-        pageUrl: image.pageUrl,
-        imageUrl: image.imageUrl,
-        confidence: image.confidence,
-        width: image.width,
-        height: image.height,
-      }));
+    const selectedImages = images.map((image, idx) => ({
+      index: idx + 1,
+      title: image.title,
+      source: image.source,
+      pageUrl: image.pageUrl,
+      imageUrl: image.imageUrl,
+      confidence: image.confidence,
+      width: image.width,
+      height: image.height,
+    }));
+    const metadataText = selectedImages.length > 0
+      ? selectedImages.map(image => (
+          `${image.index}: Title: ${image.title}\n`
+          + `Source: ${image.source}\n`
+          + `Page URL: ${image.pageUrl}\n`
+          + `Image URL: ${image.imageUrl}\n`
+          + `Confidence: ${image.confidence ?? 'N/A'}\n`
+          + `Width: ${image.width ?? 'N/A'}\n`
+          + `Height: ${image.height ?? 'N/A'}`
+        )).join('\n\n')
+      : 'No images selected.';
     const selectedImageUrls = new Set(images.map(image => image.imageUrl));
     const fileEntries = Object.entries(fileIdMap).filter(([imageUrl]) => selectedImageUrls.has(imageUrl));
     const imageIds = fileEntries.map(([, fileId]) => fileId);
     const rawFileIdsByImageUrl = Object.fromEntries(fileEntries);
 
     setWidgetState({
-      modelContent: {
+      modelContent: metadataText,
+      privateContent: {
         selectedImages,
         count: selectedImages.length,
-      },
-      privateContent: {
         rawFileIds: imageIds,
         rawFileIdsByImageUrl,
       },
