@@ -68,12 +68,19 @@ export default function ImageMcpAppMode() {
   const [contextImages, setContextImages] = useState<ContextImage[]>([]);
   const imageContentCacheRef = useRef<Record<string, { data: string; mimeType: string }>>({});
   const contextUpdateSequenceRef = useRef(0);
+  const contextImagesRef = useRef(contextImages);
+  contextImagesRef.current = contextImages;
 
   const handleContextChange = useCallback(async (images: ContextImage[]) => {
-    setContextImages(images);
+    const previousImages = contextImagesRef.current;
     if (!app)
       return;
     const sequence = ++contextUpdateSequenceRef.current;
+    const isRemoveOrNoOp = images.length <= previousImages.length;
+
+    if (isRemoveOrNoOp) {
+      setContextImages(images);
+    }
 
     const contentText = images.length > 0
       ? images
@@ -145,9 +152,13 @@ export default function ImageMcpAppMode() {
     }
     catch (err) {
       console.warn('Host rejected image context payload, falling back to text-only context.', err);
-      app.updateModelContext({
+      await app.updateModelContext({
         content: textOnlyContent,
-      }).catch(fallbackErr => console.error('Failed to update text-only model context:', fallbackErr));
+      });
+    }
+
+    if (!isRemoveOrNoOp && sequence === contextUpdateSequenceRef.current) {
+      setContextImages(images);
     }
   }, [app]);
 

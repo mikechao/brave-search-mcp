@@ -44,7 +44,7 @@ importers:
         specifier: workspace:*
         version: link:../../packages/brave-search
       hono:
-        specifier: ^4.12.4
+        specifier: 4.12.4
         version: 4.12.4
       pigeon-maps:
         specifier: ^0.22.1

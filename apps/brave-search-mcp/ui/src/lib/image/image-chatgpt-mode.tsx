@@ -196,9 +196,9 @@ export default function ImageChatGPTMode() {
       }
 
       const nextFileIdsByImageUrl = { ...previousFileIdsByImageUrl, [addedImage.imageUrl]: fileId };
+      syncWidgetState(images, nextFileIdsByImageUrl);
       setContextImages(images);
       setFileIdsByImageUrl(nextFileIdsByImageUrl);
-      syncWidgetState(images, nextFileIdsByImageUrl);
     }
     catch (err) {
       disableContextForSession(err instanceof Error ? err.message : String(err));

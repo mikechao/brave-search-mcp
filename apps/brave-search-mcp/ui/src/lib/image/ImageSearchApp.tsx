@@ -4,10 +4,21 @@
 import type { WidgetProps } from '../../widget-props';
 import type { ContextImage, ImageItem, ImageSearchData } from './types';
 import { Check, Plus } from '@openai/apps-sdk-ui/components/Icon';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
 
 const EMPTY_CONTEXT_IMAGES: ContextImage[] = [];
+const EMPTY_PENDING_IMAGE_URLS: string[] = [];
+
+function ContextSpinner() {
+  return (
+    <span
+      className="inline-block animate-spin rounded-full border-solid border-[var(--grid-line-strong)] border-t-[var(--accent)]"
+      style={{ width: 14, height: 14, borderWidth: 2 }}
+      aria-hidden="true"
+    />
+  );
+}
 
 export interface ImageSearchAppProps extends WidgetProps {
   /** Whether the initial search is in progress (tool invoked but no result yet) */
@@ -17,7 +28,7 @@ export interface ImageSearchAppProps extends WidgetProps {
   /** Images currently in context */
   contextImages?: ContextImage[];
   /** Callback when user adds/removes image from context */
-  onContextChange?: (images: ContextImage[]) => void;
+  onContextChange?: (images: ContextImage[]) => void | Promise<void>;
 }
 
 export default function ImageSearchApp({
@@ -36,7 +47,10 @@ export default function ImageSearchApp({
   const items = data?.items ?? [];
   const error = data?.error;
   const hasData = Boolean(data);
+  const [pendingImageUrls, setPendingImageUrls] = useState<string[]>(EMPTY_PENDING_IMAGE_URLS);
   const contextImageUrls = useMemo(() => new Set(contextImages.map(i => i.imageUrl)), [contextImages]);
+  const pendingImageUrlSet = useMemo(() => new Set(pendingImageUrls), [pendingImageUrls]);
+  const hasPendingContextAdd = pendingImageUrls.length > 0;
   const hasContextSupport = Boolean(onContextChange);
 
   const handleOpenLink = async (item: ImageItem) => {
@@ -54,12 +68,20 @@ export default function ImageSearchApp({
     }
   };
 
-  const handleToggleContext = (item: ImageItem) => {
+  const handleToggleContext = async (item: ImageItem) => {
     if (!onContextChange)
       return;
 
+    if (pendingImageUrlSet.has(item.imageUrl)) {
+      return;
+    }
+
     if (contextImageUrls.has(item.imageUrl)) {
       onContextChange(contextImages.filter(image => image.imageUrl !== item.imageUrl));
+      return;
+    }
+
+    if (hasPendingContextAdd) {
       return;
     }
 
@@ -72,7 +94,16 @@ export default function ImageSearchApp({
       width: item.width,
       height: item.height,
     };
-    onContextChange([...contextImages, contextImage]);
+    setPendingImageUrls(current => current.includes(item.imageUrl) ? current : [...current, item.imageUrl]);
+    try {
+      await onContextChange([...contextImages, contextImage]);
+    }
+    catch {
+      // Parent wrappers own failure handling; just clear the pending UI state here.
+    }
+    finally {
+      setPendingImageUrls(current => current.filter(imageUrl => imageUrl !== item.imageUrl));
+    }
   };
 
   return (
@@ -95,36 +126,52 @@ export default function ImageSearchApp({
       requestDisplayMode={requestDisplayMode}
     >
       <section className="image-grid">
-        {items.map(item => (
-          <article key={item.imageUrl} className="image-thumbnail-shell">
-            <button
-              className={`image-thumbnail ${contextImageUrls.has(item.imageUrl) ? 'image-thumbnail--in-context' : ''}`}
-              onClick={() => handleOpenLink(item)}
-              type="button"
-            >
-              <img
-                src={item.imageUrl}
-                alt={item.title}
-                loading="lazy"
-              />
-              <div className="image-overlay">
-                <div className="image-overlay-title">{item.title}</div>
-                <div className="image-overlay-source">{item.source}</div>
-              </div>
-            </button>
-            {hasContextSupport && (
+        {items.map((item) => {
+          const isInContext = contextImageUrls.has(item.imageUrl);
+          const isPending = pendingImageUrlSet.has(item.imageUrl);
+          const ariaLabel = isPending
+            ? 'Adding to context'
+            : isInContext
+              ? 'Remove from context'
+              : 'Add to context';
+          const title = isPending
+            ? 'Adding to context'
+            : isInContext
+              ? 'In context'
+              : 'Add to context';
+
+          return (
+            <article key={item.imageUrl} className="image-thumbnail-shell">
               <button
+                className={`image-thumbnail ${isInContext ? 'image-thumbnail--in-context' : ''}`}
+                onClick={() => handleOpenLink(item)}
                 type="button"
-                className={`context-btn ${contextImageUrls.has(item.imageUrl) ? 'context-btn--active' : ''}`}
-                onClick={() => handleToggleContext(item)}
-                aria-label={contextImageUrls.has(item.imageUrl) ? 'Remove from context' : 'Add to context'}
-                title={contextImageUrls.has(item.imageUrl) ? 'In context' : 'Add to context'}
               >
-                {contextImageUrls.has(item.imageUrl) ? <Check width={14} height={14} /> : <Plus width={14} height={14} />}
+                <img
+                  src={item.imageUrl}
+                  alt={item.title}
+                  loading="lazy"
+                />
+                <div className="image-overlay">
+                  <div className="image-overlay-title">{item.title}</div>
+                  <div className="image-overlay-source">{item.source}</div>
+                </div>
               </button>
-            )}
-          </article>
-        ))}
+              {hasContextSupport && (
+                <button
+                  type="button"
+                  className={`context-btn ${isInContext ? 'context-btn--active' : ''} ${isPending ? 'context-btn--pending' : ''}`}
+                  onClick={() => handleToggleContext(item)}
+                  aria-label={ariaLabel}
+                  title={title}
+                  disabled={hasPendingContextAdd}
+                >
+                  {isPending ? <ContextSpinner /> : isInContext ? <Check width={14} height={14} /> : <Plus width={14} height={14} />}
+                </button>
+              )}
+            </article>
+          );
+        })}
       </section>
     </SearchAppLayout>
   );

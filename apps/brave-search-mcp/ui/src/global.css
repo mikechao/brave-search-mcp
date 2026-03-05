@@ -520,6 +520,23 @@ body {
   opacity: 0.9;
 }
 
+.context-btn--pending {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.context-btn--pending:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.context-btn:disabled {
+  cursor: wait;
+  opacity: 1;
+}
+
 /* =====================
    Shared Header Actions
    ===================== */
