@@ -53,7 +53,7 @@ describe('braveLLMContextSearchTool', () => {
       maximum_number_of_snippets: 16,
       maximum_number_of_tokens_per_url: 512,
       maximum_number_of_snippets_per_url: 2,
-      context_threshold_mode: 'strict',
+      context_threshold_mode: 'balanced',
     });
 
     const text = getFirstTextContent(result);
@@ -169,7 +169,7 @@ describe('braveLLMContextSearchTool', () => {
     expect(parsed.snippets[1]).toBe('plain text snippet');
   });
 
-  it('combines query and url for retrieval and filters to exact URL matches', async () => {
+  it('uses the url itself for retrieval and filters to exact URL matches', async () => {
     const mockBraveSearch = createMockBraveSearch();
     const server = createServerStub();
     const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
@@ -197,14 +197,14 @@ describe('braveLLMContextSearchTool', () => {
       url: 'https://example.com/target',
     });
 
-    expect(mockBraveSearch.llmContextSearch).toHaveBeenCalledWith('banana ripening https://example.com/target', {
+    expect(mockBraveSearch.llmContextSearch).toHaveBeenCalledWith('https://example.com/target', {
       count: 8,
       maximum_number_of_urls: 8,
       maximum_number_of_tokens: 2048,
       maximum_number_of_snippets: 16,
       maximum_number_of_tokens_per_url: 512,
       maximum_number_of_snippets_per_url: 2,
-      context_threshold_mode: 'strict',
+      context_threshold_mode: 'balanced',
     });
 
     const text = getFirstTextContent(result);

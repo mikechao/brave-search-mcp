@@ -5,8 +5,6 @@ import type { BraveMcpServer } from '../server.js';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
 
-const contextThresholdModes = ['disabled', 'strict', 'lenient', 'balanced'] as const satisfies readonly ContextThresholdMode[];
-
 const COMPACT_DEFAULTS = {
   count: 8,
   maximumNumberOfUrls: 8,
@@ -16,7 +14,7 @@ const COMPACT_DEFAULTS = {
   maximumNumberOfSnippetsPerUrl: 2,
   maxSnippetChars: 400,
   maxOutputChars: 8000,
-  contextThresholdMode: 'strict' as ContextThresholdMode,
+  contextThresholdMode: 'balanced' as ContextThresholdMode,
 };
 
 const boilerplateSignals = [
@@ -34,15 +32,14 @@ const boilerplateSignals = [
 ];
 
 const llmContextSearchInputSchema = z.object({
-  query: z.string().max(400).describe('The search query. Maximum 400 characters and 50 words. When combined with a url, use a short keyword phrase rather than a full question.'),
-  url: z.url().optional().describe('Optional URL to target. When provided, query and URL are combined for retrieval, and only snippets from this exact URL are returned.'),
+  query: z.string().max(400).describe('The search query. Maximum 400 characters and 50 words.'),
+  url: z.url().optional().describe('Optional URL to target. When provided, the tool retrieves context for that URL and only returns snippets from that exact URL.'),
   count: z.number().min(1).max(50).default(COMPACT_DEFAULTS.count).optional().describe(`The maximum number of search results considered. Minimum 1, maximum 50. Default ${COMPACT_DEFAULTS.count} in compact mode, up to 50 in full mode.`),
   maximumNumberOfUrls: z.number().min(1).max(50).default(COMPACT_DEFAULTS.maximumNumberOfUrls).optional().describe(`The maximum number of URLs to include in the response. Minimum 1, maximum 50. Default ${COMPACT_DEFAULTS.maximumNumberOfUrls} in compact mode, up to 50 in full mode.`),
   maximumNumberOfTokens: z.number().min(1024).max(32768).default(COMPACT_DEFAULTS.maximumNumberOfTokens).optional().describe(`The approximate maximum number of tokens in the returned context. Minimum 1024, maximum 32768. Default ${COMPACT_DEFAULTS.maximumNumberOfTokens} in compact mode, up to 32768 in full mode.`),
   maximumNumberOfSnippets: z.number().min(1).max(100).default(COMPACT_DEFAULTS.maximumNumberOfSnippets).optional().describe(`The maximum number of snippets across all URLs. Minimum 1, maximum 100. Default ${COMPACT_DEFAULTS.maximumNumberOfSnippets} in compact mode, up to 100 in full mode.`),
   maximumNumberOfTokensPerUrl: z.number().min(512).max(8192).default(COMPACT_DEFAULTS.maximumNumberOfTokensPerUrl).optional().describe(`The maximum number of tokens per URL. Minimum 512, maximum 8192. Default ${COMPACT_DEFAULTS.maximumNumberOfTokensPerUrl} in compact mode, up to 8192 in full mode.`),
   maximumNumberOfSnippetsPerUrl: z.number().min(1).max(100).default(COMPACT_DEFAULTS.maximumNumberOfSnippetsPerUrl).optional().describe(`The maximum number of snippets per URL. Minimum 1, maximum 100. Default ${COMPACT_DEFAULTS.maximumNumberOfSnippetsPerUrl} in compact mode, up to 100 in full mode.`),
-  contextThresholdMode: z.enum(contextThresholdModes).optional().describe(`Controls relevance filtering. Defaults to "${COMPACT_DEFAULTS.contextThresholdMode}" in compact mode when not set.`),
   responseMode: z.enum(['compact', 'full']).default('compact').optional().describe('compact returns filtered/truncated context optimized for model consumption. full returns all raw snippets without filtering or truncation.'),
   maxSnippetChars: z.number().int().min(80).max(4000).default(COMPACT_DEFAULTS.maxSnippetChars).optional().describe(`Maximum characters per snippet in compact mode. Default ${COMPACT_DEFAULTS.maxSnippetChars}.`),
   maxOutputChars: z.number().int().min(1000).max(100000).default(COMPACT_DEFAULTS.maxOutputChars).optional().describe(`Approximate maximum serialized response size in compact mode. Default ${COMPACT_DEFAULTS.maxOutputChars}.`),
@@ -53,7 +50,7 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
   public readonly description = 'Best for questions that require reading and synthesizing web page content, '
     + 'such as "how does X work", "explain Y in detail", or "what are the tradeoffs of Z". '
     + 'Returns extracted text from web pages rather than just titles and descriptions. '
-    + 'Also useful for extracting text from a specific URL that matches the query. '
+    + 'Also useful for extracting text from a specific URL. '
     + 'Not needed for simple factual lookups — use brave_web_search for those.';
 
   public readonly inputSchema = llmContextSearchInputSchema;
@@ -76,7 +73,6 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
       maximumNumberOfSnippets,
       maximumNumberOfTokensPerUrl,
       maximumNumberOfSnippetsPerUrl,
-      contextThresholdMode,
       responseMode,
       maxSnippetChars,
       maxOutputChars,
@@ -99,17 +95,16 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
     const effectiveMaximumNumberOfSnippetsPerUrl = isCompact
       ? Math.min(maximumNumberOfSnippetsPerUrl ?? COMPACT_DEFAULTS.maximumNumberOfSnippetsPerUrl, COMPACT_DEFAULTS.maximumNumberOfSnippetsPerUrl)
       : maximumNumberOfSnippetsPerUrl;
-    const effectiveContextThresholdMode = contextThresholdMode ?? (isCompact ? COMPACT_DEFAULTS.contextThresholdMode : undefined);
-    const combinedQuery = url ? `${query} ${url}` : query;
+    const retrievalQuery = url ?? query;
 
-    const results = await this.braveSearch.llmContextSearch(combinedQuery, {
+    const results = await this.braveSearch.llmContextSearch(retrievalQuery, {
       count: effectiveCount,
       maximum_number_of_urls: effectiveMaximumNumberOfUrls,
       maximum_number_of_tokens: effectiveMaximumNumberOfTokens,
       maximum_number_of_snippets: effectiveMaximumNumberOfSnippets,
       maximum_number_of_tokens_per_url: effectiveMaximumNumberOfTokensPerUrl,
       maximum_number_of_snippets_per_url: effectiveMaximumNumberOfSnippetsPerUrl,
-      ...(effectiveContextThresholdMode ? { context_threshold_mode: effectiveContextThresholdMode } : {}),
+      context_threshold_mode: COMPACT_DEFAULTS.contextThresholdMode,
     });
 
     const genericItems = url
