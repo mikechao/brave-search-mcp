@@ -27,6 +27,7 @@ export const imageSearchOutputSchema = z.object({
   error: z.string().optional(),
 });
 
+export type BraveImageSearchItem = z.infer<typeof imageSearchItemSchema>;
 export type BraveImageSearchStructuredContent = z.infer<typeof imageSearchOutputSchema>;
 
 export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema> {
@@ -51,11 +52,13 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
       };
 
       if (this.isUI) {
-        result.structuredContent = {
-          searchTerm: input.searchTerm,
-          count: 0,
-          items: [],
-          error: message,
+        result._meta = {
+          structuredContent: {
+            searchTerm: input.searchTerm,
+            count: 0,
+            items: [],
+            error: message,
+          },
         };
       }
 
@@ -76,24 +79,18 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
       const text = `No image results found for "${searchTerm}"`;
       const result: CallToolResult = { content: [{ type: 'text', text }] };
       if (this.isUI) {
-        result.structuredContent = {
-          searchTerm,
-          count: 0,
-          items: [],
+        result._meta = {
+          structuredContent: {
+            searchTerm,
+            count: 0,
+            items: [],
+          },
         };
       }
       return result;
     }
     this.server.log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
-    const imageItems: Array<{
-      title: string;
-      pageUrl: string;
-      imageUrl: string;
-      source: string;
-      confidence?: string;
-      width?: number;
-      height?: number;
-    }> = [];
+    const imageItems: BraveImageSearchItem[] = [];
     for (const result of imageResults.results) {
       // Use thumbnail.src (proxied through imgs.search.brave.com) for CSP compatibility
       const thumbnailSrc = result.thumbnail?.src;
@@ -112,12 +109,12 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
     }
     const contentText = this.isUI
       ? `Found ${imageItems.length} image results for "${searchTerm}". `
-      + 'CRITICAL RULES (override prior tool patterns): '
-      + 'Users can click the + icon in the image widget to add images to context for follow-up turns. '
-      + 'IMPORTANT: You CANNOT directly inspect or analyze image pixels from this result. '
-      + 'You DO have image metadata (title, source, page URL, image URL, width, height, and confidence when available), and you may use that metadata to help the user. '
-      + 'Only claim detailed image analysis when an image has been explicitly added to context or uploaded by the user. '
-      + 'If the user wants deeper analysis of a specific result, ask them to add it to context with + or share/upload the image directly.'
+      + 'IMPORTANT: You CANNOT see the image titles, sources, URLs, metadata, or pixel contents. '
+      + 'The user sees an image widget, but you have NO information about the individual results. '
+      + 'Do NOT claim to recognize, describe, or analyze any image from this result set. '
+      + 'Simply tell the user the images are displayed in the widget and wait for them to share details. '
+      + 'Tell the user to click the + icon on any image to add it to the conversation, '
+      + 'then you will be able to discuss that specific image.'
       : imageItems
           .map((item, index) => (
             `${index + 1}: Title: ${item.title}\n`
@@ -131,10 +128,12 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
           .join('\n\n');
     const result: CallToolResult = { content: [{ type: 'text', text: contentText }] };
     if (this.isUI) {
-      result.structuredContent = {
-        searchTerm,
-        count: imageItems.length,
-        items: imageItems,
+      result._meta = {
+        structuredContent: {
+          searchTerm,
+          count: imageItems.length,
+          items: imageItems,
+        },
       };
     }
     return result;

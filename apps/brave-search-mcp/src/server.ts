@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
-import { BraveImageSearchTool, imageSearchOutputSchema } from './tools/BraveImageSearchTool.js';
+import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
 import { BraveLLMContextSearchTool } from './tools/BraveLLMContextSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
@@ -137,7 +137,6 @@ export class BraveMcpServer {
         title: 'Brave Image Search',
         description: this.imageSearchTool.description,
         inputSchema: this.imageSearchTool.inputSchema.shape,
-        outputSchema: imageSearchOutputSchema.shape,
         annotations: {
           readOnlyHint: true,
           destructiveHint: false,

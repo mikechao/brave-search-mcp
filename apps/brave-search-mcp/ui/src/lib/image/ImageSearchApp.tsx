@@ -43,7 +43,7 @@ export default function ImageSearchApp({
   contextImages = EMPTY_CONTEXT_IMAGES,
   onContextChange,
 }: ImageSearchAppProps) {
-  const data = toolResult?.structuredContent as ImageSearchData | undefined;
+  const data = (toolResult?._meta?.structuredContent ?? toolResult?.structuredContent) as ImageSearchData | undefined;
   const items = data?.items ?? [];
   const error = data?.error;
   const hasData = Boolean(data);

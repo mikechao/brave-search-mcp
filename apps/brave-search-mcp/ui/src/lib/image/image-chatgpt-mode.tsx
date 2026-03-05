@@ -7,7 +7,7 @@ import type { ContextImage, ImageSearchData } from './types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { useChatGptBridge } from '../../hooks/useChatGptBridge';
-import { useToolInput, useToolOutput } from '../../hooks/useOpenAiGlobal';
+import { useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
 import ImageSearchApp from './ImageSearchApp';
 
 const UPLOAD_MIME_BY_EXTENSION: Record<string, string> = {
@@ -50,11 +50,11 @@ function buildUploadFileName(image: ContextImage, extension: 'png' | 'jpg' | 'we
 export default function ImageChatGPTMode() {
   useOpenAiAppTheme();
 
-  // Use reactive hooks instead of manual polling
-  const toolOutput = useToolOutput() as unknown as ImageSearchData | null;
-
   // Access tool input (arguments) for loading state detection
   const toolInput = useToolInput() as { searchTerm?: string } | null;
+  const rawOutput = useToolOutput() as any;
+  const rawMetadata = useToolResponseMetadata() as any;
+  const toolData = (rawMetadata?.structuredContent ?? rawOutput) as ImageSearchData | null;
   const {
     displayMode,
     hostContext,
@@ -76,7 +76,7 @@ export default function ImageChatGPTMode() {
   fileIdsByImageUrlRef.current = fileIdsByImageUrl;
 
   // Derive initial loading state: tool invoked (has input) but no result yet
-  const hasData = Boolean(toolOutput);
+  const hasData = Boolean(toolData);
   const isInitialLoading = toolInput !== null && !hasData;
   const loadingQuery = toolInput?.searchTerm;
   const hasContextSupport = canSetWidgetState && canUploadFile && !contextDisabled;
@@ -211,7 +211,7 @@ export default function ImageChatGPTMode() {
   const props: ImageSearchAppProps = {
     toolInputs: null,
     toolInputsPartial: null,
-    toolResult: toolOutput ? { structuredContent: toolOutput } : null,
+    toolResult: toolData ? { structuredContent: toolData } : null,
     hostContext,
     openLink,
     sendLog: noopLog,
