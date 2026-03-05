@@ -66,7 +66,7 @@
     "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
   "dependencies": {
-    "@hono/node-server": "^1.19.0",
+    "@hono/node-server": "^1.19.11",
     "@modelcontextprotocol/ext-apps": "^1.1.0",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@openai/apps-sdk-ui": "^0.2.1",
