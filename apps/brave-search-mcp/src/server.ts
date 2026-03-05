@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
+import packageJson from '../package.json' with { type: 'json' };
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
 import { BraveLLMContextSearchTool } from './tools/BraveLLMContextSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
@@ -14,6 +15,7 @@ import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 import { UI_RESOURCES } from './ui-resources.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
+const { version: SERVER_VERSION } = packageJson;
 
 /** ChatGPT Apps SDK MIME type for widget resources */
 const CHATGPT_MIME_TYPE = 'text/html+skybridge';
@@ -44,7 +46,7 @@ export class BraveMcpServer {
       {
         name: 'Brave Search MCP Server',
         description: 'A server that provides tools for searching the web, images, videos, and local businesses using the Brave Search API.',
-        version: '2.0.1',
+        version: SERVER_VERSION,
       },
       {
         capabilities: {

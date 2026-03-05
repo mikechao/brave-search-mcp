@@ -4,9 +4,12 @@ import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { beforeEach, describe, expect, it } from 'vitest';
+import packageJson from '../../package.json' with { type: 'json' };
 import { BraveMcpServer } from '../../src/server.js';
 import { ALL_UI_RESOURCE_URIS, UI_RESOURCES } from '../../src/ui-resources.js';
 import { createMockBraveSearch } from '../mocks/index.js';
+
+const { version: SERVER_VERSION } = packageJson;
 
 describe('braveMcpServer', () => {
   let mockBraveSearch: MockBraveSearch;
@@ -182,7 +185,7 @@ describe('braveMcpServer', () => {
         expect(client.getServerVersion()).toEqual({
           name: 'Brave Search MCP Server',
           description: 'A server that provides tools for searching the web, images, videos, and local businesses using the Brave Search API.',
-          version: '2.0.1',
+          version: SERVER_VERSION,
         });
       }
       finally {
