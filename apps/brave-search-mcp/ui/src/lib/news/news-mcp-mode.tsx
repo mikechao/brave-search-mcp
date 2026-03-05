@@ -1,112 +1,80 @@
 /**
  * News Search - MCP App mode with pagination and context selection support
  */
-import type { McpUiHostContext } from '@modelcontextprotocol/ext-apps';
+import type { DisplayMode, ToolResult } from '../../widget-props';
 import type { NewsSearchAppProps } from './NewsSearchApp';
 import type { ContextArticle, NewsSearchData } from './types';
-import { App, PostMessageTransport } from '@modelcontextprotocol/ext-apps';
-import { useCallback, useEffect, useState } from 'react';
-import { useAppTheme } from '../../hooks/useAppTheme';
+import { useCallback, useMemo, useState } from 'react';
+import { useMcpApp } from '../../hooks/useMcpApp';
 import NewsSearchApp from './NewsSearchApp';
+
+interface NewsToolInput extends Record<string, unknown> {
+  query?: string;
+  count?: number;
+  offset?: number;
+}
+
+const APP_INFO = { name: 'Brave News Search', version: '1.0.0' };
+const APP_CAPABILITIES = { availableDisplayModes: ['inline', 'fullscreen', 'pip'] as DisplayMode[] };
+
+function getStructuredContent(result: ToolResult | null): NewsSearchData | null {
+  const content = (result?._meta?.structuredContent ?? result?.structuredContent) as NewsSearchData | undefined;
+  return content ?? null;
+}
 
 /**
  * MCP App mode wrapper
  */
 export default function NewsMcpAppMode() {
-  const [app, setApp] = useState<App | null>(null);
-  const [toolResult, setToolResult] = useState<{ structuredContent?: NewsSearchData } | null>(null);
+  const {
+    app,
+    error,
+    toolInputs,
+    toolInputsPartial,
+    toolResult,
+    hostContext,
+    callServerTool,
+    sendMessage,
+    openLink,
+    sendLog,
+    requestDisplayMode,
+  } = useMcpApp<NewsToolInput>({ appInfo: APP_INFO, capabilities: APP_CAPABILITIES });
+  const [pagedToolResult, setPagedToolResult] = useState<ToolResult | null>(null);
+  const [pagedQuery, setPagedQuery] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [contextArticles, setContextArticles] = useState<ContextArticle[]>([]);
-  const [hostContext, setHostContext] = useState<McpUiHostContext | null>(null);
-  useAppTheme(hostContext?.theme);
+  const currentQuery = toolInputs?.query ?? null;
+  const hostData = getStructuredContent(toolResult);
+  const currentResult = useMemo(() => {
+    if (pagedToolResult && pagedQuery === currentQuery)
+      return pagedToolResult;
 
-  // Initialize App SDK
-  useEffect(() => {
-    // If not in iframe, don't initialize (dev mode)
-    if (window === window.parent)
-      return;
+    if (!toolResult)
+      return null;
 
-    let isMounted = true;
-    const mcpApp = new App(
-      { name: 'Brave News Search', version: '1.0.0' },
-      {
-        tools: {
-          // We don't expose any client-side tools
-        },
-      },
-    );
+    if (currentQuery === null || hostData?.query === currentQuery)
+      return toolResult;
 
-    // Register handlers before connecting to avoid missing early events.
-    mcpApp.ontoolresult = (params) => {
-      const content = params?._meta?.structuredContent ?? params?.structuredContent;
-      if (content) {
-        setToolResult({ structuredContent: content as NewsSearchData });
-      }
-    };
-    mcpApp.onhostcontextchanged = (params) => {
-      setHostContext(prev => ({ ...prev, ...params }));
-    };
+    return null;
+  }, [currentQuery, hostData?.query, pagedQuery, pagedToolResult, toolResult]);
+  const currentData = useMemo(() => getStructuredContent(currentResult), [currentResult]);
 
-    // Initial connection
-    mcpApp.connect(new PostMessageTransport(window.parent, window.parent))
-      .then(() => {
-        if (!isMounted) {
-          mcpApp.close();
-          return;
-        }
-        setApp(mcpApp);
-        const ctx = mcpApp.getHostContext();
-        if (ctx)
-          setHostContext(ctx);
-      })
-      .catch((err) => {
-        if (isMounted) {
-          console.error('Failed to connect to host:', err);
-        }
-      });
-
-    return () => {
-      isMounted = false;
-      mcpApp.close();
-    };
-  }, []);
-
-  const handleOpenLink = async ({ url }: { url: string }) => {
-    if (app) {
-      return app.openLink({ url });
-    }
-    return window.open(url, '_blank') ? { isError: false } : { isError: true };
-  };
-
-  const handleRequestDisplayMode = async (mode: 'inline' | 'fullscreen' | 'pip') => {
-    if (app) {
-      const result = await app.requestDisplayMode({ mode });
-      return result.mode;
-    }
-    return undefined;
-  };
-
-  // Pagination handler using app.callServerTool
   const handleLoadPage = useCallback(async (offset: number) => {
-    if (!toolResult?.structuredContent || !app)
+    if (!currentData)
       return;
 
     setIsLoading(true);
     try {
-      // Call the server tool to get the next page
-      const result = await app.callServerTool({
+      const result = await callServerTool({
         name: 'brave_news_search',
         arguments: {
-          query: toolResult.structuredContent.query,
-          count: toolResult.structuredContent.pageSize ?? toolResult.structuredContent.count ?? 10,
+          query: currentData.query,
+          count: currentData.pageSize ?? currentData.count ?? 10,
           offset,
         },
       });
-
-      const content = result?._meta?.structuredContent ?? result?.structuredContent;
-      if (content) {
-        setToolResult({ structuredContent: content as NewsSearchData });
-      }
+      setPagedToolResult(result as ToolResult);
+      setPagedQuery(currentData.query);
     }
     catch (err) {
       console.error('Failed to load page:', err);
@@ -114,42 +82,52 @@ export default function NewsMcpAppMode() {
     finally {
       setIsLoading(false);
     }
-  }, [app, toolResult]);
+  }, [callServerTool, currentData]);
 
-  // Context selection handler using app.updateModelContext
   const handleContextChange = useCallback((articles: ContextArticle[]) => {
     setContextArticles(articles);
 
     if (app) {
-      // Format context for the model
       const contentText = articles.length > 0
-        ? articles.map((a, idx) => (
-            `${idx + 1}: Title: ${a.title}\nURL: ${a.url}\nAge: ${a.age}\nSource: ${a.source}`
+        ? articles.map((article, index) => (
+            `${index + 1}: Title: ${article.title}\nURL: ${article.url}\nAge: ${article.age}\nSource: ${article.source}`
           )).join('\n\n')
         : 'No articles selected.';
 
-      // Send update to host without triggering follow-up
       app.updateModelContext({
         content: [{ type: 'text', text: contentText }],
       }).catch(err => console.error('Failed to update model context:', err));
     }
   }, [app]);
 
+  if (error) {
+    return (
+      <div className="error">
+        Error:
+        {error.message}
+      </div>
+    );
+  }
+  if (!app)
+    return <div className="loading">Connecting...</div>;
+
   const props: NewsSearchAppProps = {
-    toolInputs: null,
-    toolInputsPartial: null,
-    toolResult,
+    toolInputs,
+    toolInputsPartial,
+    toolResult: currentResult,
     hostContext,
-    openLink: handleOpenLink,
-    sendLog: app ? params => app.sendLog(params) : async () => {},
+    callServerTool,
+    sendMessage,
+    openLink,
+    sendLog,
     displayMode: hostContext?.displayMode ?? 'inline',
-    requestDisplayMode: handleRequestDisplayMode,
-    onLoadPage: app ? handleLoadPage : undefined,
+    requestDisplayMode,
+    onLoadPage: handleLoadPage,
     isLoading,
-    isInitialLoading: !toolResult && Boolean(app),
-    loadingQuery: undefined, // MCP news mode doesn't track toolInputs currently
+    isInitialLoading: toolInputs !== null && currentResult === null,
+    loadingQuery: toolInputs?.query,
     contextArticles,
-    onContextChange: app ? handleContextChange : undefined,
+    onContextChange: handleContextChange,
   };
 
   return <NewsSearchApp {...props} />;
