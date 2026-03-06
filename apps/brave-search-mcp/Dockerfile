@@ -1,26 +1,18 @@
-FROM node:23.11-alpine AS builder
+FROM node:23.11-alpine
 
-# Must be entire project because `prepare` script is run during `npm install` and requires all files.
+WORKDIR /app
+
+RUN npm install -g pnpm@10
+
+# Build from the monorepo root so workspace packages resolve correctly.
 COPY . /app
 
-WORKDIR /app
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --no-frozen-lockfile
+RUN pnpm -C apps/brave-search-mcp build
 
-RUN npm install -g pnpm@10
-
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
-
-FROM node:23.11-alpine AS release
-
-WORKDIR /app
-
-RUN npm install -g pnpm@10
-
-COPY --from=builder /app/dist /app/dist
-COPY --from=builder /app/package.json /app/package.json
-COPY --from=builder /app/pnpm-lock.yaml /app/pnpm-lock.yaml
+WORKDIR /app/apps/brave-search-mcp
 
 ENV NODE_ENV=production
-
-RUN pnpm install --prod --ignore-scripts
+EXPOSE 3001
 
 ENTRYPOINT ["node", "dist/index.js"]
