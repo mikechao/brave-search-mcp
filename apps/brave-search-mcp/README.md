@@ -239,13 +239,19 @@ Replace `YOUR_API_KEY_HERE` with your actual Brave Search API key.
 #### Docker
 
 1. Clone the repo
-2. Docker build
+2. Build the image from the repo root
 
 ```bash
-docker build -t brave-search-mcp:latest -f ./Dockerfile .
+docker build -t brave-search-mcp:latest -f apps/brave-search-mcp/Dockerfile .
 ```
 
-3. Add this to your `claude_desktop_config.json`:
+3. Run it directly if you want HTTP mode:
+
+```bash
+docker run --rm -p 3001:3001 -e BRAVE_API_KEY="YOUR_API_KEY_HERE" brave-search-mcp:latest --http
+```
+
+4. Add this to your `claude_desktop_config.json` for stdio mode:
 
 ```json
 {
