@@ -7,7 +7,7 @@ RUN npm install -g pnpm@10
 # Build from the monorepo root so workspace packages resolve correctly.
 COPY . /app
 
-RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --no-frozen-lockfile
+RUN --mount=type=cache,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 RUN pnpm -C apps/brave-search-mcp build
 
 WORKDIR /app/apps/brave-search-mcp
