@@ -3,13 +3,16 @@
  * Supports pagination and add-to-context functionality
  */
 import type { WidgetProps } from '../../widget-props';
+import type { WebResultItem } from '../web/types';
 import type { ContextPlace, LocalBusinessItem, LocalSearchData } from './types';
 import { lazy, Suspense, useRef, useState } from 'react';
 import { SearchAppLayout } from '../shared/SearchAppLayout';
+import { WebResultCard } from '../web/WebResultCard';
 import { LocalBusinessCard } from './LocalBusinessCard';
 
 const LocalMap = lazy(() => import('./LocalMap').then(module => ({ default: module.LocalMap })));
 const EMPTY_CONTEXT_PLACES: ContextPlace[] = [];
+const EMPTY_WEB_FALLBACK_ITEMS: WebResultItem[] = [];
 
 export interface LocalSearchAppProps extends WidgetProps {
   /** Callback to load a different page of results */
@@ -49,18 +52,27 @@ export default function LocalSearchApp({
   const data = (toolResult?._meta?.structuredContent ?? toolResult?.structuredContent) as LocalSearchData | undefined;
 
   const items = data?.items ?? [];
+  const webFallbackItems = data?.webFallbackItems ?? EMPTY_WEB_FALLBACK_ITEMS;
   const error = data?.error;
   const fallbackToWeb = data?.fallbackToWeb;
+  const isWebFallback = Boolean(fallbackToWeb);
+  const hasWebFallbackItems = webFallbackItems.length > 0;
   const hasData = Boolean(data);
   const currentOffset = data?.offset ?? 0;
-  const returnedCount = data?.returnedCount ?? items.length;
-  const pageSize = data?.pageSize ?? data?.count ?? items.length;
+  const returnedCount = isWebFallback
+    ? (data?.returnedCount ?? webFallbackItems.length)
+    : (data?.returnedCount ?? items.length);
+  const pageSize = data?.pageSize ?? data?.count ?? (isWebFallback ? webFallbackItems.length : items.length);
+  const countLabel = isWebFallback
+    ? `${returnedCount}/${pageSize} results`
+    : `${returnedCount}/${pageSize} PLACES`;
+  const isEmpty = isWebFallback ? webFallbackItems.length === 0 : items.length === 0;
 
   // Pagination logic - Brave API has max offset of 9
   const MAX_OFFSET = 9;
   const hasPrevious = currentOffset > 0;
   const hasNext = currentOffset < MAX_OFFSET && items.length > 0;
-  const canPaginate = Boolean(onLoadPage) && hasData && !error && !fallbackToWeb;
+  const canPaginate = Boolean(onLoadPage) && hasData && !error && !isWebFallback;
 
   // Context selection helpers
   const contextIds = new Set(contextPlaces.map(p => `${p.name}-${p.address}`));
@@ -157,24 +169,26 @@ export default function LocalSearchApp({
   };
 
   const pageNumber = currentOffset + 1;
-  const hasMapData = items.some(item => item.coordinates) || contextPlaces.some(place => place.coordinates);
+  const hasMapData = !isWebFallback && (items.some(item => item.coordinates) || contextPlaces.some(place => place.coordinates));
 
   return (
     <SearchAppLayout
       variant="local"
       brandSub="Local Search"
       query={data?.query}
-      countLabel={`${returnedCount}/${pageSize} PLACES`}
+      countLabel={countLabel}
       error={error}
-      infoBanner={fallbackToWeb ? 'No local results found. Showing web search results instead.' : undefined}
+      infoBanner={isWebFallback ? 'No local results found. Showing web search results instead.' : undefined}
       isInitialLoading={isInitialLoading}
       loadingQuery={loadingQuery}
       hasData={hasData}
-      isEmpty={items.length === 0 && !fallbackToWeb}
+      isEmpty={isEmpty}
       emptyTitle="Local Search"
       emptyDescription="Ask to search for local businesses and places."
-      noResultsTitle="No places found"
-      noResultsDescription="Try a different location or query."
+      noResultsTitle={isWebFallback ? 'No fallback results' : 'No places found'}
+      noResultsDescription={isWebFallback
+        ? 'No local results were found, and the fallback web search also returned no results.'
+        : 'Try a different location or query.'}
       hostContext={hostContext}
       displayMode={displayMode}
       requestDisplayMode={requestDisplayMode}
@@ -188,7 +202,7 @@ export default function LocalSearchApp({
             onNext: handleNext,
           }
         : undefined}
-      context={hasContextSupport && items.length > 0
+      context={hasContextSupport && !isWebFallback && items.length > 0
         ? {
             count: contextPlaces.length,
             onAddAll: handleAddAllToContext,
@@ -196,50 +210,65 @@ export default function LocalSearchApp({
           }
         : undefined}
     >
-      <div className="local-split-view">
-        {/* Left: Business List */}
-        <div className="local-list" ref={listRef}>
-          {items.map((item, index) => (
-            <LocalBusinessCard
-              key={item.id || index}
-              item={item}
-              index={index}
-              isSelected={selectedIndex === index}
-              onSelect={() => setSelectedIndex(prev => prev === index ? null : index)}
-              onOpenLink={handleOpenLink}
-              isInContext={isInContext(item)}
-              onToggleContext={hasContextSupport ? handleToggleContext : undefined}
-            />
-          ))}
-        </div>
-
-        {/* Right: Map */}
-        <div className="local-map-wrapper">
-          {hasMapData
-            ? (
-                <Suspense
-                  fallback={(
-                    <div className="local-map-empty">
-                      <p>Loading map...</p>
-                    </div>
-                  )}
-                >
-                  <LocalMap
-                    items={items}
-                    selectedIndex={selectedIndex}
-                    onSelectIndex={handleSelectFromMap}
-                    displayMode={displayMode}
-                    contextPlaces={contextPlaces}
+      {isWebFallback && hasWebFallbackItems
+        ? (
+            <section className="web-results-list">
+              {webFallbackItems.map((item, index) => (
+                <WebResultCard
+                  key={item.url}
+                  item={item}
+                  index={index}
+                  onOpenLink={handleOpenLink}
+                />
+              ))}
+            </section>
+          )
+        : (
+            <div className="local-split-view">
+              {/* Left: Business List */}
+              <div className="local-list" ref={listRef}>
+                {items.map((item, index) => (
+                  <LocalBusinessCard
+                    key={item.id || index}
+                    item={item}
+                    index={index}
+                    isSelected={selectedIndex === index}
+                    onSelect={() => setSelectedIndex(prev => prev === index ? null : index)}
+                    onOpenLink={handleOpenLink}
+                    isInContext={isInContext(item)}
+                    onToggleContext={hasContextSupport ? handleToggleContext : undefined}
                   />
-                </Suspense>
-              )
-            : (
-                <div className="local-map-empty">
-                  <p>No location data available</p>
-                </div>
-              )}
-        </div>
-      </div>
+                ))}
+              </div>
+
+              {/* Right: Map */}
+              <div className="local-map-wrapper">
+                {hasMapData
+                  ? (
+                      <Suspense
+                        fallback={(
+                          <div className="local-map-empty">
+                            <p>Loading map...</p>
+                          </div>
+                        )}
+                      >
+                        <LocalMap
+                          items={items}
+                          selectedIndex={selectedIndex}
+                          onSelectIndex={handleSelectFromMap}
+                          displayMode={displayMode}
+                          contextPlaces={contextPlaces}
+                        />
+                      </Suspense>
+                    )
+                  : (
+                      <div className="local-map-empty">
+                        <p>No location data available</p>
+                      </div>
+                    )}
+              </div>
+            </div>
+          )}
     </SearchAppLayout>
   );
 }

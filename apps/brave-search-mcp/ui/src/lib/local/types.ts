@@ -1,6 +1,7 @@
 /**
  * Type definitions for Local Search Widget
  */
+import type { WebResultItem } from '../web/types';
 
 export interface LocalBusinessItem {
   id?: string;
@@ -25,6 +26,7 @@ export interface LocalSearchData {
   returnedCount?: number;
   offset?: number;
   items: LocalBusinessItem[];
+  webFallbackItems?: WebResultItem[];
   fallbackToWeb?: boolean;
   error?: string;
 }

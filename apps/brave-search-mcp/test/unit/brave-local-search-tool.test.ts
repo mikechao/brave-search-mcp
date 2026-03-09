@@ -28,6 +28,15 @@ interface LocalStructuredContent {
     weeklyHours?: string;
     description?: string;
   }>;
+  webFallbackItems?: Array<{
+    title: string;
+    url: string;
+    description: string;
+    domain: string;
+    favicon?: string;
+    age?: string;
+    thumbnail?: { src: string; height?: number; width?: number };
+  }>;
   fallbackToWeb?: boolean;
   error?: string;
 }
@@ -110,8 +119,19 @@ describe('braveLocalSearchTool', () => {
       _meta: {
         structuredContent: {
           query: 'brunch',
-          count: 10,
-          items: [],
+          count: 2,
+          pageSize: 2,
+          returnedCount: 1,
+          offset: 0,
+          items: [
+            {
+              title: 'Brunch Guide',
+              url: 'https://example.com/brunch',
+              description: 'Best brunch spots',
+              domain: 'example.com',
+              favicon: 'https://example.com/favicon.ico',
+            },
+          ],
         },
       },
     });
@@ -128,11 +148,121 @@ describe('braveLocalSearchTool', () => {
       query: 'brunch',
       count: 2,
       pageSize: 2,
-      returnedCount: 0,
-      offset: 2,
+      returnedCount: 1,
+      offset: 0,
       items: [],
+      webFallbackItems: [
+        {
+          title: 'Brunch Guide',
+          url: 'https://example.com/brunch',
+          description: 'Best brunch spots',
+          domain: 'example.com',
+          favicon: 'https://example.com/favicon.ico',
+        },
+      ],
       fallbackToWeb: true,
     });
+  });
+
+  it('preserves empty fallback web payloads in UI mode', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const server = createServerStub();
+    const webSearchTool = createWebSearchToolStub();
+    const tool = new BraveLocalSearchTool(
+      server,
+      mockBraveSearch as unknown as BraveSearch,
+      webSearchTool,
+      true,
+    );
+
+    mockBraveSearch.webSearch.mockResolvedValue({
+      type: 'search',
+      query: { original: 'late night food' },
+      locations: { results: [] },
+    } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
+
+    (webSearchTool as unknown as { executeCore: ReturnType<typeof vi.fn> }).executeCore.mockResolvedValue({
+      content: [{ type: 'text' as const, text: 'No results found for "late night food"' }],
+      _meta: {
+        structuredContent: {
+          query: 'late night food',
+          count: 3,
+          pageSize: 3,
+          returnedCount: 0,
+          offset: 0,
+          items: [],
+        },
+      },
+    });
+
+    const result = await tool.executeCore({
+      query: 'late night food',
+      count: 3,
+      offset: 4,
+    });
+
+    expect(getFirstTextContent(result)).toBe('No results found for "late night food"');
+    const structured = getMetaStructuredContent<LocalStructuredContent>(result);
+    expect(structured).toEqual({
+      query: 'late night food',
+      count: 3,
+      pageSize: 3,
+      returnedCount: 0,
+      offset: 0,
+      items: [],
+      webFallbackItems: [],
+      fallbackToWeb: true,
+    });
+  });
+
+  it('degrades gracefully when fallback web metadata is malformed', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const server = createServerStub();
+    const webSearchTool = createWebSearchToolStub();
+    const tool = new BraveLocalSearchTool(
+      server,
+      mockBraveSearch as unknown as BraveSearch,
+      webSearchTool,
+      true,
+    );
+
+    mockBraveSearch.webSearch.mockResolvedValue({
+      type: 'search',
+      query: { original: 'dim sum' },
+      locations: { results: [] },
+    } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
+
+    (webSearchTool as unknown as { executeCore: ReturnType<typeof vi.fn> }).executeCore.mockResolvedValue({
+      content: [{ type: 'text' as const, text: 'fallback content' }],
+      _meta: {
+        structuredContent: {
+          unexpected: true,
+        },
+      },
+    });
+
+    const result = await tool.executeCore({
+      query: 'dim sum',
+      count: 5,
+      offset: 1,
+    });
+
+    expect(getFirstTextContent(result)).toBe('fallback content');
+    const structured = getMetaStructuredContent<LocalStructuredContent>(result);
+    expect(structured).toEqual({
+      query: 'dim sum',
+      count: 5,
+      pageSize: 5,
+      returnedCount: 0,
+      offset: 0,
+      items: [],
+      webFallbackItems: [],
+      fallbackToWeb: true,
+    });
+    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+      expect.stringContaining('Invalid web fallback structured content for "dim sum"'),
+      'warning',
+    );
   });
 
   it('paginates location IDs, injects missing ids, and returns structured UI local items', async () => {

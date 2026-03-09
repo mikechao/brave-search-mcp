@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const dockerfilePath = fileURLToPath(new URL('../../Dockerfile', import.meta.url));
 const dockerfile = readFileSync(dockerfilePath, 'utf8');
 
-describe('Dockerfile', () => {
+describe('dockerfile', () => {
   it('uses frozen lockfile for workspace install', () => {
     expect(dockerfile).toMatch(
       /^RUN --mount=type=cache,target=\/root\/\.local\/share\/pnpm\/store pnpm install --frozen-lockfile$/m,

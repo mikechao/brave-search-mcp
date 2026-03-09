@@ -25,7 +25,7 @@ The following values are supported:
     ),
 });
 
-const webResultSchema = z.object({
+export const webResultSchema = z.object({
   title: z.string(),
   url: z.string(),
   description: z.string(),
