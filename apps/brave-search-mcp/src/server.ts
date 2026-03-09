@@ -20,6 +20,55 @@ const { version: SERVER_VERSION } = packageJson;
 /** ChatGPT Apps SDK MIME type for widget resources */
 const CHATGPT_MIME_TYPE = 'text/html+skybridge';
 const OPENAI_CDN_RESOURCE_DOMAIN = 'https://cdn.openai.com';
+const OPENAI_WIDGET_DOMAIN = 'mc-brave-search-mcp';
+const READ_ONLY_TOOL_ANNOTATIONS = {
+  readOnlyHint: true,
+  destructiveHint: false,
+  openWorldHint: true,
+} as const;
+
+interface ResourceCsp {
+  connectDomains?: string[];
+  resourceDomains?: string[];
+  frameDomains?: string[];
+  baseUriDomains?: string[];
+}
+
+interface OpenAIWidgetCsp {
+  connect_domains?: string[];
+  resource_domains?: string[];
+  redirect_domains?: string[];
+  frame_domains?: string[];
+}
+
+interface StandardToolRegistrationTarget {
+  name: string;
+  description: string;
+  inputSchema: unknown;
+  execute: (input: never) => Promise<unknown>;
+}
+
+interface UiToolRegistrationTarget extends StandardToolRegistrationTarget {
+  inputSchema: {
+    shape: unknown;
+  };
+}
+
+interface UiToolDescriptor {
+  resourceKey: keyof typeof UI_RESOURCES;
+  chatgptRegistrationName: string;
+  title: string;
+  mcpResourceDescription: string;
+  chatgptResourceDescription: string;
+  mcpBundlePath: string;
+  chatgptBundlePath: string;
+  mcpCsp?: ResourceCsp;
+  chatgptCsp?: OpenAIWidgetCsp;
+  widgetAccessible?: boolean;
+  invokingText: string;
+  invokedText: string;
+  tool: UiToolRegistrationTarget;
+}
 
 export class BraveMcpServer {
   private server: McpServer;
@@ -67,155 +116,201 @@ export class BraveMcpServer {
   }
 
   private setupTools(): void {
+    const uiToolDescriptors = this.getUiToolDescriptors();
+
     if (this.isUI) {
-      // Dual-resource strategy: register BOTH MCP-APP and ChatGPT resources
-      this.setupDualResourceImageTools();
-      this.setupDualResourceNewsTools();
-      this.setupDualResourceVideoTools();
-      this.setupDualResourceWebTools();
-      this.setupDualResourceLocalTools();
-      this.setupLLMContextSearchTool();
+      for (const descriptor of uiToolDescriptors)
+        this.registerUiTool(descriptor);
+
+      this.registerStandardTool(this.llmContextSearchTool);
+      return;
     }
-    else {
-      this.setupImageSearchTool();
-      this.setupNewsSearchTool();
-      this.setupVideoSearchTool();
-      this.setupWebSearchTool();
-      this.setupLocalSearchTool();
-      this.setupLLMContextSearchTool();
-    }
+
+    for (const tool of [...uiToolDescriptors.map(({ tool }) => tool), this.llmContextSearchTool])
+      this.registerStandardTool(tool);
   }
 
-  /**
-   * Dual-Resource Strategy for Image Search: Register both MCP-APP and ChatGPT resources
-   */
-  private setupDualResourceImageTools(): void {
-    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.image;
-
-    // Register MCP-APP resource (ext-apps format)
-    registerAppResource(
-      this.server,
-      mcpAppResourceUri,
-      mcpAppResourceUri,
-      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Image Search UI (MCP-APP)' },
-      async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(
-          mcpAppResourceUri,
-          RESOURCE_MIME_TYPE,
-          'src/lib/image/mcp-app.html',
-          {
-            connectDomains: ['https://imgs.search.brave.com'],
-            resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-          },
-        );
-      },
-    );
-
-    // Register ChatGPT resource (skybridge format)
-    this.server.registerResource(
-      'brave-image-search-chatgpt',
-      chatgptResourceUri,
-      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Image Search Widget (ChatGPT)' },
-      async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(
-          chatgptResourceUri,
-          CHATGPT_MIME_TYPE,
-          'src/lib/image/chatgpt-app.html',
-          undefined,
-          {
-            connect_domains: ['https://imgs.search.brave.com'],
-            resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-          },
-          'mc-brave-search-mcp',
-        );
-      },
-    );
-
-    // Register tool with BOTH metadata pointers
-    registerAppTool(
-      this.server,
-      this.imageSearchTool.name,
+  private getUiToolDescriptors(): UiToolDescriptor[] {
+    return [
       {
+        resourceKey: 'image',
+        chatgptRegistrationName: 'brave-image-search-chatgpt',
         title: 'Brave Image Search',
-        description: this.imageSearchTool.description,
-        inputSchema: this.imageSearchTool.inputSchema.shape,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
+        mcpResourceDescription: 'Brave Image Search UI (MCP-APP)',
+        chatgptResourceDescription: 'Brave Image Search Widget (ChatGPT)',
+        mcpBundlePath: 'src/lib/image/mcp-app.html',
+        chatgptBundlePath: 'src/lib/image/chatgpt-app.html',
+        mcpCsp: {
+          connectDomains: ['https://imgs.search.brave.com'],
+          resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
         },
-        _meta: {
-          'ui': { resourceUri: mcpAppResourceUri },
-          'openai/outputTemplate': chatgptResourceUri,
-          'openai/toolInvocation/invoking': 'Searching for images…',
-          'openai/toolInvocation/invoked': 'Images found.',
+        chatgptCsp: {
+          connect_domains: ['https://imgs.search.brave.com'],
+          resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
         },
+        invokingText: 'Searching for images…',
+        invokedText: 'Images found.',
+        tool: this.imageSearchTool,
       },
-      this.imageSearchTool.execute.bind(this.imageSearchTool),
+      {
+        resourceKey: 'news',
+        chatgptRegistrationName: 'brave-news-search-chatgpt',
+        title: 'Brave News Search',
+        mcpResourceDescription: 'Brave News Search UI (MCP-APP)',
+        chatgptResourceDescription: 'Brave News Search Widget (ChatGPT)',
+        mcpBundlePath: 'src/lib/news/mcp-app.html',
+        chatgptBundlePath: 'src/lib/news/chatgpt-app.html',
+        mcpCsp: {
+          resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+        },
+        chatgptCsp: {
+          resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+        },
+        widgetAccessible: true,
+        invokingText: 'Searching for news…',
+        invokedText: 'News articles found.',
+        tool: this.newsSearchTool,
+      },
+      {
+        resourceKey: 'video',
+        chatgptRegistrationName: 'brave-video-search-chatgpt',
+        title: 'Brave Video Search',
+        mcpResourceDescription: 'Brave Video Search UI (MCP-APP)',
+        chatgptResourceDescription: 'Brave Video Search Widget (ChatGPT)',
+        mcpBundlePath: 'src/lib/video/mcp-app.html',
+        chatgptBundlePath: 'src/lib/video/chatgpt-app.html',
+        mcpCsp: {
+          resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+          frameDomains: ['https://www.youtube.com', 'https://player.vimeo.com'],
+        },
+        chatgptCsp: {
+          resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com', OPENAI_CDN_RESOURCE_DOMAIN],
+          frame_domains: ['https://www.youtube.com', 'https://youtube.com', 'https://player.vimeo.com', 'https://vimeo.com'],
+        },
+        widgetAccessible: true,
+        invokingText: 'Searching for videos…',
+        invokedText: 'Videos found.',
+        tool: this.videoSearchTool,
+      },
+      {
+        resourceKey: 'web',
+        chatgptRegistrationName: 'brave-web-search-chatgpt',
+        title: 'Brave Web Search',
+        mcpResourceDescription: 'Brave Web Search UI (MCP-APP)',
+        chatgptResourceDescription: 'Brave Web Search Widget (ChatGPT)',
+        mcpBundlePath: 'src/lib/web/mcp-app.html',
+        chatgptBundlePath: 'src/lib/web/chatgpt-app.html',
+        mcpCsp: {
+          resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+        },
+        chatgptCsp: {
+          resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+        },
+        widgetAccessible: true,
+        invokingText: 'Searching the web…',
+        invokedText: 'Search complete.',
+        tool: this.webSearchTool,
+      },
+      {
+        resourceKey: 'local',
+        chatgptRegistrationName: 'brave-local-search-chatgpt',
+        title: 'Brave Local Search',
+        mcpResourceDescription: 'Brave Local Search UI (MCP-APP)',
+        chatgptResourceDescription: 'Brave Local Search Widget (ChatGPT)',
+        mcpBundlePath: 'src/lib/local/mcp-app.html',
+        chatgptBundlePath: 'src/lib/local/chatgpt-app.html',
+        mcpCsp: {
+          resourceDomains: [
+            'https://tile.openstreetmap.org',
+            'https://a.tile.openstreetmap.org',
+            'https://b.tile.openstreetmap.org',
+            'https://c.tile.openstreetmap.org',
+            OPENAI_CDN_RESOURCE_DOMAIN,
+          ],
+        },
+        chatgptCsp: {
+          resource_domains: [
+            'https://tile.openstreetmap.org',
+            'https://a.tile.openstreetmap.org',
+            'https://b.tile.openstreetmap.org',
+            'https://c.tile.openstreetmap.org',
+            OPENAI_CDN_RESOURCE_DOMAIN,
+          ],
+        },
+        widgetAccessible: true,
+        invokingText: 'Searching local businesses…',
+        invokedText: 'Places found.',
+        tool: this.localSearchTool,
+      },
+    ];
+  }
+
+  private registerStandardTool(tool: StandardToolRegistrationTarget): void {
+    this.server.registerTool(
+      tool.name,
+      {
+        description: tool.description,
+        inputSchema: tool.inputSchema as never,
+        annotations: READ_ONLY_TOOL_ANNOTATIONS,
+      },
+      tool.execute.bind(tool) as never,
     );
   }
 
-  /**
-   * Dual-Resource Strategy for News Search: Register both MCP-APP and ChatGPT resources
-   */
-  private setupDualResourceNewsTools(): void {
-    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.news;
+  private registerUiTool(descriptor: UiToolDescriptor): void {
+    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES[descriptor.resourceKey];
 
-    // Register MCP-APP resource (ext-apps format)
     registerAppResource(
       this.server,
       mcpAppResourceUri,
       mcpAppResourceUri,
-      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave News Search UI (MCP-APP)' },
+      { mimeType: RESOURCE_MIME_TYPE, description: descriptor.mcpResourceDescription },
       async (): Promise<ReadResourceResult> => {
         return this.loadUIBundle(
           mcpAppResourceUri,
           RESOURCE_MIME_TYPE,
-          'src/lib/news/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
+          descriptor.mcpBundlePath,
+          descriptor.mcpCsp,
         );
       },
     );
 
-    // Register ChatGPT resource (skybridge format)
     this.server.registerResource(
-      'brave-news-search-chatgpt',
+      descriptor.chatgptRegistrationName,
       chatgptResourceUri,
-      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave News Search Widget (ChatGPT)' },
+      { mimeType: CHATGPT_MIME_TYPE, description: descriptor.chatgptResourceDescription },
       async (): Promise<ReadResourceResult> => {
         return this.loadUIBundle(
           chatgptResourceUri,
           CHATGPT_MIME_TYPE,
-          'src/lib/news/chatgpt-app.html',
+          descriptor.chatgptBundlePath,
           undefined,
-          { resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
-          'mc-brave-search-mcp',
+          descriptor.chatgptCsp,
+          OPENAI_WIDGET_DOMAIN,
         );
       },
     );
 
-    // Register tool with BOTH metadata pointers
+    const toolMeta: Record<string, unknown> = {
+      'ui': { resourceUri: mcpAppResourceUri },
+      'openai/outputTemplate': chatgptResourceUri,
+      'openai/toolInvocation/invoking': descriptor.invokingText,
+      'openai/toolInvocation/invoked': descriptor.invokedText,
+    };
+    if (descriptor.widgetAccessible)
+      toolMeta['openai/widgetAccessible'] = true;
+
     registerAppTool(
       this.server,
-      this.newsSearchTool.name,
+      descriptor.tool.name,
       {
-        title: 'Brave News Search',
-        description: this.newsSearchTool.description,
-        inputSchema: this.newsSearchTool.inputSchema.shape,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-        _meta: {
-          'ui': { resourceUri: mcpAppResourceUri },
-          'openai/outputTemplate': chatgptResourceUri,
-          'openai/widgetAccessible': true,
-          'openai/toolInvocation/invoking': 'Searching for news…',
-          'openai/toolInvocation/invoked': 'News articles found.',
-        },
+        title: descriptor.title,
+        description: descriptor.tool.description,
+        inputSchema: descriptor.tool.inputSchema.shape as never,
+        annotations: READ_ONLY_TOOL_ANNOTATIONS,
+        _meta: toolMeta,
       },
-      this.newsSearchTool.execute.bind(this.newsSearchTool),
+      descriptor.tool.execute.bind(descriptor.tool) as never,
     );
   }
 
@@ -282,316 +377,6 @@ export class BraveMcpServer {
         ],
       };
     }
-  }
-
-  private setupImageSearchTool(): void {
-    this.server.registerTool(
-      this.imageSearchTool.name,
-      {
-        description: this.imageSearchTool.description,
-        inputSchema: this.imageSearchTool.inputSchema,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-      },
-      this.imageSearchTool.execute.bind(this.imageSearchTool),
-    );
-  }
-
-  private setupNewsSearchTool(): void {
-    this.server.registerTool(
-      this.newsSearchTool.name,
-      {
-        description: this.newsSearchTool.description,
-        inputSchema: this.newsSearchTool.inputSchema,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-      },
-      this.newsSearchTool.execute.bind(this.newsSearchTool),
-    );
-  }
-
-  /**
-   * Dual-Resource Strategy for Video Search: Register both MCP-APP and ChatGPT resources
-   */
-  private setupDualResourceVideoTools(): void {
-    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.video;
-
-    // Register MCP-APP resource (ext-apps format)
-    registerAppResource(
-      this.server,
-      mcpAppResourceUri,
-      mcpAppResourceUri,
-      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Video Search UI (MCP-APP)' },
-      async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(
-          mcpAppResourceUri,
-          RESOURCE_MIME_TYPE,
-          'src/lib/video/mcp-app.html',
-          {
-            resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-            frameDomains: ['https://www.youtube.com', 'https://player.vimeo.com'],
-          },
-        );
-      },
-    );
-
-    // Register ChatGPT resource (skybridge format)
-    this.server.registerResource(
-      'brave-video-search-chatgpt',
-      chatgptResourceUri,
-      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Video Search Widget (ChatGPT)' },
-      async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(
-          chatgptResourceUri,
-          CHATGPT_MIME_TYPE,
-          'src/lib/video/chatgpt-app.html',
-          undefined,
-          {
-            resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com', OPENAI_CDN_RESOURCE_DOMAIN],
-            frame_domains: ['https://www.youtube.com', 'https://youtube.com', 'https://player.vimeo.com', 'https://vimeo.com'],
-          },
-          'mc-brave-search-mcp',
-        );
-      },
-    );
-
-    // Register tool with BOTH metadata pointers
-    registerAppTool(
-      this.server,
-      this.videoSearchTool.name,
-      {
-        title: 'Brave Video Search',
-        description: this.videoSearchTool.description,
-        inputSchema: this.videoSearchTool.inputSchema.shape,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-        _meta: {
-          'ui': { resourceUri: mcpAppResourceUri },
-          'openai/outputTemplate': chatgptResourceUri,
-          'openai/widgetAccessible': true,
-          'openai/toolInvocation/invoking': 'Searching for videos…',
-          'openai/toolInvocation/invoked': 'Videos found.',
-        },
-      },
-      this.videoSearchTool.execute.bind(this.videoSearchTool),
-    );
-  }
-
-  private setupVideoSearchTool(): void {
-    this.server.registerTool(
-      this.videoSearchTool.name,
-      {
-        description: this.videoSearchTool.description,
-        inputSchema: this.videoSearchTool.inputSchema,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-      },
-      this.videoSearchTool.execute.bind(this.videoSearchTool),
-    );
-  }
-
-  /**
-   * Dual-Resource Strategy for Web Search: Register both MCP-APP and ChatGPT resources
-   */
-  private setupDualResourceWebTools(): void {
-    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.web;
-
-    // Register MCP-APP resource (ext-apps format)
-    registerAppResource(
-      this.server,
-      mcpAppResourceUri,
-      mcpAppResourceUri,
-      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Web Search UI (MCP-APP)' },
-      async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(
-          mcpAppResourceUri,
-          RESOURCE_MIME_TYPE,
-          'src/lib/web/mcp-app.html',
-          { resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
-        );
-      },
-    );
-
-    // Register ChatGPT resource (skybridge format)
-    this.server.registerResource(
-      'brave-web-search-chatgpt',
-      chatgptResourceUri,
-      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Web Search Widget (ChatGPT)' },
-      async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(
-          chatgptResourceUri,
-          CHATGPT_MIME_TYPE,
-          'src/lib/web/chatgpt-app.html',
-          undefined,
-          { resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
-          'mc-brave-search-mcp',
-        );
-      },
-    );
-
-    // Register tool with BOTH metadata pointers
-    registerAppTool(
-      this.server,
-      this.webSearchTool.name,
-      {
-        title: 'Brave Web Search',
-        description: this.webSearchTool.description,
-        inputSchema: this.webSearchTool.inputSchema.shape,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-        _meta: {
-          'ui': { resourceUri: mcpAppResourceUri },
-          'openai/outputTemplate': chatgptResourceUri,
-          'openai/widgetAccessible': true,
-          'openai/toolInvocation/invoking': 'Searching the web…',
-          'openai/toolInvocation/invoked': 'Search complete.',
-        },
-      },
-      this.webSearchTool.execute.bind(this.webSearchTool),
-    );
-  }
-
-  private setupWebSearchTool(): void {
-    this.server.registerTool(
-      this.webSearchTool.name,
-      {
-        description: this.webSearchTool.description,
-        inputSchema: this.webSearchTool.inputSchema,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-      },
-      this.webSearchTool.execute.bind(this.webSearchTool),
-    );
-  }
-
-  /**
-   * Dual-Resource Strategy for Local Search: Register both MCP-APP and ChatGPT resources
-   */
-  private setupDualResourceLocalTools(): void {
-    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES.local;
-
-    // Register MCP-APP resource (ext-apps format)
-    registerAppResource(
-      this.server,
-      mcpAppResourceUri,
-      mcpAppResourceUri,
-      { mimeType: RESOURCE_MIME_TYPE, description: 'Brave Local Search UI (MCP-APP)' },
-      async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(
-          mcpAppResourceUri,
-          RESOURCE_MIME_TYPE,
-          'src/lib/local/mcp-app.html',
-          {
-            resourceDomains: [
-              'https://tile.openstreetmap.org',
-              'https://a.tile.openstreetmap.org',
-              'https://b.tile.openstreetmap.org',
-              'https://c.tile.openstreetmap.org',
-              OPENAI_CDN_RESOURCE_DOMAIN,
-            ],
-          },
-        );
-      },
-    );
-
-    // Register ChatGPT resource (skybridge format)
-    this.server.registerResource(
-      'brave-local-search-chatgpt',
-      chatgptResourceUri,
-      { mimeType: CHATGPT_MIME_TYPE, description: 'Brave Local Search Widget (ChatGPT)' },
-      async (): Promise<ReadResourceResult> => {
-        return this.loadUIBundle(
-          chatgptResourceUri,
-          CHATGPT_MIME_TYPE,
-          'src/lib/local/chatgpt-app.html',
-          undefined,
-          {
-            resource_domains: [
-              'https://tile.openstreetmap.org',
-              'https://a.tile.openstreetmap.org',
-              'https://b.tile.openstreetmap.org',
-              'https://c.tile.openstreetmap.org',
-              OPENAI_CDN_RESOURCE_DOMAIN,
-            ],
-          },
-          'mc-brave-search-mcp',
-        );
-      },
-    );
-
-    // Register tool with BOTH metadata pointers
-    registerAppTool(
-      this.server,
-      this.localSearchTool.name,
-      {
-        title: 'Brave Local Search',
-        description: this.localSearchTool.description,
-        inputSchema: this.localSearchTool.inputSchema.shape,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-        _meta: {
-          'ui': { resourceUri: mcpAppResourceUri },
-          'openai/outputTemplate': chatgptResourceUri,
-          'openai/widgetAccessible': true,
-          'openai/toolInvocation/invoking': 'Searching local businesses…',
-          'openai/toolInvocation/invoked': 'Places found.',
-        },
-      },
-      this.localSearchTool.execute.bind(this.localSearchTool),
-    );
-  }
-
-  private setupLocalSearchTool(): void {
-    this.server.registerTool(
-      this.localSearchTool.name,
-      {
-        description: this.localSearchTool.description,
-        inputSchema: this.localSearchTool.inputSchema,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-      },
-      this.localSearchTool.execute.bind(this.localSearchTool),
-    );
-  }
-
-  private setupLLMContextSearchTool(): void {
-    this.server.registerTool(
-      this.llmContextSearchTool.name,
-      {
-        description: this.llmContextSearchTool.description,
-        inputSchema: this.llmContextSearchTool.inputSchema,
-        annotations: {
-          readOnlyHint: true,
-          destructiveHint: false,
-          openWorldHint: true,
-        },
-      },
-      this.llmContextSearchTool.execute.bind(this.llmContextSearchTool),
-    );
   }
 
   public get serverInstance(): McpServer {
