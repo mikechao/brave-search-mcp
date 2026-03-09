@@ -82,7 +82,6 @@ describe('braveLocalSearchTool', () => {
 
     expect(mockBraveSearch.webSearch).toHaveBeenCalledWith('pizza near me', {
       count: 4,
-      offset: 3,
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
@@ -344,6 +343,145 @@ describe('braveLocalSearchTool', () => {
     });
     expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
       'Using 1 of 3 location IDs for "coffee seattle" (offset: 1)',
+      'debug',
+    );
+  });
+
+  it('does not paginate location ids twice when loading page 2', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const server = createServerStub();
+    const webSearchTool = createWebSearchToolStub();
+    const tool = new BraveLocalSearchTool(
+      server,
+      mockBraveSearch as unknown as BraveSearch,
+      webSearchTool,
+      true,
+    );
+
+    mockBraveSearch.webSearch.mockImplementation(async (_query: string, options?: { offset?: number }) => ({
+      type: 'search',
+      query: { original: 'coffee seattle' },
+      locations: {
+        results: options?.offset === 1
+          ? [{ id: 'loc-3' }, { id: 'loc-4' }]
+          : [{ id: 'loc-1' }, { id: 'loc-2' }, { id: 'loc-3' }, { id: 'loc-4' }],
+      },
+    } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>));
+
+    mockBraveSearch.localPoiSearch.mockImplementation(async (ids: string[]) => ({
+      type: 'local_pois',
+      results: ids.map((id) => {
+        if (id === 'loc-3') {
+          return {
+            type: 'location_result',
+            title: 'Cafe Three',
+            url: 'https://example.com/cafe-three',
+            description: 'Cafe',
+            family_friendly: true,
+            provider_url: 'https://maps.example.com/cafe-three',
+            postal_address: { displayAddress: '300 Pine St, Seattle, WA' },
+            coordinates: [47.612, -122.338],
+            contact: { telephone: '555-333-0000', email: 'three@cafe.example' },
+            price_range: '$$',
+            rating: { ratingValue: 4.6, reviewCount: 130 },
+            serves_cuisine: ['Coffee', 'Pastries'],
+            opening_hours: {
+              current_day: [{ opens: '07:00', closes: '16:00', full_name: 'Monday', abbr_name: 'Mon' }],
+              days: [[{ opens: '07:00', closes: '16:00', full_name: 'Monday', abbr_name: 'Mon' }]],
+            },
+          };
+        }
+
+        return {
+          type: 'location_result',
+          title: 'Cafe Four',
+          url: 'https://example.com/cafe-four',
+          description: 'Cafe',
+          family_friendly: true,
+          provider_url: 'https://maps.example.com/cafe-four',
+          postal_address: { displayAddress: '400 Pine St, Seattle, WA' },
+          coordinates: [47.613, -122.339],
+          contact: { telephone: '555-444-0000', email: 'four@cafe.example' },
+          price_range: '$$$',
+          rating: { ratingValue: 4.9, reviewCount: 90 },
+          serves_cuisine: ['Coffee', 'Brunch'],
+          opening_hours: {
+            current_day: [{ opens: '08:00', closes: '17:00', full_name: 'Monday', abbr_name: 'Mon' }],
+            days: [[{ opens: '08:00', closes: '17:00', full_name: 'Monday', abbr_name: 'Mon' }]],
+          },
+        };
+      }),
+    } as unknown as Awaited<ReturnType<BraveSearch['localPoiSearch']>>));
+
+    mockBraveSearch.localDescriptionsSearch.mockImplementation(async (ids: string[]) => ({
+      type: 'local_descriptions',
+      results: ids.map(id => ({
+        type: 'local_description',
+        id,
+        description: id === 'loc-3' ? 'Known for espresso drinks.' : 'Known for brunch specials.',
+      })),
+    } as unknown as Awaited<ReturnType<BraveSearch['localDescriptionsSearch']>>));
+
+    const result = await tool.executeCore({
+      query: 'coffee seattle',
+      count: 2,
+      offset: 1,
+    });
+
+    expect(mockBraveSearch.webSearch).toHaveBeenCalledWith('coffee seattle', {
+      count: 2,
+      safesearch: SafeSearchLevel.Strict,
+      result_filter: 'locations',
+    });
+    expect(mockBraveSearch.localPoiSearch).toHaveBeenCalledWith(['loc-3', 'loc-4']);
+    expect(mockBraveSearch.localDescriptionsSearch).toHaveBeenCalledWith(['loc-3', 'loc-4']);
+
+    const text = getFirstTextContent(result);
+    expect(text).toContain('Found 2 local places for "coffee seattle".');
+    expect(text).toContain('You CANNOT see the business names');
+
+    const structured = getMetaStructuredContent<LocalStructuredContent>(result);
+    expect(structured).toEqual({
+      query: 'coffee seattle',
+      count: 2,
+      pageSize: 2,
+      returnedCount: 2,
+      offset: 1,
+      items: [
+        {
+          id: 'loc-3',
+          name: 'Cafe Three',
+          address: '300 Pine St, Seattle, WA',
+          coordinates: [47.612, -122.338],
+          phone: '555-333-0000',
+          email: 'three@cafe.example',
+          priceRange: '$$',
+          rating: 4.6,
+          reviewCount: 130,
+          cuisine: ['Coffee', 'Pastries'],
+          todayHours: '07:00 - 16:00',
+          weeklyHours: 'Mon: 07:00-16:00',
+          description: 'Known for espresso drinks.',
+        },
+        {
+          id: 'loc-4',
+          name: 'Cafe Four',
+          address: '400 Pine St, Seattle, WA',
+          coordinates: [47.613, -122.339],
+          phone: '555-444-0000',
+          email: 'four@cafe.example',
+          priceRange: '$$$',
+          rating: 4.9,
+          reviewCount: 90,
+          cuisine: ['Coffee', 'Brunch'],
+          todayHours: '08:00 - 17:00',
+          weeklyHours: 'Mon: 08:00-17:00',
+          description: 'Known for brunch specials.',
+        },
+      ],
+    });
+    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+      'Using 2 of 4 location IDs for "coffee seattle" (offset: 1)',
       'debug',
     );
   });

@@ -90,7 +90,6 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     const requestedCount = count ?? 10;
     const results = await this.braveSearch.webSearch(query, {
       count: requestedCount,
-      offset,
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
