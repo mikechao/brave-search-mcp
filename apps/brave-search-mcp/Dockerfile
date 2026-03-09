@@ -2,7 +2,7 @@ FROM node:23.11-alpine
 
 WORKDIR /app
 
-RUN npm install -g pnpm@10
+RUN npm install -g pnpm@10.30.1
 
 # Build from the monorepo root so workspace packages resolve correctly.
 COPY . /app
