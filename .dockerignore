@@ -1,0 +1,8 @@
+.git
+.agent
+node_modules
+.pnpm-store
+.turbo
+**/dist
+.env
+.env.*

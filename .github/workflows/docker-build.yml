@@ -13,3 +13,24 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build Docker image
         run: docker build -t brave-search-mcp:test -f apps/brave-search-mcp/Dockerfile .
+      - name: Simulate pre-fix failure without .dockerignore
+        run: |
+          set -euo pipefail
+          tmpdir="$(mktemp -d)"
+          tar -cf - . | tar -xf - -C "$tmpdir"
+          rm -f "$tmpdir/.dockerignore"
+          mkdir -p "$tmpdir/node_modules"
+          printf 'layoutVersion: 5\n' > "$tmpdir/node_modules/.modules.yaml"
+
+          if docker build -t brave-search-mcp:expect-fail -f "$tmpdir/apps/brave-search-mcp/Dockerfile" "$tmpdir"; then
+            echo "Expected docker build to fail without .dockerignore"
+            exit 1
+          fi
+      - name: Verify .dockerignore fixes synthetic node_modules context
+        run: |
+          set -euo pipefail
+          tmpdir="$(mktemp -d)"
+          tar -cf - . | tar -xf - -C "$tmpdir"
+          mkdir -p "$tmpdir/node_modules"
+          printf 'layoutVersion: 5\n' > "$tmpdir/node_modules/.modules.yaml"
+          docker build -t brave-search-mcp:test-synthetic -f "$tmpdir/apps/brave-search-mcp/Dockerfile" "$tmpdir"
