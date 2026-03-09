@@ -4,7 +4,7 @@ import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveImageSearchTool } from '../../src/tools/BraveImageSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
-import { getFirstTextContent } from './tool-result-helpers.js';
+import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
 
 function createServerStub() {
   return {
@@ -94,8 +94,8 @@ describe('braveImageSearchTool', () => {
     const result = await tool.executeCore({ searchTerm: 'unknown', count: 3 });
 
     expect(getFirstTextContent(result)).toBe('No image results found for "unknown"');
-    expect(result).toHaveProperty('structuredContent');
-    expect(result.structuredContent).toEqual({
+    const structured = getMetaStructuredContent(result);
+    expect(structured).toEqual({
       searchTerm: 'unknown',
       count: 0,
       items: [],
@@ -172,8 +172,9 @@ describe('braveImageSearchTool', () => {
 
     const text = getFirstTextContent(result);
     expect(text).toContain('Found 1 image results for "landscape".');
-    expect(text).toContain('CRITICAL RULES');
-    expect(result.structuredContent).toEqual({
+    expect(text).toContain('IMPORTANT: You CANNOT see the image titles, sources, URLs, metadata, or pixel contents.');
+    const structured = getMetaStructuredContent(result);
+    expect(structured).toEqual({
       searchTerm: 'landscape',
       count: 1,
       items: [
@@ -224,11 +225,13 @@ describe('braveImageSearchTool', () => {
     expect(result).toMatchObject({
       isError: true,
       content: [{ type: 'text', text: 'Error in brave_image_search: timeout' }],
-      structuredContent: {
-        searchTerm: 'failure',
-        count: 0,
-        items: [],
-        error: 'timeout',
+      _meta: {
+        structuredContent: {
+          searchTerm: 'failure',
+          count: 0,
+          items: [],
+          error: 'timeout',
+        },
       },
     });
   });
