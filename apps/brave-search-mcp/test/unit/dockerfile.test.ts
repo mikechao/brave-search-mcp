@@ -16,7 +16,6 @@ function getPinnedPnpmVersion(packageManager: string): string {
   }
   return match[1];
 }
-
 describe('dockerfile', () => {
   it('uses frozen lockfile for workspace install', () => {
     expect(dockerfile).toMatch(

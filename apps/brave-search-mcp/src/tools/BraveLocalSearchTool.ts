@@ -6,6 +6,7 @@ import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { formatPoiResults } from '../utils.js';
 import { BaseTool } from './BaseTool.js';
+import { webResultSchema, webSearchOutputSchema } from './BraveWebSearchTool.js';
 
 const localSearchInputSchema = z.object({
   query: z.string().describe('Local search query (e.g. \'pizza near Central Park\')'),
@@ -36,6 +37,7 @@ export const localSearchOutputSchema = z.object({
   returnedCount: z.number().optional(),
   offset: z.number().optional(),
   items: z.array(localBusinessSchema),
+  webFallbackItems: z.array(webResultSchema).optional(),
   fallbackToWeb: z.boolean().optional(),
   error: z.string().optional(),
 });
@@ -109,7 +111,15 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       const webResult = await this.webSearchTool.executeCore({ query, count, offset: 0 });
 
       // If UI mode, add fallback flag
-      if (this.isUI && webResult._meta?.structuredContent) {
+      if (this.isUI) {
+        const parsedWebResult = webSearchOutputSchema.safeParse(webResult._meta?.structuredContent);
+        if (!parsedWebResult.success && webResult._meta?.structuredContent !== undefined) {
+          this.braveMcpServer.log(
+            `Invalid web fallback structured content for "${query}": ${parsedWebResult.error.message}`,
+            'warning',
+          );
+        }
+        const webFallbackItems = parsedWebResult.success ? parsedWebResult.data.items : [];
         return {
           ...webResult,
           _meta: {
@@ -117,9 +127,10 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
               query,
               count: requestedCount,
               pageSize: requestedCount,
-              returnedCount: 0,
-              offset: offset ?? 0,
+              returnedCount: webFallbackItems.length,
+              offset: 0,
               items: [],
+              webFallbackItems,
               fallbackToWeb: true,
             },
           },
