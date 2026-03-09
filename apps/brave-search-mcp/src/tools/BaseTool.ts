@@ -10,19 +10,23 @@ export abstract class BaseTool<T extends z.ZodType> {
 
   public abstract executeCore(input: z.infer<T>): Promise<CallToolResult>;
 
+  protected buildErrorResult(_input: z.infer<T>, error: unknown): CallToolResult {
+    return {
+      content: [{
+        type: 'text',
+        text: `Error in ${this.name}: ${error}`,
+      }],
+      isError: true,
+    };
+  }
+
   public async execute(input: z.infer<T>): Promise<CallToolResult> {
     try {
       return await this.executeCore(input);
     }
     catch (error) {
       console.error(`Error executing ${this.name}:`, error);
-      return {
-        content: [{
-          type: 'text',
-          text: `Error in ${this.name}: ${error}`,
-        }],
-        isError: true,
-      };
+      return this.buildErrorResult(input, error);
     }
   }
 }
