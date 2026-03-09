@@ -3,6 +3,12 @@ import type { BraveSearch } from 'brave-search';
 import type { BraveMcpServer } from '../server.js';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
+import {
+  buildPagedStructuredContent,
+  buildStructuredToolResult,
+  createPagedSearchOutputSchema,
+  getErrorMessage,
+} from './search-tool-shared.js';
 
 const newsSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for news articles, trending topics, or recent events'),
@@ -40,15 +46,7 @@ const newsItemSchema = z.object({
   favicon: z.string().optional(),
 });
 
-export const newsSearchOutputSchema = z.object({
-  query: z.string(),
-  count: z.number(),
-  pageSize: z.number().optional(),
-  returnedCount: z.number().optional(),
-  offset: z.number().optional(),
-  items: z.array(newsItemSchema),
-  error: z.string().optional(),
-});
+export const newsSearchOutputSchema = createPagedSearchOutputSchema(newsItemSchema);
 
 export type BraveNewsSearchStructuredContent = z.infer<typeof newsSearchOutputSchema>;
 
@@ -68,34 +66,22 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> 
     super();
   }
 
-  public async execute(input: z.infer<typeof newsSearchInputSchema>): Promise<CallToolResult> {
-    try {
-      return await this.executeCore(input);
-    }
-    catch (error) {
-      console.error(`Error executing ${this.name}:`, error);
-      const message = error instanceof Error ? error.message : String(error);
-      const result: CallToolResult = {
-        content: [{ type: 'text' as const, text: `Error in ${this.name}: ${message}` }],
-        isError: true,
-      };
-
-      if (this.isUI) {
-        const pageSize = input.count ?? 10;
-        result._meta = {
-          structuredContent: {
-            query: input.query,
-            count: pageSize,
-            pageSize,
-            returnedCount: 0,
-            items: [],
-            error: message,
-          },
-        };
-      }
-
-      return result;
-    }
+  protected buildErrorResult(input: z.infer<typeof newsSearchInputSchema>, error: unknown): CallToolResult {
+    const message = getErrorMessage(error);
+    return {
+      ...buildStructuredToolResult(
+        `Error in ${this.name}: ${message}`,
+        this.isUI
+          ? buildPagedStructuredContent({
+              query: input.query,
+              count: input.count ?? 10,
+              items: [],
+              extra: { error: message },
+            })
+          : undefined,
+      ),
+      isError: true,
+    };
   }
 
   public async executeCore(input: z.infer<typeof newsSearchInputSchema>): Promise<CallToolResult> {
@@ -109,20 +95,17 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> 
     if (!newsResult.results || newsResult.results.length === 0) {
       this.braveMcpServer.log(`No news results found for "${query}"`);
       const text = `No news results found for "${query}"`;
-      const result: CallToolResult = { content: [{ type: 'text' as const, text }] };
-      if (this.isUI) {
-        result._meta = {
-          structuredContent: {
-            query,
-            offset,
-            count: requestedCount,
-            pageSize: requestedCount,
-            returnedCount: 0,
-            items: [],
-          },
-        };
-      }
-      return result;
+      return buildStructuredToolResult(
+        text,
+        this.isUI
+          ? buildPagedStructuredContent({
+              query,
+              count: requestedCount,
+              offset,
+              items: [],
+            })
+          : undefined,
+      );
     }
 
     // Build structured news items
@@ -187,21 +170,16 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> 
           ))
           .join('\n\n');
 
-    const result: CallToolResult = { content: [{ type: 'text' as const, text: contentText }] };
-
-    if (this.isUI) {
-      result._meta = {
-        structuredContent: {
-          query,
-          offset,
-          count: requestedCount,
-          pageSize: requestedCount,
-          returnedCount: newsItems.length,
-          items: newsItems,
-        },
-      };
-    }
-
-    return result;
+    return buildStructuredToolResult(
+      contentText,
+      this.isUI
+        ? buildPagedStructuredContent({
+            query,
+            count: requestedCount,
+            offset,
+            items: newsItems,
+          })
+        : undefined,
+    );
   }
 }

@@ -6,7 +6,14 @@ import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { formatPoiResults } from '../utils.js';
 import { BaseTool } from './BaseTool.js';
-import { webResultSchema, webSearchOutputSchema } from './BraveWebSearchTool.js';
+import {
+  buildPagedStructuredContent,
+  buildStructuredToolResult,
+  createPagedSearchOutputSchema,
+  getErrorMessage,
+  webResultSchema,
+  webSearchOutputSchema,
+} from './search-tool-shared.js';
 
 const localSearchInputSchema = z.object({
   query: z.string().describe('Local search query (e.g. \'pizza near Central Park\')'),
@@ -30,16 +37,9 @@ const localBusinessSchema = z.object({
   description: z.string().optional(),
 });
 
-export const localSearchOutputSchema = z.object({
-  query: z.string(),
-  count: z.number(),
-  pageSize: z.number().optional(),
-  returnedCount: z.number().optional(),
-  offset: z.number().optional(),
-  items: z.array(localBusinessSchema),
+export const localSearchOutputSchema = createPagedSearchOutputSchema(localBusinessSchema, {
   webFallbackItems: z.array(webResultSchema).optional(),
   fallbackToWeb: z.boolean().optional(),
-  error: z.string().optional(),
 });
 
 export type BraveLocalSearchStructuredContent = z.infer<typeof localSearchOutputSchema>;
@@ -66,33 +66,23 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     super();
   }
 
-  public async execute(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {
-    try {
-      return await this.executeCore(input);
-    }
-    catch (error) {
-      console.error(`Error executing ${this.name}:`, error);
-      const message = error instanceof Error ? error.message : String(error);
-      const result: CallToolResult = {
-        content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
-        isError: true,
-      };
-      if (this.isUI) {
-        const pageSize = input.count ?? 10;
-        result._meta = {
-          structuredContent: {
-            query: input.query,
-            count: pageSize,
-            pageSize,
-            returnedCount: 0,
-            offset: input.offset ?? 0,
-            items: [],
-            error: message,
-          },
-        };
-      }
-      return result;
-    }
+  protected buildErrorResult(input: z.infer<typeof localSearchInputSchema>, error: unknown): CallToolResult {
+    const message = getErrorMessage(error);
+    return {
+      ...buildStructuredToolResult(
+        `Error in ${this.name}: ${message}`,
+        this.isUI
+          ? buildPagedStructuredContent({
+              query: input.query,
+              count: input.count ?? 10,
+              offset: input.offset ?? 0,
+              items: [],
+              extra: { error: message },
+            })
+          : undefined,
+      ),
+      isError: true,
+    };
   }
 
   public async executeCore(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {
@@ -123,16 +113,17 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         return {
           ...webResult,
           _meta: {
-            structuredContent: {
+            structuredContent: buildPagedStructuredContent({
               query,
               count: requestedCount,
-              pageSize: requestedCount,
-              returnedCount: webFallbackItems.length,
               offset: 0,
               items: [],
-              webFallbackItems,
-              fallbackToWeb: true,
-            },
+              returnedCount: webFallbackItems.length,
+              extra: {
+                webFallbackItems,
+                fallbackToWeb: true,
+              },
+            }),
           },
         };
       }
@@ -223,20 +214,17 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     const texts = formatPoiResults(localPoiSearchApiResponse, localDescriptionsSearchApiResponse);
     if (texts.length === 0) {
       const text = `No local results found for "${query}"`;
-      const result: CallToolResult = { content: [{ type: 'text', text }] };
-      if (this.isUI) {
-        result._meta = {
-          structuredContent: {
-            query,
-            count: requestedCount,
-            pageSize: requestedCount,
-            returnedCount: 0,
-            offset: offset ?? 0,
-            items: [],
-          },
-        };
-      }
-      return result;
+      return buildStructuredToolResult(
+        text,
+        this.isUI
+          ? buildPagedStructuredContent({
+              query,
+              count: requestedCount,
+              offset: offset ?? 0,
+              items: [],
+            })
+          : undefined,
+      );
     }
 
     // Generate combined text for non-UI mode
@@ -256,21 +244,16 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       + 'then you will be able to see and discuss that place.'
       : combinedText;
 
-    const result: CallToolResult = { content: [{ type: 'text', text: contentText }] };
-
-    if (this.isUI) {
-      result._meta = {
-        structuredContent: {
-          query,
-          offset: offset ?? 0,
-          count: requestedCount,
-          pageSize: requestedCount,
-          returnedCount: localItems.length,
-          items: localItems,
-        },
-      };
-    }
-
-    return result;
+    return buildStructuredToolResult(
+      contentText,
+      this.isUI
+        ? buildPagedStructuredContent({
+            query,
+            count: requestedCount,
+            offset: offset ?? 0,
+            items: localItems,
+          })
+        : undefined,
+    );
   }
 }

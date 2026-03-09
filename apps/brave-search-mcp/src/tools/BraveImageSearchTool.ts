@@ -4,6 +4,7 @@ import type { BraveMcpServer } from '../server.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
+import { buildStructuredToolResult, getErrorMessage } from './search-tool-shared.js';
 
 const imageSearchInputSchema = z.object({
   searchTerm: z.string().describe('The term to search the internet for images of'),
@@ -39,31 +40,22 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
     super();
   }
 
-  public async execute(input: z.infer<typeof imageSearchInputSchema>): Promise<CallToolResult> {
-    try {
-      return await this.executeCore(input);
-    }
-    catch (error) {
-      console.error(`Error executing ${this.name}:`, error);
-      const message = error instanceof Error ? error.message : String(error);
-      const result: CallToolResult = {
-        content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
-        isError: true,
-      };
-
-      if (this.isUI) {
-        result._meta = {
-          structuredContent: {
-            searchTerm: input.searchTerm,
-            count: 0,
-            items: [],
-            error: message,
-          },
-        };
-      }
-
-      return result;
-    }
+  protected buildErrorResult(input: z.infer<typeof imageSearchInputSchema>, error: unknown): CallToolResult {
+    const message = getErrorMessage(error);
+    return {
+      ...buildStructuredToolResult(
+        `Error in ${this.name}: ${message}`,
+        this.isUI
+          ? {
+              searchTerm: input.searchTerm,
+              count: 0,
+              items: [],
+              error: message,
+            }
+          : undefined,
+      ),
+      isError: true,
+    };
   }
 
   public async executeCore(input: z.infer<typeof imageSearchInputSchema>): Promise<CallToolResult> {
@@ -77,17 +69,16 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
     if (!imageResults.results || imageResults.results.length === 0) {
       this.server.log(`No image results found for "${searchTerm}"`, 'info');
       const text = `No image results found for "${searchTerm}"`;
-      const result: CallToolResult = { content: [{ type: 'text', text }] };
-      if (this.isUI) {
-        result._meta = {
-          structuredContent: {
-            searchTerm,
-            count: 0,
-            items: [],
-          },
-        };
-      }
-      return result;
+      return buildStructuredToolResult(
+        text,
+        this.isUI
+          ? {
+              searchTerm,
+              count: 0,
+              items: [],
+            }
+          : undefined,
+      );
     }
     this.server.log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
     const imageItems: BraveImageSearchItem[] = [];
@@ -126,16 +117,15 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
             + `Height: ${item.height ?? 'N/A'}`
           ))
           .join('\n\n');
-    const result: CallToolResult = { content: [{ type: 'text', text: contentText }] };
-    if (this.isUI) {
-      result._meta = {
-        structuredContent: {
-          searchTerm,
-          count: imageItems.length,
-          items: imageItems,
-        },
-      };
-    }
-    return result;
+    return buildStructuredToolResult(
+      contentText,
+      this.isUI
+        ? {
+            searchTerm,
+            count: imageItems.length,
+            items: imageItems,
+          }
+        : undefined,
+    );
   }
 }

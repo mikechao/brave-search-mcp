@@ -1,0 +1,102 @@
+import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import { z } from 'zod';
+
+const pagedSearchOutputBaseShape = {
+  query: z.string(),
+  count: z.number(),
+  pageSize: z.number().optional(),
+  returnedCount: z.number().optional(),
+  offset: z.number().optional(),
+  error: z.string().optional(),
+} satisfies z.ZodRawShape;
+
+export const webResultSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+  description: z.string(),
+  domain: z.string().optional().default(''),
+  favicon: z.string().optional(),
+  age: z.string().optional(),
+  thumbnail: z.object({
+    src: z.string(),
+    height: z.number().optional(),
+    width: z.number().optional(),
+  }).optional(),
+});
+
+export const webSearchOutputSchema = createPagedSearchOutputSchema(webResultSchema);
+
+export type PagedStructuredContent<TItem, TExtra extends object = Record<string, never>> = {
+  query: string;
+  count: number;
+  pageSize: number;
+  returnedCount: number;
+  offset?: number;
+  items: TItem[];
+} & TExtra;
+
+interface BuildPagedStructuredContentInput<TItem, TExtra extends object> {
+  query: string;
+  count: number;
+  items: TItem[];
+  offset?: number;
+  returnedCount?: number;
+  extra?: TExtra;
+}
+
+export function createPagedSearchOutputSchema<
+  TItemSchema extends z.ZodTypeAny,
+  TExtraShape extends z.ZodRawShape = z.ZodRawShape,
+>(
+  itemSchema: TItemSchema,
+  extraShape?: TExtraShape,
+) {
+  return z.object({
+    ...pagedSearchOutputBaseShape,
+    items: z.array(itemSchema),
+    ...(extraShape ?? {}),
+  });
+}
+
+export function buildStructuredToolResult<TStructuredContent extends object>(
+  text: string,
+  structuredContent?: TStructuredContent,
+): CallToolResult {
+  const result: CallToolResult = {
+    content: [{ type: 'text', text }],
+  };
+
+  if (structuredContent !== undefined) {
+    result._meta = {
+      structuredContent,
+    };
+  }
+
+  return result;
+}
+
+export function buildPagedStructuredContent<
+  TItem,
+  TExtra extends object = Record<string, never>,
+>({
+  query,
+  count,
+  items,
+  offset,
+  returnedCount,
+  extra,
+}: BuildPagedStructuredContentInput<TItem, TExtra>): PagedStructuredContent<TItem, TExtra> {
+  return {
+    query,
+    count,
+    pageSize: count,
+    returnedCount: returnedCount ?? items.length,
+    ...(offset !== undefined ? { offset } : {}),
+    items,
+    ...(extra ?? {} as TExtra),
+  };
+}
+
+export function getErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}

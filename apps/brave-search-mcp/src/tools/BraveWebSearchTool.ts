@@ -4,6 +4,13 @@ import type { BraveMcpServer } from '../server.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
+import {
+  buildPagedStructuredContent,
+  buildStructuredToolResult,
+  createPagedSearchOutputSchema,
+  getErrorMessage,
+  webResultSchema,
+} from './search-tool-shared.js';
 
 const webSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for'),
@@ -25,29 +32,7 @@ The following values are supported:
     ),
 });
 
-export const webResultSchema = z.object({
-  title: z.string(),
-  url: z.string(),
-  description: z.string(),
-  domain: z.string().optional().default(''),
-  favicon: z.string().optional(),
-  age: z.string().optional(),
-  thumbnail: z.object({
-    src: z.string(),
-    height: z.number().optional(),
-    width: z.number().optional(),
-  }).optional(),
-});
-
-export const webSearchOutputSchema = z.object({
-  query: z.string(),
-  count: z.number(),
-  pageSize: z.number().optional(),
-  returnedCount: z.number().optional(),
-  offset: z.number().optional(),
-  items: z.array(webResultSchema),
-  error: z.string().optional(),
-});
+export const webSearchOutputSchema = createPagedSearchOutputSchema(webResultSchema);
 
 export type BraveWebSearchStructuredContent = z.infer<typeof webSearchOutputSchema>;
 
@@ -67,32 +52,22 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
     super();
   }
 
-  public async execute(input: z.infer<typeof webSearchInputSchema>): Promise<CallToolResult> {
-    try {
-      return await this.executeCore(input);
-    }
-    catch (error) {
-      console.error(`Error executing ${this.name}:`, error);
-      const message = error instanceof Error ? error.message : String(error);
-      const result: CallToolResult = {
-        content: [{ type: 'text', text: `Error in ${this.name}: ${message}` }],
-        isError: true,
-      };
-      if (this.isUI) {
-        const pageSize = input.count ?? 10;
-        result._meta = {
-          structuredContent: {
-            query: input.query,
-            count: pageSize,
-            pageSize,
-            returnedCount: 0,
-            items: [],
-            error: message,
-          },
-        };
-      }
-      return result;
-    }
+  protected buildErrorResult(input: z.infer<typeof webSearchInputSchema>, error: unknown): CallToolResult {
+    const message = getErrorMessage(error);
+    return {
+      ...buildStructuredToolResult(
+        `Error in ${this.name}: ${message}`,
+        this.isUI
+          ? buildPagedStructuredContent({
+              query: input.query,
+              count: input.count ?? 10,
+              items: [],
+              extra: { error: message },
+            })
+          : undefined,
+      ),
+      isError: true,
+    };
   }
 
   public async executeCore(input: z.infer<typeof webSearchInputSchema>): Promise<CallToolResult> {
@@ -108,20 +83,17 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
     if (!results.web || results.web?.results.length === 0) {
       this.braveMcpServer.log(`No results found for "${query}"`, 'info');
       const text = `No results found for "${query}"`;
-      const result: CallToolResult = { content: [{ type: 'text', text }] };
-      if (this.isUI) {
-        result._meta = {
-          structuredContent: {
-            query,
-            offset,
-            count: requestedCount,
-            pageSize: requestedCount,
-            returnedCount: 0,
-            items: [],
-          },
-        };
-      }
-      return result;
+      return buildStructuredToolResult(
+        text,
+        this.isUI
+          ? buildPagedStructuredContent({
+              query,
+              count: requestedCount,
+              offset,
+              items: [],
+            })
+          : undefined,
+      );
     }
 
     // Build structured items
@@ -169,21 +141,16 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
           ))
           .join('\n\n');
 
-    const result: CallToolResult = { content: [{ type: 'text', text: contentText }] };
-
-    if (this.isUI) {
-      result._meta = {
-        structuredContent: {
-          query,
-          offset,
-          count: requestedCount,
-          pageSize: requestedCount,
-          returnedCount: webItems.length,
-          items: webItems,
-        },
-      };
-    }
-
-    return result;
+    return buildStructuredToolResult(
+      contentText,
+      this.isUI
+        ? buildPagedStructuredContent({
+            query,
+            count: requestedCount,
+            offset,
+            items: webItems,
+          })
+        : undefined,
+    );
   }
 }

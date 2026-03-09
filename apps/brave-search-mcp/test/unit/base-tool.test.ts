@@ -21,6 +21,37 @@ class TestTool extends BaseTool<typeof testInputSchema> {
   }
 }
 
+class HookedErrorTool extends BaseTool<typeof testInputSchema> {
+  public readonly name = 'hooked_tool';
+  public readonly description = 'Test tool for error hook behavior';
+  public readonly inputSchema = testInputSchema;
+
+  constructor() {
+    super();
+  }
+
+  public async executeCore(_input: { value: string }): Promise<CallToolResult> {
+    throw new Error('hook boom');
+  }
+
+  protected buildErrorResult(input: { value: string }, error: unknown): CallToolResult {
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `Hooked ${input.value}: ${error instanceof Error ? error.message : String(error)}`,
+        },
+      ],
+      isError: true,
+      _meta: {
+        structuredContent: {
+          value: input.value,
+        },
+      },
+    };
+  }
+}
+
 describe('baseTool', () => {
   it('returns executeCore result when no error occurs', async () => {
     const tool = new TestTool(async input => ({
@@ -72,6 +103,29 @@ describe('baseTool', () => {
         },
       ],
       isError: true,
+    });
+  });
+
+  it('lets subclasses customize caught-error results without replacing execute()', async () => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const tool = new HookedErrorTool();
+
+    const result = await tool.execute({ value: 'custom' });
+
+    expect(consoleSpy).toHaveBeenCalledWith('Error executing hooked_tool:', expect.any(Error));
+    expect(result).toEqual({
+      content: [
+        {
+          type: 'text',
+          text: 'Hooked custom: hook boom',
+        },
+      ],
+      isError: true,
+      _meta: {
+        structuredContent: {
+          value: 'custom',
+        },
+      },
     });
   });
 });
