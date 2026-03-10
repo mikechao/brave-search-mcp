@@ -53,7 +53,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 
 - **brave_local_search**
   - Search for local businesses, services and points of interest
-  - Falls back to brave_web_search if no location results are found
+  - Falls back to brave_web_search on the initial page if no location results are found
   - Inputs:
     - `query` (string): Local search term
     - `count` (number, optional): The number of results to return (max 20, default 5)

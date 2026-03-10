@@ -53,7 +53,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     + '- Ratings and review counts\n'
     + '- Phone numbers and opening hours\n'
     + 'Use this when the query implies \'near me\' or mentions specific locations. '
-    + 'Automatically falls back to web search if no local results are found.';
+    + 'Automatically falls back to web search on the first page if no local results are found.';
 
   public readonly inputSchema = localSearchInputSchema;
 
@@ -88,14 +88,17 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
   public async executeCore(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {
     const { query, count, offset } = input;
     const requestedCount = count ?? 10;
+    const requestedOffset = offset ?? 0;
     const results = await this.braveSearch.webSearch(query, {
       count: requestedCount,
+      offset: requestedOffset,
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
+    const locationResults = results.locations?.results ?? [];
 
-    // Check for fallback to web search
-    if (!results.locations || results.locations?.results.length === 0) {
+    // Only the initial page falls back to web search when no local ids are available.
+    if (locationResults.length === 0 && requestedOffset === 0) {
       this.braveMcpServer.log(`No location results found for "${query}" falling back to web search. Make sure your API Plan is at least "Pro"`);
       const webResult = await this.webSearchTool.executeCore({ query, count, offset: 0 });
 
@@ -129,12 +132,23 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       return webResult;
     }
 
-    // Brave Locations API returns all matching location IDs at once
-    // We implement pagination client-side by slicing the IDs array
-    const allIds = results.locations.results.map(result => result.id);
-    const startIndex = (offset ?? 0) * requestedCount;
-    const ids = allIds.slice(startIndex, startIndex + requestedCount);
-    this.braveMcpServer.log(`Using ${ids.length} of ${allIds.length} location IDs for "${query}" (offset: ${offset ?? 0})`, 'debug');
+    if (locationResults.length === 0) {
+      const text = `No local results found for "${query}"`;
+      return buildStructuredToolResult(
+        text,
+        this.isUI
+          ? buildPagedStructuredContent({
+              query,
+              count: requestedCount,
+              offset: requestedOffset,
+              items: [],
+            })
+          : undefined,
+      );
+    }
+
+    const ids = locationResults.map(result => result.id);
+    this.braveMcpServer.log(`Using ${ids.length} location IDs for "${query}" (offset: ${requestedOffset})`, 'debug');
 
     const localPoiSearchApiResponse = await this.braveSearch.localPoiSearch(ids);
     const poiResults = (localPoiSearchApiResponse.results || []).map((result, index) => {
@@ -249,7 +263,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
         ? buildPagedStructuredContent({
             query,
             count: requestedCount,
-            offset: offset ?? 0,
+            offset: requestedOffset,
             items: localItems,
           })
         : undefined,

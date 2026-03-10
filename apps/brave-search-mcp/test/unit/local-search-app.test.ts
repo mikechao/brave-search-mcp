@@ -64,4 +64,23 @@ describe('localSearchApp', () => {
     expect(markup).not.toContain('No places found');
     expect(markup).not.toContain('No location data available');
   });
+
+  it('keeps pagination visible for an exhausted later local page', () => {
+    const markup = renderToStaticMarkup(createElement(LocalSearchApp, {
+      ...createProps({
+        query: 'coffee seattle',
+        count: 2,
+        pageSize: 2,
+        returnedCount: 0,
+        offset: 1,
+        items: [],
+      }),
+      onLoadPage: vi.fn(async () => {}),
+    }));
+
+    expect(markup).toContain('No places found');
+    expect(markup).toContain('aria-label="Pagination"');
+    expect(markup).toContain('Page 2');
+    expect(markup).not.toContain('No fallback results');
+  });
 });

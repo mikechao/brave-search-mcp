@@ -77,11 +77,12 @@ describe('braveLocalSearchTool', () => {
     const result = await tool.executeCore({
       query: 'pizza near me',
       count: 4,
-      offset: 3,
+      offset: 0,
     });
 
     expect(mockBraveSearch.webSearch).toHaveBeenCalledWith('pizza near me', {
       count: 4,
+      offset: 0,
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
@@ -138,7 +139,7 @@ describe('braveLocalSearchTool', () => {
     const result = await tool.executeCore({
       query: 'brunch',
       count: 2,
-      offset: 2,
+      offset: 0,
     });
 
     expect(getFirstTextContent(result)).toBe('fallback content');
@@ -197,7 +198,7 @@ describe('braveLocalSearchTool', () => {
     const result = await tool.executeCore({
       query: 'late night food',
       count: 3,
-      offset: 4,
+      offset: 0,
     });
 
     expect(getFirstTextContent(result)).toBe('No results found for "late night food"');
@@ -243,7 +244,7 @@ describe('braveLocalSearchTool', () => {
     const result = await tool.executeCore({
       query: 'dim sum',
       count: 5,
-      offset: 1,
+      offset: 0,
     });
 
     expect(getFirstTextContent(result)).toBe('fallback content');
@@ -279,7 +280,7 @@ describe('braveLocalSearchTool', () => {
       type: 'search',
       query: { original: 'coffee seattle' },
       locations: {
-        results: [{ id: 'loc-1' }, { id: 'loc-2' }, { id: 'loc-3' }],
+        results: [{ id: 'loc-2' }],
       },
     } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
 
@@ -320,6 +321,12 @@ describe('braveLocalSearchTool', () => {
       offset: 1,
     });
 
+    expect(mockBraveSearch.webSearch).toHaveBeenCalledWith('coffee seattle', {
+      count: 1,
+      offset: 1,
+      safesearch: SafeSearchLevel.Strict,
+      result_filter: 'locations',
+    });
     expect(mockBraveSearch.localPoiSearch).toHaveBeenCalledWith(['loc-2']);
     expect(mockBraveSearch.localDescriptionsSearch).toHaveBeenCalledWith(['loc-2']);
     const text = getFirstTextContent(result);
@@ -342,7 +349,7 @@ describe('braveLocalSearchTool', () => {
       description: 'Great espresso and pastries.',
     });
     expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
-      'Using 1 of 3 location IDs for "coffee seattle" (offset: 1)',
+      'Using 1 location IDs for "coffee seattle" (offset: 1)',
       'debug',
     );
   });
@@ -430,6 +437,7 @@ describe('braveLocalSearchTool', () => {
 
     expect(mockBraveSearch.webSearch).toHaveBeenCalledWith('coffee seattle', {
       count: 2,
+      offset: 1,
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
@@ -481,9 +489,53 @@ describe('braveLocalSearchTool', () => {
       ],
     });
     expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
-      'Using 2 of 4 location IDs for "coffee seattle" (offset: 1)',
+      'Using 2 location IDs for "coffee seattle" (offset: 1)',
       'debug',
     );
+  });
+
+  it('returns an empty local page instead of web fallback when a later page has no location ids', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const server = createServerStub();
+    const webSearchTool = createWebSearchToolStub();
+    const tool = new BraveLocalSearchTool(
+      server,
+      mockBraveSearch as unknown as BraveSearch,
+      webSearchTool,
+      true,
+    );
+
+    mockBraveSearch.webSearch.mockResolvedValue({
+      type: 'search',
+      query: { original: 'coffee seattle' },
+      locations: { results: [] },
+    } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
+
+    const result = await tool.executeCore({
+      query: 'coffee seattle',
+      count: 2,
+      offset: 1,
+    });
+
+    expect(mockBraveSearch.webSearch).toHaveBeenCalledWith('coffee seattle', {
+      count: 2,
+      offset: 1,
+      safesearch: SafeSearchLevel.Strict,
+      result_filter: 'locations',
+    });
+    expect((webSearchTool as unknown as { executeCore: ReturnType<typeof vi.fn> }).executeCore).not.toHaveBeenCalled();
+    expect(mockBraveSearch.localPoiSearch).not.toHaveBeenCalled();
+    expect(mockBraveSearch.localDescriptionsSearch).not.toHaveBeenCalled();
+    expect(getFirstTextContent(result)).toBe('No local results found for "coffee seattle"');
+    const structured = getMetaStructuredContent<LocalStructuredContent>(result);
+    expect(structured).toEqual({
+      query: 'coffee seattle',
+      count: 2,
+      pageSize: 2,
+      returnedCount: 0,
+      offset: 1,
+      items: [],
+    });
   });
 
   it('handles local description lookup failures and still returns POI text', async () => {

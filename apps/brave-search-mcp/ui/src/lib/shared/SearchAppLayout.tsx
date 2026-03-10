@@ -232,7 +232,7 @@ export function SearchAppLayout({
         </section>
       )}
 
-      {pagination && hasData && !isEmpty && (
+      {pagination && hasData && (!isEmpty || pagination.hasPrevious || pagination.hasNext || pagination.isLoading) && (
         <footer
           className="app-footer"
           style={footerStyle}
