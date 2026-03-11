@@ -10,6 +10,14 @@ import { ALL_UI_RESOURCE_URIS, UI_RESOURCES } from '../../src/ui-resources.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 
 const { version: SERVER_VERSION } = packageJson;
+const EXPECTED_STANDARD_TOOL_NAMES = [
+  'brave_image_search',
+  'brave_web_search',
+  'brave_local_search',
+  'brave_news_search',
+  'brave_video_search',
+  'brave_llm_context_search',
+] as const;
 
 describe('braveMcpServer', () => {
   let mockBraveSearch: MockBraveSearch;
@@ -65,11 +73,6 @@ describe('braveMcpServer', () => {
   }
 
   describe('constructor', () => {
-    it('should retain the injected BraveSearch instance', () => {
-      const internals = server as unknown as { braveSearch: unknown };
-      expect(internals.braveSearch).toBe(mockBraveSearch);
-    });
-
     it('should use the injected BraveSearch instance when executing tools', async () => {
       const { client, close } = await createConnectedClient(server);
 
@@ -88,6 +91,29 @@ describe('braveMcpServer', () => {
         'dependency injection query',
         expect.objectContaining({ count: 10 }),
       );
+    });
+
+    it('should register standard tools without UI metadata when isUI=false', async () => {
+      const { client, close } = await createConnectedClient(server);
+
+      try {
+        const toolList = await client.listTools();
+        const toolNames = toolList.tools.map(tool => tool.name);
+
+        expect(toolNames).toEqual(EXPECTED_STANDARD_TOOL_NAMES);
+        expect(toolList.tools).toHaveLength(EXPECTED_STANDARD_TOOL_NAMES.length);
+
+        for (const tool of toolList.tools) {
+          const meta = tool._meta as Record<string, unknown> | undefined;
+          const uiMeta = meta?.ui as { resourceUri?: string } | undefined;
+
+          expect(uiMeta?.resourceUri).toBeUndefined();
+          expect(meta?.['openai/outputTemplate']).toBeUndefined();
+        }
+      }
+      finally {
+        await close();
+      }
     });
 
     it('should register UI resources and UI tool metadata when isUI=true', async () => {
