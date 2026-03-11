@@ -163,6 +163,16 @@ describe('braveLLMContextSearchTool', () => {
       responseMode: 'full',
     });
 
+    expect(mockBraveSearch.llmContextSearch).toHaveBeenCalledWith('banana', {
+      count: undefined,
+      maximum_number_of_urls: undefined,
+      maximum_number_of_tokens: undefined,
+      maximum_number_of_snippets: undefined,
+      maximum_number_of_tokens_per_url: undefined,
+      maximum_number_of_snippets_per_url: undefined,
+      context_threshold_mode: 'disabled',
+    });
+
     const text = getFirstTextContent(result);
     const parsed = JSON.parse(text);
     expect(parsed.snippets[0]).toEqual({ foo: 'bar' });

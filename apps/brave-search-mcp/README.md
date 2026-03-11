@@ -75,7 +75,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
 
 - **brave_llm_context_search**
   - Pre-extracted web content optimized for AI agents, LLM grounding, and RAG pipelines.
-  - Uses Brave's `balanced` context threshold mode.
+  - Uses Brave's `balanced` context threshold mode in `compact` mode and disables Brave relevance filtering in `full` mode.
   - Inputs:
     - `query` (string): The search query. Maximum 400 characters and 50 words.
     - `url` (string, optional): Optional URL to target. When provided, query and URL are combined for retrieval and only snippets from this exact URL are returned.
@@ -85,7 +85,7 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
     - `maximumNumberOfSnippets` (number, optional, default 16): The maximum number of snippets across all URLs. Minimum 1, maximum 100.
     - `maximumNumberOfTokensPerUrl` (number, optional, default 512): The maximum number of tokens per URL. Minimum 512, maximum 8192.
     - `maximumNumberOfSnippetsPerUrl` (number, optional, default 2): The maximum number of snippets per URL. Minimum 1, maximum 100.
-    - `responseMode` (enum, optional, default `compact`): `compact` returns filtered/truncated context optimized for model consumption. `full` returns all raw snippets without filtering or truncation.
+    - `responseMode` (enum, optional, default `compact`): `compact` applies Brave's `balanced` relevance filtering plus local snippet filtering/truncation. `full` disables Brave's relevance filtering and returns raw snippets without local filtering or truncation.
     - `maxSnippetChars` (number, optional, default 400): Maximum characters per snippet in compact mode. Minimum 80, maximum 4000.
     - `maxOutputChars` (number, optional, default 8000): Approximate maximum serialized response size in compact mode. Minimum 1000, maximum 100000.
 

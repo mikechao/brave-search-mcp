@@ -40,7 +40,7 @@ const llmContextSearchInputSchema = z.object({
   maximumNumberOfSnippets: z.number().min(1).max(100).default(COMPACT_DEFAULTS.maximumNumberOfSnippets).optional().describe(`The maximum number of snippets across all URLs. Minimum 1, maximum 100. Default ${COMPACT_DEFAULTS.maximumNumberOfSnippets} in compact mode, up to 100 in full mode.`),
   maximumNumberOfTokensPerUrl: z.number().min(512).max(8192).default(COMPACT_DEFAULTS.maximumNumberOfTokensPerUrl).optional().describe(`The maximum number of tokens per URL. Minimum 512, maximum 8192. Default ${COMPACT_DEFAULTS.maximumNumberOfTokensPerUrl} in compact mode, up to 8192 in full mode.`),
   maximumNumberOfSnippetsPerUrl: z.number().min(1).max(100).default(COMPACT_DEFAULTS.maximumNumberOfSnippetsPerUrl).optional().describe(`The maximum number of snippets per URL. Minimum 1, maximum 100. Default ${COMPACT_DEFAULTS.maximumNumberOfSnippetsPerUrl} in compact mode, up to 100 in full mode.`),
-  responseMode: z.enum(['compact', 'full']).default('compact').optional().describe('compact returns filtered/truncated context optimized for model consumption. full returns all raw snippets without filtering or truncation.'),
+  responseMode: z.enum(['compact', 'full']).default('compact').optional().describe('compact applies Brave\'s balanced relevance filtering plus local snippet filtering/truncation. full disables Brave\'s relevance filtering and returns raw snippets without local filtering or truncation.'),
   maxSnippetChars: z.number().int().min(80).max(4000).default(COMPACT_DEFAULTS.maxSnippetChars).optional().describe(`Maximum characters per snippet in compact mode. Default ${COMPACT_DEFAULTS.maxSnippetChars}.`),
   maxOutputChars: z.number().int().min(1000).max(100000).default(COMPACT_DEFAULTS.maxOutputChars).optional().describe(`Approximate maximum serialized response size in compact mode. Default ${COMPACT_DEFAULTS.maxOutputChars}.`),
 });
@@ -104,7 +104,7 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
       maximum_number_of_snippets: effectiveMaximumNumberOfSnippets,
       maximum_number_of_tokens_per_url: effectiveMaximumNumberOfTokensPerUrl,
       maximum_number_of_snippets_per_url: effectiveMaximumNumberOfSnippetsPerUrl,
-      context_threshold_mode: COMPACT_DEFAULTS.contextThresholdMode,
+      context_threshold_mode: isCompact ? COMPACT_DEFAULTS.contextThresholdMode : 'disabled',
     });
 
     const genericItems = url
