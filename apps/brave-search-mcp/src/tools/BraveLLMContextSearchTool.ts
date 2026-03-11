@@ -63,6 +63,20 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
     super();
   }
 
+  private buildNoContextResult(query: string, url?: string): CallToolResult {
+    if (url) {
+      this.braveMcpServer.log(`No LLM context snippets found for URL "${url}" with query "${query}"`, 'info');
+      return {
+        content: [{ type: 'text', text: `No context snippets found for URL "${url}" with query "${query}"` }],
+      };
+    }
+
+    this.braveMcpServer.log(`No LLM context results found for "${query}"`, 'info');
+    return {
+      content: [{ type: 'text', text: `No context results found for "${query}"` }],
+    };
+  }
+
   public async executeCore(input: z.infer<typeof llmContextSearchInputSchema>): Promise<CallToolResult> {
     const {
       query,
@@ -111,19 +125,8 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
       ? (results.grounding?.generic ?? []).filter(item => item.url === url)
       : results.grounding?.generic ?? [];
 
-    if (genericItems.length === 0) {
-      if (url) {
-        this.braveMcpServer.log(`No LLM context snippets found for URL "${url}" with query "${query}"`, 'info');
-        return {
-          content: [{ type: 'text', text: `No context snippets found for URL "${url}" with query "${query}"` }],
-        };
-      }
-
-      this.braveMcpServer.log(`No LLM context results found for "${query}"`, 'info');
-      return {
-        content: [{ type: 'text', text: `No context results found for "${query}"` }],
-      };
-    }
+    if (genericItems.length === 0)
+      return this.buildNoContextResult(query, url);
 
     if (!isCompact) {
       const contentText = genericItems
@@ -199,6 +202,9 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
       outputChars += delimiterLength + line.length;
       totalSnippetCount += lineSnippets.length;
     }
+
+    if (compactLines.length === 0)
+      return this.buildNoContextResult(query, url);
 
     const contentText = compactLines.join('\n');
 

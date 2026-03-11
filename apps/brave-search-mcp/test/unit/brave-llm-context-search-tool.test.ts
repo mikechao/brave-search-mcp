@@ -251,4 +251,106 @@ describe('braveLLMContextSearchTool', () => {
 
     expect(getFirstTextContent(result)).toBe('No context snippets found for URL "https://example.com/target" with query "banana ripening"');
   });
+
+  it('returns explicit message when compact mode filters away every snippet', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const server = createServerStub();
+    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+
+    mockBraveSearch.llmContextSearch.mockResolvedValue({
+      grounding: {
+        generic: [
+          {
+            title: 'Noisy page',
+            url: 'https://example.com/noisy',
+            snippets: [
+              '{"@graph":[{"@type":"Organization","name":"Example"}]}',
+              'Table of Contents',
+              'Privacy Policy',
+            ],
+          },
+        ],
+      },
+      sources: {},
+    } as Awaited<ReturnType<BraveSearch['llmContextSearch']>>);
+
+    const result = await tool.executeCore({
+      query: 'banana ripening',
+    });
+
+    expect(getFirstTextContent(result)).toBe('No context results found for "banana ripening"');
+    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+      'No LLM context results found for "banana ripening"',
+      'info',
+    );
+  });
+
+  it('returns explicit message when compact mode filters away every snippet for a targeted url', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const server = createServerStub();
+    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+
+    mockBraveSearch.llmContextSearch.mockResolvedValue({
+      grounding: {
+        generic: [
+          {
+            title: 'Target page',
+            url: 'https://example.com/target',
+            snippets: [
+              '{"@graph":[{"@type":"Organization","name":"Example"}]}',
+              'Table of Contents',
+              'Privacy Policy',
+            ],
+          },
+          {
+            title: 'Other page',
+            url: 'https://example.com/other',
+            snippets: ['Useful snippet that should be ignored because the URL does not match.'],
+          },
+        ],
+      },
+      sources: {},
+    } as Awaited<ReturnType<BraveSearch['llmContextSearch']>>);
+
+    const result = await tool.executeCore({
+      query: 'banana ripening',
+      url: 'https://example.com/target',
+    });
+
+    expect(getFirstTextContent(result)).toBe('No context snippets found for URL "https://example.com/target" with query "banana ripening"');
+    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+      'No LLM context snippets found for URL "https://example.com/target" with query "banana ripening"',
+      'info',
+    );
+  });
+
+  it('returns explicit message when compact output budget cannot fit the first line', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const server = createServerStub();
+    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+
+    mockBraveSearch.llmContextSearch.mockResolvedValue({
+      grounding: {
+        generic: [
+          {
+            title: 'T'.repeat(750),
+            url: 'https://example.com/huge',
+            snippets: ['Banana ripening details '.repeat(40)],
+          },
+        ],
+      },
+      sources: {},
+    } as Awaited<ReturnType<BraveSearch['llmContextSearch']>>);
+
+    const result = await tool.executeCore({
+      query: 'banana ripening',
+      maxOutputChars: 1000,
+    });
+
+    expect(getFirstTextContent(result)).toBe('No context results found for "banana ripening"');
+    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+      'No LLM context results found for "banana ripening"',
+      'info',
+    );
+  });
 });
