@@ -1,4 +1,5 @@
-import { StrictMode, type ComponentType } from 'react';
+import type { ComponentType } from 'react';
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 export function mountWidget(Widget: ComponentType) {
