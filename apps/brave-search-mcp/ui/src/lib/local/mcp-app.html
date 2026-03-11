@@ -10,6 +10,13 @@
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/lib/local/local-mcp-entry.tsx"></script>
+    <script type="module">
+      import { mountWidget } from '/src/lib/shared/mountWidget.tsx';
+      import LocalMcpMode from '/src/lib/local/local-mcp-mode.tsx';
+      import '/src/lib/web/web.css';
+      import '/src/lib/local/local.css';
+
+      mountWidget(LocalMcpMode);
+    </script>
   </body>
 </html>

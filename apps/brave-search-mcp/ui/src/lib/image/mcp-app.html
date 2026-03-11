@@ -10,6 +10,12 @@
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/lib/image/image-mcp-entry.tsx"></script>
+    <script type="module">
+      import { mountWidget } from '/src/lib/shared/mountWidget.tsx';
+      import ImageMcpMode from '/src/lib/image/image-mcp-mode.tsx';
+      import '/src/lib/image/image.css';
+
+      mountWidget(ImageMcpMode);
+    </script>
   </body>
 </html>

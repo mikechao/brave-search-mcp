@@ -10,6 +10,13 @@
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/lib/local/local-chatgpt-entry.tsx"></script>
+    <script type="module">
+      import { mountWidget } from '/src/lib/shared/mountWidget.tsx';
+      import LocalChatGptMode from '/src/lib/local/local-chatgpt-mode.tsx';
+      import '/src/lib/web/web.css';
+      import '/src/lib/local/local.css';
+
+      mountWidget(LocalChatGptMode);
+    </script>
   </body>
 </html>

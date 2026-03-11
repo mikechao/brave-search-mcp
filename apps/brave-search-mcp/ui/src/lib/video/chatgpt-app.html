@@ -10,6 +10,12 @@
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/lib/video/video-chatgpt-entry.tsx"></script>
+    <script type="module">
+      import { mountWidget } from '/src/lib/shared/mountWidget.tsx';
+      import VideoChatGptMode from '/src/lib/video/video-chatgpt-mode.tsx';
+      import '/src/lib/video/video.css';
+
+      mountWidget(VideoChatGptMode);
+    </script>
   </body>
 </html>

@@ -10,6 +10,12 @@
 
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/lib/news/news-chatgpt-entry.tsx"></script>
+    <script type="module">
+      import { mountWidget } from '/src/lib/shared/mountWidget.tsx';
+      import NewsChatGptMode from '/src/lib/news/news-chatgpt-mode.tsx';
+      import '/src/lib/news/news.css';
+
+      mountWidget(NewsChatGptMode);
+    </script>
   </body>
 </html>
