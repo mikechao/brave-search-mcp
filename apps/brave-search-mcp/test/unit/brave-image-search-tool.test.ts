@@ -1,23 +1,20 @@
 import type { BraveSearch } from 'brave-search';
-import type { BraveMcpServer } from '../../src/server.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveImageSearchTool } from '../../src/tools/BraveImageSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
 
-function createServerStub() {
-  return {
-    log: vi.fn(),
-  } as unknown as BraveMcpServer;
+function createLogStub() {
+  return vi.fn();
 }
 
 describe('braveImageSearchTool', () => {
   it('calls brave image search with strict safe search and formats text output for non-UI', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
+    const log = createLogStub();
     const tool = new BraveImageSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
       false,
     );
@@ -70,7 +67,7 @@ describe('braveImageSearchTool', () => {
     expect(text).toContain('Confidence: high');
     expect(text).toContain('Width: 640');
     expect(text).toContain('Height: 480');
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'Searching for images of "cats" with count 5',
       'debug',
     );
@@ -78,9 +75,9 @@ describe('braveImageSearchTool', () => {
 
   it('returns no-results text and structured content in UI mode', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
+    const log = createLogStub();
     const tool = new BraveImageSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
       true,
     );
@@ -104,9 +101,9 @@ describe('braveImageSearchTool', () => {
 
   it('skips image results without thumbnail src and reports filtered count in UI mode', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
+    const log = createLogStub();
     const tool = new BraveImageSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
       true,
     );
@@ -193,9 +190,9 @@ describe('braveImageSearchTool', () => {
 
   it('returns isError response when execute catches an error (non-UI)', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
+    const log = createLogStub();
     const tool = new BraveImageSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
       false,
     );
@@ -212,9 +209,9 @@ describe('braveImageSearchTool', () => {
 
   it('returns structured error response when execute catches an error in UI mode', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
+    const log = createLogStub();
     const tool = new BraveImageSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
       true,
     );

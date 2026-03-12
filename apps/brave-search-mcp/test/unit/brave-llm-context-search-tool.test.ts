@@ -1,21 +1,18 @@
 import type { BraveSearch } from 'brave-search';
-import type { BraveMcpServer } from '../../src/server.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveLLMContextSearchTool } from '../../src/tools/BraveLLMContextSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 import { getFirstTextContent } from './tool-result-helpers.js';
 
-function createServerStub() {
-  return {
-    log: vi.fn(),
-  } as unknown as BraveMcpServer;
+function createLogStub() {
+  return vi.fn();
 }
 
 describe('braveLLMContextSearchTool', () => {
   it('uses compact mode by default and clamps request limits', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.llmContextSearch.mockResolvedValue({
       grounding: {
@@ -68,8 +65,8 @@ describe('braveLLMContextSearchTool', () => {
 
   it('filters noisy snippets, deduplicates, and truncates in compact mode', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.llmContextSearch.mockResolvedValue({
       grounding: {
@@ -109,8 +106,8 @@ describe('braveLLMContextSearchTool', () => {
 
   it('enforces compact output budget', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.llmContextSearch.mockResolvedValue({
       grounding: {
@@ -142,8 +139,8 @@ describe('braveLLMContextSearchTool', () => {
 
   it('supports full mode with raw snippet payloads', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.llmContextSearch.mockResolvedValue({
       grounding: {
@@ -181,8 +178,8 @@ describe('braveLLMContextSearchTool', () => {
 
   it('uses the url itself for retrieval and filters to exact URL matches', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.llmContextSearch.mockResolvedValue({
       grounding: {
@@ -228,8 +225,8 @@ describe('braveLLMContextSearchTool', () => {
 
   it('returns explicit message when url filter has no matches', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.llmContextSearch.mockResolvedValue({
       grounding: {
@@ -254,8 +251,8 @@ describe('braveLLMContextSearchTool', () => {
 
   it('returns explicit message when compact mode filters away every snippet', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.llmContextSearch.mockResolvedValue({
       grounding: {
@@ -279,7 +276,7 @@ describe('braveLLMContextSearchTool', () => {
     });
 
     expect(getFirstTextContent(result)).toBe('No context results found for "banana ripening"');
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'No LLM context results found for "banana ripening"',
       'info',
     );
@@ -287,8 +284,8 @@ describe('braveLLMContextSearchTool', () => {
 
   it('returns explicit message when compact mode filters away every snippet for a targeted url', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.llmContextSearch.mockResolvedValue({
       grounding: {
@@ -318,7 +315,7 @@ describe('braveLLMContextSearchTool', () => {
     });
 
     expect(getFirstTextContent(result)).toBe('No context snippets found for URL "https://example.com/target" with query "banana ripening"');
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'No LLM context snippets found for URL "https://example.com/target" with query "banana ripening"',
       'info',
     );
@@ -326,8 +323,8 @@ describe('braveLLMContextSearchTool', () => {
 
   it('returns explicit message when compact output budget cannot fit the first line', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveLLMContextSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.llmContextSearch.mockResolvedValue({
       grounding: {
@@ -348,7 +345,7 @@ describe('braveLLMContextSearchTool', () => {
     });
 
     expect(getFirstTextContent(result)).toBe('No context results found for "banana ripening"');
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'No LLM context results found for "banana ripening"',
       'info',
     );

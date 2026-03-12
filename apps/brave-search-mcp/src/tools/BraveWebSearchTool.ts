@@ -1,6 +1,6 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
-import type { BraveMcpServer } from '../server.js';
+import type { ToolLogger } from './tool-runtime.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
@@ -45,7 +45,7 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
   public readonly inputSchema = webSearchInputSchema;
 
   constructor(
-    private braveMcpServer: BraveMcpServer,
+    private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
   ) {
@@ -81,7 +81,7 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
     });
 
     if (!results.web || results.web?.results.length === 0) {
-      this.braveMcpServer.log(`No results found for "${query}"`, 'info');
+      this.logMessage(`No results found for "${query}"`, 'info');
       const text = `No results found for "${query}"`;
       return buildStructuredToolResult(
         text,

@@ -1,7 +1,6 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch, LocalDescriptionsSearchApiResponse } from 'brave-search';
-import type { BraveMcpServer } from '../server.js';
-import type { BraveWebSearchTool } from './BraveWebSearchTool.js';
+import type { LocalWebFallbackExecutor, ToolLogger } from './tool-runtime.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { formatPoiResults } from '../utils.js';
@@ -58,9 +57,9 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
   public readonly inputSchema = localSearchInputSchema;
 
   constructor(
-    private braveMcpServer: BraveMcpServer,
+    private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
-    private webSearchTool: BraveWebSearchTool,
+    private executeWebFallback: LocalWebFallbackExecutor,
     private isUI: boolean = false,
   ) {
     super();
@@ -99,14 +98,14 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
 
     // Only the initial page falls back to web search when no local ids are available.
     if (locationResults.length === 0 && requestedOffset === 0) {
-      this.braveMcpServer.log(`No location results found for "${query}" falling back to web search. Make sure your API Plan is at least "Pro"`);
-      const webResult = await this.webSearchTool.executeCore({ query, count, offset: 0 });
+      this.logMessage(`No location results found for "${query}" falling back to web search. Make sure your API Plan is at least "Pro"`);
+      const webResult = await this.executeWebFallback({ query, count, offset: 0 });
 
       // If UI mode, add fallback flag
       if (this.isUI) {
         const parsedWebResult = webSearchOutputSchema.safeParse(webResult._meta?.structuredContent);
         if (!parsedWebResult.success && webResult._meta?.structuredContent !== undefined) {
-          this.braveMcpServer.log(
+          this.logMessage(
             `Invalid web fallback structured content for "${query}": ${parsedWebResult.error.message}`,
             'warning',
           );
@@ -148,7 +147,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     }
 
     const ids = locationResults.map(result => result.id);
-    this.braveMcpServer.log(`Using ${ids.length} location IDs for "${query}" (offset: ${requestedOffset})`, 'debug');
+    this.logMessage(`Using ${ids.length} location IDs for "${query}" (offset: ${requestedOffset})`, 'debug');
 
     const localPoiSearchApiResponse = await this.braveSearch.localPoiSearch(ids);
     const poiResults = (localPoiSearchApiResponse.results || []).map((result, index) => {
@@ -166,7 +165,7 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       localDescriptionsSearchApiResponse = await this.braveSearch.localDescriptionsSearch(ids);
     }
     catch (error) {
-      this.braveMcpServer.log(`${error}`, 'error');
+      this.logMessage(`${error}`, 'error');
       localDescriptionsSearchApiResponse = {
         type: 'local_descriptions',
         results: [],

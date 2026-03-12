@@ -1,6 +1,4 @@
 import type { BraveSearch } from 'brave-search';
-import type { BraveMcpServer } from '../../src/server.js';
-import type { BraveWebSearchTool } from '../../src/tools/BraveWebSearchTool.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveLocalSearchTool } from '../../src/tools/BraveLocalSearchTool.js';
@@ -41,27 +39,23 @@ interface LocalStructuredContent {
   error?: string;
 }
 
-function createServerStub() {
-  return {
-    log: vi.fn(),
-  } as unknown as BraveMcpServer;
+function createLogStub() {
+  return vi.fn();
 }
 
-function createWebSearchToolStub() {
-  return {
-    executeCore: vi.fn(),
-  } as unknown as BraveWebSearchTool;
+function createWebFallbackStub() {
+  return vi.fn();
 }
 
 describe('braveLocalSearchTool', () => {
   it('falls back to web search when no locations are returned (non-UI)', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       false,
     );
 
@@ -72,7 +66,7 @@ describe('braveLocalSearchTool', () => {
     } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
 
     const fallbackResult = { content: [{ type: 'text' as const, text: 'web fallback result' }] };
-    (webSearchTool as unknown as { executeCore: ReturnType<typeof vi.fn> }).executeCore.mockResolvedValue(fallbackResult);
+    executeWebFallback.mockResolvedValue(fallbackResult);
 
     const result = await tool.executeCore({
       query: 'pizza near me',
@@ -86,25 +80,25 @@ describe('braveLocalSearchTool', () => {
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
-    expect((webSearchTool as unknown as { executeCore: ReturnType<typeof vi.fn> }).executeCore).toHaveBeenCalledWith({
+    expect(executeWebFallback).toHaveBeenCalledWith({
       query: 'pizza near me',
       count: 4,
       offset: 0,
     });
     expect(result).toBe(fallbackResult);
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'No location results found for "pizza near me" falling back to web search. Make sure your API Plan is at least "Pro"',
     );
   });
 
   it('adds fallbackToWeb structured content in UI mode', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       true,
     );
 
@@ -114,7 +108,7 @@ describe('braveLocalSearchTool', () => {
       locations: { results: [] },
     } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
 
-    (webSearchTool as unknown as { executeCore: ReturnType<typeof vi.fn> }).executeCore.mockResolvedValue({
+    executeWebFallback.mockResolvedValue({
       content: [{ type: 'text' as const, text: 'fallback content' }],
       _meta: {
         structuredContent: {
@@ -166,12 +160,12 @@ describe('braveLocalSearchTool', () => {
 
   it('preserves empty fallback web payloads in UI mode', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       true,
     );
 
@@ -181,7 +175,7 @@ describe('braveLocalSearchTool', () => {
       locations: { results: [] },
     } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
 
-    (webSearchTool as unknown as { executeCore: ReturnType<typeof vi.fn> }).executeCore.mockResolvedValue({
+    executeWebFallback.mockResolvedValue({
       content: [{ type: 'text' as const, text: 'No results found for "late night food"' }],
       _meta: {
         structuredContent: {
@@ -217,12 +211,12 @@ describe('braveLocalSearchTool', () => {
 
   it('degrades gracefully when fallback web metadata is malformed', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       true,
     );
 
@@ -232,7 +226,7 @@ describe('braveLocalSearchTool', () => {
       locations: { results: [] },
     } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
 
-    (webSearchTool as unknown as { executeCore: ReturnType<typeof vi.fn> }).executeCore.mockResolvedValue({
+    executeWebFallback.mockResolvedValue({
       content: [{ type: 'text' as const, text: 'fallback content' }],
       _meta: {
         structuredContent: {
@@ -259,7 +253,7 @@ describe('braveLocalSearchTool', () => {
       webFallbackItems: [],
       fallbackToWeb: true,
     });
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       expect.stringContaining('Invalid web fallback structured content for "dim sum"'),
       'warning',
     );
@@ -267,12 +261,12 @@ describe('braveLocalSearchTool', () => {
 
   it('paginates location IDs, injects missing ids, and returns structured UI local items', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       true,
     );
 
@@ -348,7 +342,7 @@ describe('braveLocalSearchTool', () => {
       weeklyHours: 'Mon: 08:00-17:00',
       description: 'Great espresso and pastries.',
     });
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'Using 1 location IDs for "coffee seattle" (offset: 1)',
       'debug',
     );
@@ -356,12 +350,12 @@ describe('braveLocalSearchTool', () => {
 
   it('does not paginate location ids twice when loading page 2', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       true,
     );
 
@@ -488,7 +482,7 @@ describe('braveLocalSearchTool', () => {
         },
       ],
     });
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'Using 2 location IDs for "coffee seattle" (offset: 1)',
       'debug',
     );
@@ -496,12 +490,12 @@ describe('braveLocalSearchTool', () => {
 
   it('returns an empty local page instead of web fallback when a later page has no location ids', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       true,
     );
 
@@ -523,7 +517,7 @@ describe('braveLocalSearchTool', () => {
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
-    expect((webSearchTool as unknown as { executeCore: ReturnType<typeof vi.fn> }).executeCore).not.toHaveBeenCalled();
+    expect(executeWebFallback).not.toHaveBeenCalled();
     expect(mockBraveSearch.localPoiSearch).not.toHaveBeenCalled();
     expect(mockBraveSearch.localDescriptionsSearch).not.toHaveBeenCalled();
     expect(getFirstTextContent(result)).toBe('No local results found for "coffee seattle"');
@@ -540,12 +534,12 @@ describe('braveLocalSearchTool', () => {
 
   it('handles local description lookup failures and still returns POI text', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       false,
     );
 
@@ -578,7 +572,7 @@ describe('braveLocalSearchTool', () => {
     const text = getFirstTextContent(result);
     expect(text).toContain('1: Name: City Library');
     expect(text).toContain('Description: No description found');
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'Error: descriptions unavailable',
       'error',
     );
@@ -586,12 +580,12 @@ describe('braveLocalSearchTool', () => {
 
   it('returns no-local-results state when POI payload is empty', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       true,
     );
 
@@ -627,12 +621,12 @@ describe('braveLocalSearchTool', () => {
 
   it('returns structured error payload in UI mode when execute catches', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const webSearchTool = createWebSearchToolStub();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
     const tool = new BraveLocalSearchTool(
-      server,
+      log,
       mockBraveSearch as unknown as BraveSearch,
-      webSearchTool,
+      executeWebFallback,
       true,
     );
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -656,5 +650,46 @@ describe('braveLocalSearchTool', () => {
         },
       },
     });
+  });
+
+  it('returns a brave_local_search error when the web fallback throws', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const log = createLogStub();
+    const executeWebFallback = createWebFallbackStub();
+    const tool = new BraveLocalSearchTool(
+      log,
+      mockBraveSearch as unknown as BraveSearch,
+      executeWebFallback,
+      true,
+    );
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    mockBraveSearch.webSearch.mockResolvedValue({
+      type: 'search',
+      query: { original: 'pizza near me' },
+      locations: { results: [] },
+    } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
+    executeWebFallback.mockRejectedValue(new Error('web fallback failed'));
+
+    const result = await tool.execute({ query: 'pizza near me', count: 3, offset: 0 });
+
+    expect(consoleSpy).toHaveBeenCalled();
+    expect(result).toMatchObject({
+      isError: true,
+      content: [{ type: 'text', text: 'Error in brave_local_search: web fallback failed' }],
+      _meta: {
+        structuredContent: {
+          query: 'pizza near me',
+          count: 3,
+          pageSize: 3,
+          returnedCount: 0,
+          offset: 0,
+          items: [],
+          error: 'web fallback failed',
+        },
+      },
+    });
+
+    consoleSpy.mockRestore();
   });
 });

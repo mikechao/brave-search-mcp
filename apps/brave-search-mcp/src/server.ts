@@ -1,3 +1,4 @@
+import type { LocalWebFallbackExecutor, ToolLogger } from './tools/tool-runtime.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -66,14 +67,16 @@ export class BraveMcpServer {
     );
 
     const braveSearch = braveSearchInstance ?? new BraveSearch(braveSearchApiKey);
+    const log: ToolLogger = this.log.bind(this);
 
     // Keep tool creation inline so the server's main wiring stays easy to scan.
-    const image = new BraveImageSearchTool(this, braveSearch, isUI);
-    const web = new BraveWebSearchTool(this, braveSearch, isUI);
-    const local = new BraveLocalSearchTool(this, braveSearch, web, isUI);
-    const news = new BraveNewsSearchTool(this, braveSearch, isUI);
-    const video = new BraveVideoSearchTool(this, braveSearch, isUI);
-    const llmContext = new BraveLLMContextSearchTool(this, braveSearch, isUI);
+    const image = new BraveImageSearchTool(log, braveSearch, isUI);
+    const web = new BraveWebSearchTool(log, braveSearch, isUI);
+    const executeWebFallback: LocalWebFallbackExecutor = input => web.executeCore(input);
+    const local = new BraveLocalSearchTool(log, braveSearch, executeWebFallback, isUI);
+    const news = new BraveNewsSearchTool(log, braveSearch, isUI);
+    const video = new BraveVideoSearchTool(log, braveSearch, isUI);
+    const llmContext = new BraveLLMContextSearchTool(log, braveSearch, isUI);
 
     this.tools = {
       image,

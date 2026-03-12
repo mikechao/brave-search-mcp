@@ -1,5 +1,4 @@
 import type { BraveSearch } from 'brave-search';
-import type { BraveMcpServer } from '../../src/server.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveVideoSearchTool } from '../../src/tools/BraveVideoSearchTool.js';
@@ -30,17 +29,15 @@ interface VideoStructuredContent {
   error?: string;
 }
 
-function createServerStub() {
-  return {
-    log: vi.fn(),
-  } as unknown as BraveMcpServer;
+function createLogStub() {
+  return vi.fn();
 }
 
 describe('braveVideoSearchTool', () => {
   it('forwards strict safesearch and formats non-UI output', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveVideoSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveVideoSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.videoSearch.mockResolvedValue({
       type: 'video',
@@ -108,8 +105,8 @@ describe('braveVideoSearchTool', () => {
 
   it('returns UI metadata with embed extraction for youtube and vimeo', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveVideoSearchTool(server, mockBraveSearch as unknown as BraveSearch, true);
+    const log = createLogStub();
+    const tool = new BraveVideoSearchTool(log, mockBraveSearch as unknown as BraveSearch, true);
 
     mockBraveSearch.videoSearch.mockResolvedValue({
       type: 'video',
@@ -172,8 +169,8 @@ describe('braveVideoSearchTool', () => {
 
   it('returns no-results response and UI metadata when empty', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveVideoSearchTool(server, mockBraveSearch as unknown as BraveSearch, true);
+    const log = createLogStub();
+    const tool = new BraveVideoSearchTool(log, mockBraveSearch as unknown as BraveSearch, true);
 
     mockBraveSearch.videoSearch.mockResolvedValue({
       type: 'video',
@@ -193,15 +190,15 @@ describe('braveVideoSearchTool', () => {
       returnedCount: 0,
       items: [],
     });
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'No video results found for "none"',
     );
   });
 
   it('returns structured error payload in UI mode when execute catches', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveVideoSearchTool(server, mockBraveSearch as unknown as BraveSearch, true);
+    const log = createLogStub();
+    const tool = new BraveVideoSearchTool(log, mockBraveSearch as unknown as BraveSearch, true);
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     mockBraveSearch.videoSearch.mockRejectedValue(new Error('video upstream failed'));

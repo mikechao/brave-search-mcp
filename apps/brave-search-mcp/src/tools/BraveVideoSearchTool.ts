@@ -1,6 +1,6 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
-import type { BraveMcpServer } from '../server.js';
+import type { ToolLogger } from './tool-runtime.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
@@ -89,7 +89,7 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
   public readonly inputSchema = videoSearchInputSchema;
 
   constructor(
-    private braveMcpServer: BraveMcpServer,
+    private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
   ) {
@@ -125,7 +125,7 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
     });
 
     if (!videoSearchResults.results || videoSearchResults.results.length === 0) {
-      this.braveMcpServer.log(`No video results found for "${query}"`);
+      this.logMessage(`No video results found for "${query}"`);
       const text = `No video results found for "${query}"`;
       return buildStructuredToolResult(
         text,

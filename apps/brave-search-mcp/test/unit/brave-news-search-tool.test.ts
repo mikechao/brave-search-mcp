@@ -1,5 +1,4 @@
 import type { BraveSearch } from 'brave-search';
-import type { BraveMcpServer } from '../../src/server.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveNewsSearchTool } from '../../src/tools/BraveNewsSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
@@ -25,17 +24,15 @@ interface NewsStructuredContent {
   error?: string;
 }
 
-function createServerStub() {
-  return {
-    log: vi.fn(),
-  } as unknown as BraveMcpServer;
+function createLogStub() {
+  return vi.fn();
 }
 
 describe('braveNewsSearchTool', () => {
   it('forwards options, sorts by pageAge, and formats non-UI text', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveNewsSearchTool(server, mockBraveSearch as unknown as BraveSearch, false);
+    const log = createLogStub();
+    const tool = new BraveNewsSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
 
     mockBraveSearch.newsSearch.mockResolvedValue({
       type: 'news',
@@ -89,8 +86,8 @@ describe('braveNewsSearchTool', () => {
 
   it('returns UI content and structured metadata with sorted items', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveNewsSearchTool(server, mockBraveSearch as unknown as BraveSearch, true);
+    const log = createLogStub();
+    const tool = new BraveNewsSearchTool(log, mockBraveSearch as unknown as BraveSearch, true);
 
     mockBraveSearch.newsSearch.mockResolvedValue({
       type: 'news',
@@ -148,8 +145,8 @@ describe('braveNewsSearchTool', () => {
 
   it('returns no-results response and UI metadata when empty', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveNewsSearchTool(server, mockBraveSearch as unknown as BraveSearch, true);
+    const log = createLogStub();
+    const tool = new BraveNewsSearchTool(log, mockBraveSearch as unknown as BraveSearch, true);
 
     mockBraveSearch.newsSearch.mockResolvedValue({
       type: 'news',
@@ -169,15 +166,15 @@ describe('braveNewsSearchTool', () => {
       returnedCount: 0,
       items: [],
     });
-    expect((server as unknown as { log: ReturnType<typeof vi.fn> }).log).toHaveBeenCalledWith(
+    expect(log).toHaveBeenCalledWith(
       'No news results found for "none"',
     );
   });
 
   it('returns structured error payload in UI mode when execute catches', async () => {
     const mockBraveSearch = createMockBraveSearch();
-    const server = createServerStub();
-    const tool = new BraveNewsSearchTool(server, mockBraveSearch as unknown as BraveSearch, true);
+    const log = createLogStub();
+    const tool = new BraveNewsSearchTool(log, mockBraveSearch as unknown as BraveSearch, true);
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     mockBraveSearch.newsSearch.mockRejectedValue(new Error('upstream failure'));

@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { ContextThresholdMode } from 'brave-search/dist/types.js';
-import type { BraveMcpServer } from '../server.js';
+import type { ToolLogger } from './tool-runtime.js';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
 
@@ -56,7 +56,7 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
   public readonly inputSchema = llmContextSearchInputSchema;
 
   constructor(
-    private braveMcpServer: BraveMcpServer,
+    private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
   ) {
@@ -65,13 +65,13 @@ export class BraveLLMContextSearchTool extends BaseTool<typeof llmContextSearchI
 
   private buildNoContextResult(query: string, url?: string): CallToolResult {
     if (url) {
-      this.braveMcpServer.log(`No LLM context snippets found for URL "${url}" with query "${query}"`, 'info');
+      this.logMessage(`No LLM context snippets found for URL "${url}" with query "${query}"`, 'info');
       return {
         content: [{ type: 'text', text: `No context snippets found for URL "${url}" with query "${query}"` }],
       };
     }
 
-    this.braveMcpServer.log(`No LLM context results found for "${query}"`, 'info');
+    this.logMessage(`No LLM context results found for "${query}"`, 'info');
     return {
       content: [{ type: 'text', text: `No context results found for "${query}"` }],
     };

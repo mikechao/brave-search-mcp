@@ -1,6 +1,6 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
-import type { BraveMcpServer } from '../server.js';
+import type { ToolLogger } from './tool-runtime.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
@@ -36,7 +36,7 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
   public readonly description = 'A tool for searching the web for images using the Brave Search API.';
   public readonly inputSchema = imageSearchInputSchema;
 
-  constructor(private server: BraveMcpServer, private braveSearch: BraveSearch, private isUI: boolean = false) {
+  constructor(private logMessage: ToolLogger, private braveSearch: BraveSearch, private isUI: boolean = false) {
     super();
   }
 
@@ -60,14 +60,14 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
 
   public async executeCore(input: z.infer<typeof imageSearchInputSchema>): Promise<CallToolResult> {
     const { searchTerm, count } = input;
-    this.server.log(`Searching for images of "${searchTerm}" with count ${count}`, 'debug');
+    this.logMessage(`Searching for images of "${searchTerm}" with count ${count}`, 'debug');
 
     const imageResults = await this.braveSearch.imageSearch(searchTerm, {
       count,
       safesearch: SafeSearchLevel.Strict,
     });
     if (!imageResults.results || imageResults.results.length === 0) {
-      this.server.log(`No image results found for "${searchTerm}"`, 'info');
+      this.logMessage(`No image results found for "${searchTerm}"`, 'info');
       const text = `No image results found for "${searchTerm}"`;
       return buildStructuredToolResult(
         text,
@@ -80,7 +80,7 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
           : undefined,
       );
     }
-    this.server.log(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
+    this.logMessage(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
     const imageItems: BraveImageSearchItem[] = [];
     for (const result of imageResults.results) {
       // Use thumbnail.src (proxied through imgs.search.brave.com) for CSP compatibility

@@ -1,6 +1,6 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
-import type { BraveMcpServer } from '../server.js';
+import type { ToolLogger } from './tool-runtime.js';
 import { z } from 'zod';
 import { BaseTool } from './BaseTool.js';
 import {
@@ -59,7 +59,7 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> 
   public readonly inputSchema = newsSearchInputSchema;
 
   constructor(
-    private braveMcpServer: BraveMcpServer,
+    private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
   ) {
@@ -93,7 +93,7 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> 
       ...(freshness ? { freshness } : {}),
     });
     if (!newsResult.results || newsResult.results.length === 0) {
-      this.braveMcpServer.log(`No news results found for "${query}"`);
+      this.logMessage(`No news results found for "${query}"`);
       const text = `No news results found for "${query}"`;
       return buildStructuredToolResult(
         text,
