@@ -1,14 +1,14 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
-import type { ToolLogger } from './tool-runtime.js';
+import type { ToolLogger } from './tool-helpers.js';
 import { z } from 'zod';
-import { BaseTool } from './BaseTool.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
   createPagedSearchOutputSchema,
+  executeTool,
   getErrorMessage,
-} from './search-tool-shared.js';
+} from './tool-helpers.js';
 
 const newsSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for news articles, trending topics, or recent events'),
@@ -50,7 +50,7 @@ export const newsSearchOutputSchema = createPagedSearchOutputSchema(newsItemSche
 
 export type BraveNewsSearchStructuredContent = z.infer<typeof newsSearchOutputSchema>;
 
-export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> {
+export class BraveNewsSearchTool {
   public readonly name = 'brave_news_search';
   public readonly description = 'Searches for news articles and returns titles, URLs, and short descriptions — not the full article content. '
     + 'Use this to find recent events or trending topics. '
@@ -62,11 +62,9 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> 
     private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
-  ) {
-    super();
-  }
+  ) {}
 
-  protected buildErrorResult(input: z.infer<typeof newsSearchInputSchema>, error: unknown): CallToolResult {
+  private buildErrorResult(input: z.infer<typeof newsSearchInputSchema>, error: unknown): CallToolResult {
     const message = getErrorMessage(error);
     return {
       ...buildStructuredToolResult(
@@ -82,6 +80,15 @@ export class BraveNewsSearchTool extends BaseTool<typeof newsSearchInputSchema> 
       ),
       isError: true,
     };
+  }
+
+  public async execute(input: z.infer<typeof newsSearchInputSchema>): Promise<CallToolResult> {
+    return executeTool({
+      toolName: this.name,
+      input,
+      executeCore: value => this.executeCore(value),
+      buildErrorResult: (value, error) => this.buildErrorResult(value, error),
+    });
   }
 
   public async executeCore(input: z.infer<typeof newsSearchInputSchema>): Promise<CallToolResult> {

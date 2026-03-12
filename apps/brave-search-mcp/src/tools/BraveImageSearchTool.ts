@@ -1,10 +1,13 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
-import type { ToolLogger } from './tool-runtime.js';
+import type { ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
-import { BaseTool } from './BaseTool.js';
-import { buildStructuredToolResult, getErrorMessage } from './search-tool-shared.js';
+import {
+  buildStructuredToolResult,
+  executeTool,
+  getErrorMessage,
+} from './tool-helpers.js';
 
 const imageSearchInputSchema = z.object({
   searchTerm: z.string().describe('The term to search the internet for images of'),
@@ -31,16 +34,14 @@ export const imageSearchOutputSchema = z.object({
 export type BraveImageSearchItem = z.infer<typeof imageSearchItemSchema>;
 export type BraveImageSearchStructuredContent = z.infer<typeof imageSearchOutputSchema>;
 
-export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema> {
+export class BraveImageSearchTool {
   public readonly name = 'brave_image_search';
   public readonly description = 'A tool for searching the web for images using the Brave Search API.';
   public readonly inputSchema = imageSearchInputSchema;
 
-  constructor(private logMessage: ToolLogger, private braveSearch: BraveSearch, private isUI: boolean = false) {
-    super();
-  }
+  constructor(private logMessage: ToolLogger, private braveSearch: BraveSearch, private isUI: boolean = false) {}
 
-  protected buildErrorResult(input: z.infer<typeof imageSearchInputSchema>, error: unknown): CallToolResult {
+  private buildErrorResult(input: z.infer<typeof imageSearchInputSchema>, error: unknown): CallToolResult {
     const message = getErrorMessage(error);
     return {
       ...buildStructuredToolResult(
@@ -56,6 +57,15 @@ export class BraveImageSearchTool extends BaseTool<typeof imageSearchInputSchema
       ),
       isError: true,
     };
+  }
+
+  public async execute(input: z.infer<typeof imageSearchInputSchema>): Promise<CallToolResult> {
+    return executeTool({
+      toolName: this.name,
+      input,
+      executeCore: value => this.executeCore(value),
+      buildErrorResult: (value, error) => this.buildErrorResult(value, error),
+    });
   }
 
   public async executeCore(input: z.infer<typeof imageSearchInputSchema>): Promise<CallToolResult> {

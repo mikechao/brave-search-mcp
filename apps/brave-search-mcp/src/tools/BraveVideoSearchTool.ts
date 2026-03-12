@@ -1,15 +1,15 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
-import type { ToolLogger } from './tool-runtime.js';
+import type { ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
-import { BaseTool } from './BaseTool.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
   createPagedSearchOutputSchema,
+  executeTool,
   getErrorMessage,
-} from './search-tool-shared.js';
+} from './tool-helpers.js';
 
 const videoSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for videos of'),
@@ -79,7 +79,7 @@ function extractVimeoId(url: string): string | null {
   return match ? match[1] : null;
 }
 
-export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema> {
+export class BraveVideoSearchTool {
   public readonly name = 'brave_video_search';
   public readonly description = 'Searches for videos using the Brave Search API. '
     + 'Use this for video content, tutorials, or any media-related queries. '
@@ -92,11 +92,9 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
     private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
-  ) {
-    super();
-  }
+  ) {}
 
-  protected buildErrorResult(input: z.infer<typeof videoSearchInputSchema>, error: unknown): CallToolResult {
+  private buildErrorResult(input: z.infer<typeof videoSearchInputSchema>, error: unknown): CallToolResult {
     const message = getErrorMessage(error);
     return {
       ...buildStructuredToolResult(
@@ -112,6 +110,15 @@ export class BraveVideoSearchTool extends BaseTool<typeof videoSearchInputSchema
       ),
       isError: true,
     };
+  }
+
+  public async execute(input: z.infer<typeof videoSearchInputSchema>): Promise<CallToolResult> {
+    return executeTool({
+      toolName: this.name,
+      input,
+      executeCore: value => this.executeCore(value),
+      buildErrorResult: (value, error) => this.buildErrorResult(value, error),
+    });
   }
 
   public async executeCore(input: z.infer<typeof videoSearchInputSchema>): Promise<CallToolResult> {

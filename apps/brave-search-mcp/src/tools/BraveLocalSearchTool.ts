@@ -1,18 +1,18 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch, LocalDescriptionsSearchApiResponse } from 'brave-search';
-import type { LocalWebFallbackExecutor, ToolLogger } from './tool-runtime.js';
+import type { LocalWebFallbackExecutor, ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
 import { formatPoiResults } from '../utils.js';
-import { BaseTool } from './BaseTool.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
   createPagedSearchOutputSchema,
+  executeTool,
   getErrorMessage,
   webResultSchema,
   webSearchOutputSchema,
-} from './search-tool-shared.js';
+} from './tool-helpers.js';
 
 const localSearchInputSchema = z.object({
   query: z.string().describe('Local search query (e.g. \'pizza near Central Park\')'),
@@ -43,7 +43,7 @@ export const localSearchOutputSchema = createPagedSearchOutputSchema(localBusine
 
 export type BraveLocalSearchStructuredContent = z.infer<typeof localSearchOutputSchema>;
 
-export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema> {
+export class BraveLocalSearchTool {
   public readonly name = 'brave_local_search';
   public readonly description = 'Searches for local businesses and places using Brave\'s Local Search API. '
     + 'Best for queries related to physical locations, businesses, restaurants, services, etc. '
@@ -61,11 +61,9 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
     private braveSearch: BraveSearch,
     private executeWebFallback: LocalWebFallbackExecutor,
     private isUI: boolean = false,
-  ) {
-    super();
-  }
+  ) {}
 
-  protected buildErrorResult(input: z.infer<typeof localSearchInputSchema>, error: unknown): CallToolResult {
+  private buildErrorResult(input: z.infer<typeof localSearchInputSchema>, error: unknown): CallToolResult {
     const message = getErrorMessage(error);
     return {
       ...buildStructuredToolResult(
@@ -82,6 +80,15 @@ export class BraveLocalSearchTool extends BaseTool<typeof localSearchInputSchema
       ),
       isError: true,
     };
+  }
+
+  public async execute(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {
+    return executeTool({
+      toolName: this.name,
+      input,
+      executeCore: value => this.executeCore(value),
+      buildErrorResult: (value, error) => this.buildErrorResult(value, error),
+    });
   }
 
   public async executeCore(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {

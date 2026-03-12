@@ -1,16 +1,15 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
-import type { ToolLogger } from './tool-runtime.js';
+import type { ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search/dist/types.js';
 import { z } from 'zod';
-import { BaseTool } from './BaseTool.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
-  createPagedSearchOutputSchema,
+  executeTool,
   getErrorMessage,
-  webResultSchema,
-} from './search-tool-shared.js';
+  webSearchOutputSchema,
+} from './tool-helpers.js';
 
 const webSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for'),
@@ -32,11 +31,11 @@ The following values are supported:
     ),
 });
 
-export const webSearchOutputSchema = createPagedSearchOutputSchema(webResultSchema);
-
 export type BraveWebSearchStructuredContent = z.infer<typeof webSearchOutputSchema>;
 
-export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
+export { webSearchOutputSchema };
+
+export class BraveWebSearchTool {
   public readonly name = 'brave_web_search';
   public readonly description = 'Performs a web search and returns titles, URLs, and short descriptions — not the full content of the pages. '
     + 'Use this to discover sources or get an overview of what is available on a topic. '
@@ -48,11 +47,9 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
     private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
-  ) {
-    super();
-  }
+  ) {}
 
-  protected buildErrorResult(input: z.infer<typeof webSearchInputSchema>, error: unknown): CallToolResult {
+  private buildErrorResult(input: z.infer<typeof webSearchInputSchema>, error: unknown): CallToolResult {
     const message = getErrorMessage(error);
     return {
       ...buildStructuredToolResult(
@@ -68,6 +65,15 @@ export class BraveWebSearchTool extends BaseTool<typeof webSearchInputSchema> {
       ),
       isError: true,
     };
+  }
+
+  public async execute(input: z.infer<typeof webSearchInputSchema>): Promise<CallToolResult> {
+    return executeTool({
+      toolName: this.name,
+      input,
+      executeCore: value => this.executeCore(value),
+      buildErrorResult: (value, error) => this.buildErrorResult(value, error),
+    });
   }
 
   public async executeCore(input: z.infer<typeof webSearchInputSchema>): Promise<CallToolResult> {

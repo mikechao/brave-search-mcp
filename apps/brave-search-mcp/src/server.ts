@@ -1,4 +1,4 @@
-import type { LocalWebFallbackExecutor, ToolLogger } from './tools/tool-runtime.js';
+import type { LocalWebFallbackExecutor, ToolLogger } from './tools/tool-helpers.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
