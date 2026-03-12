@@ -18,6 +18,33 @@ const EXPECTED_STANDARD_TOOL_NAMES = [
   'brave_video_search',
   'brave_llm_context_search',
 ] as const;
+const UI_TOOL_METADATA_EXPECTATIONS = {
+  brave_image_search: {
+    invoking: 'Searching for images…',
+    invoked: 'Images found.',
+    widgetAccessible: false,
+  },
+  brave_news_search: {
+    invoking: 'Searching for news…',
+    invoked: 'News articles found.',
+    widgetAccessible: true,
+  },
+  brave_video_search: {
+    invoking: 'Searching for videos…',
+    invoked: 'Videos found.',
+    widgetAccessible: true,
+  },
+  brave_web_search: {
+    invoking: 'Searching the web…',
+    invoked: 'Search complete.',
+    widgetAccessible: true,
+  },
+  brave_local_search: {
+    invoking: 'Searching local businesses…',
+    invoked: 'Places found.',
+    widgetAccessible: true,
+  },
+} as const;
 
 describe('braveMcpServer', () => {
   let mockBraveSearch: MockBraveSearch;
@@ -142,16 +169,23 @@ describe('braveMcpServer', () => {
           return typeof uiMeta?.resourceUri === 'string' && typeof meta?.['openai/outputTemplate'] === 'string';
         });
         expect(uiTools).toHaveLength(5);
+        expect(uiTools.map(tool => tool.name).sort()).toEqual(
+          Object.keys(UI_TOOL_METADATA_EXPECTATIONS).sort(),
+        );
 
         const resourceUriSet = new Set(resourceUris);
         for (const tool of uiTools) {
-          const meta = tool._meta;
+          const meta = tool._meta as Record<string, unknown> | undefined;
           const ui = meta?.ui as { resourceUri?: string } | undefined;
           const mcpAppUri = ui?.resourceUri;
           const chatgptUri = meta?.['openai/outputTemplate'];
+          const expectedMeta = UI_TOOL_METADATA_EXPECTATIONS[
+            tool.name as keyof typeof UI_TOOL_METADATA_EXPECTATIONS
+          ];
 
           expect(mcpAppUri).toBeTypeOf('string');
           expect(chatgptUri).toBeTypeOf('string');
+          expect(expectedMeta).toBeDefined();
           if (typeof mcpAppUri !== 'string' || typeof chatgptUri !== 'string') {
             throw new TypeError('Expected UI metadata to include tool resource URIs');
           }
@@ -163,6 +197,13 @@ describe('braveMcpServer', () => {
           expect(mcpAppUri.replace(/\/mcp-app\.html$/, '')).toBe(
             chatgptUri.replace(/\/chatgpt-widget\.html$/, ''),
           );
+          expect(meta?.['openai/toolInvocation/invoking']).toBe(expectedMeta.invoking);
+          expect(meta?.['openai/toolInvocation/invoked']).toBe(expectedMeta.invoked);
+
+          if (expectedMeta.widgetAccessible)
+            expect(meta?.['openai/widgetAccessible']).toBe(true);
+          else
+            expect(meta?.['openai/widgetAccessible']).toBeUndefined();
         }
       }
       finally {
