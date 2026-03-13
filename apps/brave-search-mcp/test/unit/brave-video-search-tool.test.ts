@@ -1,5 +1,5 @@
 import type { BraveSearch } from 'brave-search';
-import { SafeSearchLevel } from 'brave-search/dist/types.js';
+import { SafeSearchLevel } from 'brave-search';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveVideoSearchTool } from '../../src/tools/BraveVideoSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';

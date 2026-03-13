@@ -1,4 +1,4 @@
-import type { LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse, OpeningHours, VideoResult } from 'brave-search/dist/types.js';
+import type { LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse, OpeningHours, VideoResult } from 'brave-search';
 
 export function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDesc: LocalDescriptionsSearchApiResponse) {
   return (poiData.results || []).map((poi) => {

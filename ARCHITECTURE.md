@@ -6,7 +6,7 @@
   - Provide reliable, typed access to Brave web, image, news, video, local, and LLM-context search.
   - Keep the server transport-agnostic so the same tool layer works in stdio and HTTP modes.
   - Keep UI concerns optional and isolated so non-UI MCP clients do not pay a complexity tax.
-  - Preserve a thin shared SDK layer so Brave API integration logic does not spread across the app.
+  - Preserve a thin shared SDK layer with one stable package-root import surface so Brave API integration logic does not spread across the app.
   - Ensure host widgets can be served safely inside sandboxed iframes as self-contained HTML documents.
 - Success criteria:
   - New search capabilities can be added as one new tool slice plus optional UI widgets.
@@ -41,6 +41,8 @@
 - `Brave Search SDK`:
   - Owns all HTTP calls to Brave endpoints.
   - Owns Brave request formatting, polling behavior, response typing, and API error shaping.
+  - Owns the package-root export surface via `packages/brave-search/src/index.ts`.
+  - Compiles as an internal ESM workspace package with `dist/index.js` and `dist/index.d.ts` as the supported runtime/type entrypoints.
   - Must not import app/server code.
 - `MCP Server Bootstrap`:
   - Owns process startup, env validation, runtime mode selection, and transport startup.
@@ -75,11 +77,12 @@
 - `/apps/brave-search-mcp/test`
   - Unit, integration, and eval coverage for the app package.
 - `/packages/brave-search/src`
-  - Shared Brave Search SDK and typed models.
+  - Shared Brave Search SDK, package-root export surface, and typed models.
 - `/scripts`
   - Repo-level maintenance automation only.
 - Rules:
   - Brave HTTP integration code must live only in `packages/brave-search`.
+  - App and test code must import the SDK from `brave-search`, never from `packages/brave-search/dist/*`.
   - MCP registration and transport code must live only in `apps/brave-search-mcp/src`.
   - UI host bridge code must live only in `apps/brave-search-mcp/ui/src/hooks`.
   - Tool classes may format tool outputs, but they must not read widget bundles directly.
@@ -112,6 +115,7 @@
   - Full mode preserves rawer Brave snippets.
 - Boundary rules:
   - Only tool classes may call the shared SDK.
+  - Tool and test code must treat `brave-search` package root exports as the only supported SDK boundary.
   - UI code may call back into server tools through host bridges, but it must not know SDK internals.
   - Transport code must not contain tool-specific formatting logic.
 
@@ -165,8 +169,10 @@
   - Static iframe-ready UI bundles inside `dist/ui`.
   - Manifest/package metadata for MCP packaging flows.
 - Environment differences:
-  - Local development: pnpm workspace, optional watch/build scripts.
+  - Local development: pnpm workspace with package-local `dev` tasks; root `pnpm run dev` starts SDK and app watch workflows through Turbo.
   - Test: injected mock `BraveSearch` and dedicated test server entrypoint.
+  - Direct app build, check, typecheck, and test scripts rebuild the internal SDK explicitly before consuming it, so clean-state workflows do not rely on leftover `packages/brave-search/dist` output.
+  - Direct Vitest execution resolves `brave-search` through the workspace source entrypoint so package-root imports remain valid even when SDK `dist/` has been cleaned.
   - Production: built `dist` output with runtime env vars only.
   - UI build: Vite plus single-file bundling produces inline HTML assets from `ui/src/lib/*/(mcp-app.html|chatgpt-app.html)`.
 
@@ -174,6 +180,9 @@
 - Use a shared SDK package for Brave API access.
   - Rationale: centralizes typing and HTTP behavior.
   - Trade-off: SDK changes can affect both current and future consumers.
+- Treat the shared SDK as an internal ESM workspace package with one supported package-root import surface.
+  - Rationale: keeps app/tool code off fragile `dist/*` deep imports and makes package boundaries explicit.
+  - Trade-off: app scripts and tests must encode workspace-resolution behavior intentionally instead of relying on incidental prebuilt output.
 - Keep one class per MCP tool.
   - Rationale: input schema, description, and output contract stay co-located.
   - Trade-off: some duplication across similar search tools is acceptable.
@@ -189,6 +198,9 @@
 - Keep local-search fallback inside the tool layer.
   - Rationale: fallback is a product behavior, not a transport concern.
   - Trade-off: local tool depends on web-tool core behavior.
+- Rebuild the internal SDK explicitly in direct app workflows instead of relying on install-time or cached build output.
+  - Rationale: documented commands such as `build`, `build:watch`, `check`, `typecheck`, and `test:unit` must work from a clean workspace.
+  - Trade-off: some app commands do extra SDK build work up front to keep behavior predictable.
 - Enforce read-only tool annotations.
   - Rationale: search tools should never mutate external systems.
   - Trade-off: richer workflows belong outside this server.
@@ -254,7 +266,6 @@ flowchart LR
 
 ## 12. Open Questions
 - Should HTTP mode gain first-class auth or rate limiting for safer internet exposure?
-- Should the shared SDK be modernized to match the app package style conventions consistently?
 - Should common result-formatting logic across search tools be consolidated further, or is current duplication the clearer trade-off?
 - Should widget and MCP App host support continue to share one UI codebase, or eventually split by host runtime?
 - Should the repo adopt a single documented test command at the root that includes the app’s Vitest suite?

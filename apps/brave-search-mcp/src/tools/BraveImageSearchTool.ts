@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { ToolLogger } from './tool-helpers.js';
-import { SafeSearchLevel } from 'brave-search/dist/types.js';
+import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
 import {
   buildStructuredToolResult,

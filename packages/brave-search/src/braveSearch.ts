@@ -13,10 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-const DEFAULT_POLLING_INTERVAL = 500;
-const DEFAULT_MAX_POLL_ATTEMPTS = 20;
-
-import {
+import type {
   BraveSearchOptions,
   ImageSearchApiResponse,
   ImageSearchOptions,
@@ -32,13 +29,16 @@ import {
   VideoSearchApiResponse,
   VideoSearchOptions,
   WebSearchApiResponse,
-} from "./types";
+} from './types.js';
+
+const DEFAULT_POLLING_INTERVAL = 500;
+const DEFAULT_MAX_POLL_ATTEMPTS = 20;
 
 /**
  * An error class specific to BraveSearch API interactions.
  * It includes additional information about the response data that caused the error.
  */
-class BraveSearchError extends Error {
+export class BraveSearchError extends Error {
   public responseData: any;
 
   /**
@@ -48,7 +48,7 @@ class BraveSearchError extends Error {
    */
   constructor(message: string, responseData?: any) {
     super(message);
-    this.name = "BraveSearchError";
+    this.name = 'BraveSearchError';
     this.responseData = responseData;
   }
 }
@@ -57,9 +57,9 @@ class BraveSearchError extends Error {
  * The main class for interacting with the Brave Search API, holding API key for all the requests made with it.
  * It provides methods for web search, image search, local POI search, and summarization.
  */
-class BraveSearch {
+export class BraveSearch {
   private apiKey: string;
-  private baseUrl = "https://api.search.brave.com/res/v1";
+  private baseUrl = 'https://api.search.brave.com/res/v1';
   private pollInterval: number;
   private maxPollAttempts: number;
 
@@ -145,7 +145,7 @@ class BraveSearch {
    */
   getSummarizedAnswer(
     query: string,
-    options: Omit<BraveSearchOptions, "summary"> = {},
+    options: Omit<BraveSearchOptions, 'summary'> = {},
     summarizerOptions: SummarizerOptions = {},
     signal?: AbortSignal,
   ): {
@@ -165,7 +165,8 @@ class BraveSearch {
       });
 
       return { webSearch: webSearchResponse, summary: summaryPromise };
-    } catch (error) {
+    }
+    catch (error) {
       throw this.handleApiError(error);
     }
   }
@@ -204,7 +205,8 @@ class BraveSearch {
         throw this.buildApiError(response.status, response.statusText, data);
       }
       return response.json() as Promise<LocalPoiSearchApiResponse>;
-    } catch (error) {
+    }
+    catch (error) {
       throw this.handleApiError(error);
     }
   }
@@ -226,7 +228,8 @@ class BraveSearch {
         throw this.buildApiError(response.status, response.statusText, data);
       }
       return response.json() as Promise<LocalDescriptionsSearchApiResponse>;
-    } catch (error) {
+    }
+    catch (error) {
       throw this.handleApiError(error);
     }
   }
@@ -257,16 +260,17 @@ class BraveSearch {
     for (let attempt = 0; attempt < this.maxPollAttempts; attempt++) {
       const summaryResponse = await this.summarizerSearch(key, options, signal);
 
-      if (summaryResponse.status === "complete" && summaryResponse.summary) {
+      if (summaryResponse.status === 'complete' && summaryResponse.summary) {
         return summaryResponse;
-      } else if (summaryResponse.status === "failed") {
-        throw new BraveSearchError("Summary generation failed");
+      }
+      else if (summaryResponse.status === 'failed') {
+        throw new BraveSearchError('Summary generation failed');
       }
 
-      await new Promise((resolve) => setTimeout(resolve, this.pollInterval));
+      await new Promise(resolve => setTimeout(resolve, this.pollInterval));
     }
 
-    throw new BraveSearchError("Summary not available after maximum polling attempts");
+    throw new BraveSearchError('Summary not available after maximum polling attempts');
   }
 
   private async summarizerSearch(
@@ -297,16 +301,17 @@ class BraveSearch {
         throw this.buildApiError(response.status, response.statusText, data);
       }
       return response.json() as Promise<T>;
-    } catch (error) {
+    }
+    catch (error) {
       throw this.handleApiError(error);
     }
   }
 
   private getHeaders(): Record<string, string> {
     return {
-      "Accept": "application/json",
-      "Accept-Encoding": "gzip",
-      "X-Subscription-Token": this.apiKey,
+      'Accept': 'application/json',
+      'Accept-Encoding': 'gzip',
+      'X-Subscription-Token': this.apiKey,
     };
   }
 
@@ -323,7 +328,7 @@ class BraveSearch {
   }
 
   private formatIdsQuery(ids: string[]): string {
-    return ids.map((id) => `ids=${encodeURIComponent(id)}`).join("&");
+    return ids.map(id => `ids=${encodeURIComponent(id)}`).join('&');
   }
 
   /**
@@ -333,9 +338,11 @@ class BraveSearch {
     const message = responseData?.message || statusText;
     if (status === 429) {
       return new BraveSearchError(`Rate limit exceeded: ${message}`, responseData);
-    } else if (status === 401) {
+    }
+    else if (status === 401) {
       return new BraveSearchError(`Authentication error: ${message}`, responseData);
-    } else {
+    }
+    else {
       return new BraveSearchError(`API error (${status}): ${message}`, responseData);
     }
   }
@@ -347,22 +354,3 @@ class BraveSearch {
     return new BraveSearchError(`Unexpected error: ${error?.message ?? String(error)}`);
   }
 }
-
-export {
-  BraveSearch,
-  BraveSearchError,
-  type BraveSearchOptions,
-  type ImageSearchOptions,
-  type LocalDescriptionsSearchApiResponse,
-  type LocalPoiSearchApiResponse,
-  type SummarizerOptions,
-  type SummarizerSearchApiResponse,
-  type WebSearchApiResponse,
-  type ImageSearchApiResponse,
-  type NewsSearchApiResponse,
-  type NewsSearchOptions,
-  type VideoSearchApiResponse,
-  type VideoSearchOptions,
-  type LLMContextApiResponse,
-  type LLMContextOptions,
-};

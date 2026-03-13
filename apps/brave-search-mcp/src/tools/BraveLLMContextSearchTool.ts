@@ -1,6 +1,5 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
-import type { BraveSearch } from 'brave-search';
-import type { ContextThresholdMode } from 'brave-search/dist/types.js';
+import type { BraveSearch, ContextThresholdMode } from 'brave-search';
 import type { ToolLogger } from './tool-helpers.js';
 import { z } from 'zod';
 import { executeTool } from './tool-helpers.js';
