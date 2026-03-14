@@ -27,6 +27,10 @@
       "description": "Execute web searches using Brave's API"
     },
     {
+      "name": "brave_llm_context_search",
+      "description": "Extract relevant text snippets from web pages for deeper research and synthesis"
+    },
+    {
       "name": "brave_image_search",
       "description": "Get images from the web relevant to the query"
     },
