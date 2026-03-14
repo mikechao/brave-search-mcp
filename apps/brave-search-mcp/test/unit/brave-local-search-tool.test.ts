@@ -1,6 +1,7 @@
 import type { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search';
 import { describe, expect, it, vi } from 'vitest';
+import { TOOL_NAMES } from '../../src/tool-names.js';
 import { BraveLocalSearchTool } from '../../src/tools/BraveLocalSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
@@ -637,7 +638,7 @@ describe('braveLocalSearchTool', () => {
     expect(consoleSpy).toHaveBeenCalled();
     expect(result).toMatchObject({
       isError: true,
-      content: [{ type: 'text', text: 'Error in brave_local_search: local upstream failed' }],
+      content: [{ type: 'text', text: `Error in ${TOOL_NAMES.local}: local upstream failed` }],
       _meta: {
         structuredContent: {
           query: 'failure',
@@ -652,7 +653,7 @@ describe('braveLocalSearchTool', () => {
     });
   });
 
-  it('returns a brave_local_search error when the web fallback throws', async () => {
+  it(`returns a ${TOOL_NAMES.local} error when the web fallback throws`, async () => {
     const mockBraveSearch = createMockBraveSearch();
     const log = createLogStub();
     const executeWebFallback = createWebFallbackStub();
@@ -676,7 +677,7 @@ describe('braveLocalSearchTool', () => {
     expect(consoleSpy).toHaveBeenCalled();
     expect(result).toMatchObject({
       isError: true,
-      content: [{ type: 'text', text: 'Error in brave_local_search: web fallback failed' }],
+      content: [{ type: 'text', text: `Error in ${TOOL_NAMES.local}: web fallback failed` }],
       _meta: {
         structuredContent: {
           query: 'pizza near me',

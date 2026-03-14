@@ -2,6 +2,7 @@ import type { VideoSearchAppProps } from '../../ui/src/lib/video/VideoSearchApp.
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { TOOL_NAMES } from '../../src/tool-names.js';
 
 const mockState = vi.hoisted(() => {
   const updateModelContextMock = vi.fn().mockResolvedValue(undefined);
@@ -182,7 +183,7 @@ describe('videoMcpMode', () => {
     expect(mockState.capturedProps?.onContextChange).toBeTypeOf('function');
   });
 
-  it('loads another page through brave_video_search', async () => {
+  it(`loads another page through ${TOOL_NAMES.video}`, async () => {
     const VideoMcpMode = await importVideoMcpMode();
 
     renderToStaticMarkup(createElement(VideoMcpMode));
@@ -196,7 +197,7 @@ describe('videoMcpMode', () => {
     await onLoadPage(1);
 
     expect(mockState.callServerToolMock).toHaveBeenCalledWith({
-      name: 'brave_video_search',
+      name: TOOL_NAMES.video,
       arguments: {
         query: 'typescript videos',
         count: 10,

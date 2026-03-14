@@ -1,6 +1,7 @@
 import type { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search';
 import { describe, expect, it, vi } from 'vitest';
+import { TOOL_NAMES } from '../../src/tool-names.js';
 import { BraveWebSearchTool } from '../../src/tools/BraveWebSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
@@ -195,7 +196,7 @@ describe('braveWebSearchTool', () => {
     expect(consoleSpy).toHaveBeenCalled();
     expect(result).toMatchObject({
       isError: true,
-      content: [{ type: 'text', text: 'Error in brave_web_search: web upstream failed' }],
+      content: [{ type: 'text', text: `Error in ${TOOL_NAMES.web}: web upstream failed` }],
       _meta: {
         structuredContent: {
           query: 'failure',

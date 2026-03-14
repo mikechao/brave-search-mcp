@@ -1,5 +1,6 @@
 import { MCPClientManager } from '@mcpjam/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-names.js';
 
 /**
  * Integration tests for Brave Search MCP Server using MCPJam SDK.
@@ -13,14 +14,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 describe('brave search mcp server integration', () => {
   let manager: MCPClientManager;
   const serverName = 'brave-search';
-  const expectedToolNames = [
-    'brave_web_search',
-    'brave_image_search',
-    'brave_news_search',
-    'brave_video_search',
-    'brave_local_search',
-    'brave_llm_context_search',
-  ];
+  const expectedToolNames = ALL_TOOL_NAMES;
 
   beforeAll(async () => {
     manager = new MCPClientManager();
@@ -38,40 +32,40 @@ describe('brave search mcp server integration', () => {
   });
 
   describe('tool registration', () => {
-    it('should have brave_web_search tool', async () => {
+    it(`should have ${TOOL_NAMES.web} tool`, async () => {
       const tools = await manager.listTools(serverName);
       const toolNames = tools.tools.map(t => t.name);
-      expect(toolNames).toContain('brave_web_search');
+      expect(toolNames).toContain(TOOL_NAMES.web);
     });
 
-    it('should have brave_image_search tool', async () => {
+    it(`should have ${TOOL_NAMES.image} tool`, async () => {
       const tools = await manager.listTools(serverName);
       const toolNames = tools.tools.map(t => t.name);
-      expect(toolNames).toContain('brave_image_search');
+      expect(toolNames).toContain(TOOL_NAMES.image);
     });
 
-    it('should have brave_news_search tool', async () => {
+    it(`should have ${TOOL_NAMES.news} tool`, async () => {
       const tools = await manager.listTools(serverName);
       const toolNames = tools.tools.map(t => t.name);
-      expect(toolNames).toContain('brave_news_search');
+      expect(toolNames).toContain(TOOL_NAMES.news);
     });
 
-    it('should have brave_video_search tool', async () => {
+    it(`should have ${TOOL_NAMES.video} tool`, async () => {
       const tools = await manager.listTools(serverName);
       const toolNames = tools.tools.map(t => t.name);
-      expect(toolNames).toContain('brave_video_search');
+      expect(toolNames).toContain(TOOL_NAMES.video);
     });
 
-    it('should have brave_local_search tool', async () => {
+    it(`should have ${TOOL_NAMES.local} tool`, async () => {
       const tools = await manager.listTools(serverName);
       const toolNames = tools.tools.map(t => t.name);
-      expect(toolNames).toContain('brave_local_search');
+      expect(toolNames).toContain(TOOL_NAMES.local);
     });
 
-    it('should have brave_llm_context_search tool', async () => {
+    it(`should have ${TOOL_NAMES.llmContext} tool`, async () => {
       const tools = await manager.listTools(serverName);
       const toolNames = tools.tools.map(t => t.name);
-      expect(toolNames).toContain('brave_llm_context_search');
+      expect(toolNames).toContain(TOOL_NAMES.llmContext);
     });
 
     it('should have exactly 6 tools registered', async () => {
@@ -84,9 +78,9 @@ describe('brave search mcp server integration', () => {
   });
 
   describe('tool metadata', () => {
-    it('brave_web_search should have correct description', async () => {
+    it(`${TOOL_NAMES.web} should have correct description`, async () => {
       const tools = await manager.listTools(serverName);
-      const webSearchTool = tools.tools.find(t => t.name === 'brave_web_search');
+      const webSearchTool = tools.tools.find(t => t.name === TOOL_NAMES.web);
       expect(webSearchTool).toBeDefined();
       expect(webSearchTool?.description).toContain('web');
     });
@@ -101,8 +95,8 @@ describe('brave search mcp server integration', () => {
 
   // Skip API tests when no real API key is provided
   describe.skipIf(!process.env.BRAVE_API_KEY)('tool execution (requires BRAVE_API_KEY)', () => {
-    it('brave_web_search should return results for a query', async () => {
-      const result = await manager.executeTool(serverName, 'brave_web_search', {
+    it(`${TOOL_NAMES.web} should return results for a query`, async () => {
+      const result = await manager.executeTool(serverName, TOOL_NAMES.web, {
         query: 'vitest testing framework',
         count: 3,
       });
@@ -117,8 +111,8 @@ describe('brave search mcp server integration', () => {
       }
     }, 30000);
 
-    it('brave_image_search should return results for a query', async () => {
-      const result = await manager.executeTool(serverName, 'brave_image_search', {
+    it(`${TOOL_NAMES.image} should return results for a query`, async () => {
+      const result = await manager.executeTool(serverName, TOOL_NAMES.image, {
         query: 'cats',
         count: 3,
       });

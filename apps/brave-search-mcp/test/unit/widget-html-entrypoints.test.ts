@@ -4,12 +4,13 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createContext, runInContext } from 'node:vm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { TOOL_NAMES } from '../../src/tool-names.js';
 
 const DIST_UI_ROOT = path.resolve(process.cwd(), 'dist/ui/src/lib');
 const entrypoint = {
   route: 'web',
   file: 'chatgpt-app.html',
-  expectedText: 'Run brave_web_search to see results',
+  expectedText: `Run ${TOOL_NAMES.web} to see results`,
 } as const;
 
 const BODY_REGEX = /<body>([\s\S]*?)<\/body>/i;

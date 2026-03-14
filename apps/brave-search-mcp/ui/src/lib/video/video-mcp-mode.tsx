@@ -3,6 +3,7 @@ import type { ContextVideo, VideoSearchData } from './types';
 import type { VideoSearchAppProps } from './VideoSearchApp';
 import { useCallback, useMemo, useState } from 'react';
 import { useMcpApp } from '../../hooks/useMcpApp';
+import { TOOL_NAMES } from '../shared/tool-names';
 import VideoSearchApp from './VideoSearchApp';
 
 interface VideoToolInput extends Record<string, unknown> {
@@ -60,7 +61,7 @@ export default function VideoMcpAppMode() {
     setIsLoading(true);
     try {
       const result = await callServerTool({
-        name: 'brave_video_search',
+        name: TOOL_NAMES.video,
         arguments: {
           query: currentData.query,
           count: currentData.pageSize ?? currentData.count ?? 10,

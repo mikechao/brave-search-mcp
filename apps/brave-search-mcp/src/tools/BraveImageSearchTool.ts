@@ -3,6 +3,7 @@ import type { BraveSearch } from 'brave-search';
 import type { ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../tool-names.js';
 import {
   buildStructuredToolResult,
   executeTool,
@@ -35,7 +36,7 @@ export type BraveImageSearchItem = z.infer<typeof imageSearchItemSchema>;
 export type BraveImageSearchStructuredContent = z.infer<typeof imageSearchOutputSchema>;
 
 export class BraveImageSearchTool {
-  public readonly name = 'brave_image_search';
+  public readonly name = TOOL_NAMES.image;
   public readonly description = 'A tool for searching the web for images using the Brave Search API.';
   public readonly inputSchema = imageSearchInputSchema;
 

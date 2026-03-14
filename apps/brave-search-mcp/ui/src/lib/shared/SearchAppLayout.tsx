@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import type { WidgetProps } from '../../widget-props';
 import { FullscreenButton } from './FullscreenButton';
 import { PaginationButton } from './PaginationButton';
+import { toolNameForVariant } from './tool-names';
 
 interface SpinnerProps {
   size: number;
@@ -143,7 +144,7 @@ export function SearchAppLayout({
         <div className="header-right">
           <div className="meta">
             <div className="term">
-              {hasData ? query : (isInitialLoading && loadingQuery ? loadingQuery : `Run brave_${variant}_search to see results`)}
+              {hasData ? query : (isInitialLoading && loadingQuery ? loadingQuery : `Run ${toolNameForVariant(variant)} to see results`)}
             </div>
             <div className="count">
               {hasData ? countLabel : (isInitialLoading ? 'Searching...' : 'Awaiting tool output')}

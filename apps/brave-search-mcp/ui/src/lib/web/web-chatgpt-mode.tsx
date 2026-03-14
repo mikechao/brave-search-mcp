@@ -8,6 +8,7 @@ import { useCallback, useState } from 'react';
 import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { extractToolStructuredContent, useChatGptBridge } from '../../hooks/useChatGptBridge';
 import { useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
+import { TOOL_NAMES } from '../shared/tool-names';
 import WebSearchApp from './WebSearchApp';
 
 /**
@@ -52,7 +53,7 @@ export default function WebChatGPTMode() {
 
     setIsLoading(true);
     try {
-      const result = await callTool('brave_web_search', {
+      const result = await callTool(TOOL_NAMES.web, {
         query: currentData.query,
         count: currentData.pageSize ?? currentData.count ?? 10,
         offset,

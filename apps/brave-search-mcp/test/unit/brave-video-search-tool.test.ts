@@ -1,6 +1,7 @@
 import type { BraveSearch } from 'brave-search';
 import { SafeSearchLevel } from 'brave-search';
 import { describe, expect, it, vi } from 'vitest';
+import { TOOL_NAMES } from '../../src/tool-names.js';
 import { BraveVideoSearchTool } from '../../src/tools/BraveVideoSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
@@ -207,7 +208,7 @@ describe('braveVideoSearchTool', () => {
     expect(consoleSpy).toHaveBeenCalled();
     expect(result).toMatchObject({
       isError: true,
-      content: [{ type: 'text', text: 'Error in brave_video_search: video upstream failed' }],
+      content: [{ type: 'text', text: `Error in ${TOOL_NAMES.video}: video upstream failed` }],
       _meta: {
         structuredContent: {
           query: 'fail',

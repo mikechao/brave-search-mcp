@@ -6,6 +6,7 @@ import type { NewsSearchAppProps } from './NewsSearchApp';
 import type { ContextArticle, NewsSearchData } from './types';
 import { useCallback, useMemo, useState } from 'react';
 import { useMcpApp } from '../../hooks/useMcpApp';
+import { TOOL_NAMES } from '../shared/tool-names';
 import NewsSearchApp from './NewsSearchApp';
 
 interface NewsToolInput extends Record<string, unknown> {
@@ -66,7 +67,7 @@ export default function NewsMcpAppMode() {
     setIsLoading(true);
     try {
       const result = await callServerTool({
-        name: 'brave_news_search',
+        name: TOOL_NAMES.news,
         arguments: {
           query: currentData.query,
           count: currentData.pageSize ?? currentData.count ?? 10,

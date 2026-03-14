@@ -2,6 +2,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch, ContextThresholdMode } from 'brave-search';
 import type { ToolLogger } from './tool-helpers.js';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../tool-names.js';
 import { executeTool } from './tool-helpers.js';
 
 const COMPACT_DEFAULTS = {
@@ -45,12 +46,12 @@ const llmContextSearchInputSchema = z.object({
 });
 
 export class BraveLLMContextSearchTool {
-  public readonly name = 'brave_llm_context_search';
+  public readonly name = TOOL_NAMES.llmContext;
   public readonly description = 'Best for questions that require reading and synthesizing web page content, '
     + 'such as "how does X work", "explain Y in detail", or "what are the tradeoffs of Z". '
     + 'Returns extracted text from web pages rather than just titles and descriptions. '
     + 'Also useful for extracting text from a specific URL. '
-    + 'Not needed for simple factual lookups — use brave_web_search for those.';
+    + `Not needed for simple factual lookups — use ${TOOL_NAMES.web} for those.`;
 
   public readonly inputSchema = llmContextSearchInputSchema;
 

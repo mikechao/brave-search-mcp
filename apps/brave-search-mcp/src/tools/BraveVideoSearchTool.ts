@@ -3,6 +3,7 @@ import type { BraveSearch } from 'brave-search';
 import type { ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../tool-names.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
@@ -80,7 +81,7 @@ function extractVimeoId(url: string): string | null {
 }
 
 export class BraveVideoSearchTool {
-  public readonly name = 'brave_video_search';
+  public readonly name = TOOL_NAMES.video;
   public readonly description = 'Searches for videos using the Brave Search API. '
     + 'Use this for video content, tutorials, or any media-related queries. '
     + 'Returns a list of videos with titles, URLs, and descriptions. '

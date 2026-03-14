@@ -6,40 +6,33 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 import packageJson from '../../package.json' with { type: 'json' };
 import { BraveMcpServer } from '../../src/server.js';
+import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-names.js';
 import { ALL_UI_RESOURCE_URIS, UI_RESOURCES } from '../../src/ui-resources.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 
 const { version: SERVER_VERSION } = packageJson;
-const EXPECTED_STANDARD_TOOL_NAMES = [
-  'brave_image_search',
-  'brave_web_search',
-  'brave_local_search',
-  'brave_news_search',
-  'brave_video_search',
-  'brave_llm_context_search',
-] as const;
 const UI_TOOL_METADATA_EXPECTATIONS = {
-  brave_image_search: {
+  [TOOL_NAMES.image]: {
     invoking: 'Searching for images…',
     invoked: 'Images found.',
     widgetAccessible: false,
   },
-  brave_news_search: {
+  [TOOL_NAMES.news]: {
     invoking: 'Searching for news…',
     invoked: 'News articles found.',
     widgetAccessible: true,
   },
-  brave_video_search: {
+  [TOOL_NAMES.video]: {
     invoking: 'Searching for videos…',
     invoked: 'Videos found.',
     widgetAccessible: true,
   },
-  brave_web_search: {
+  [TOOL_NAMES.web]: {
     invoking: 'Searching the web…',
     invoked: 'Search complete.',
     widgetAccessible: true,
   },
-  brave_local_search: {
+  [TOOL_NAMES.local]: {
     invoking: 'Searching local businesses…',
     invoked: 'Places found.',
     widgetAccessible: true,
@@ -105,7 +98,7 @@ describe('braveMcpServer', () => {
 
       try {
         await client.callTool({
-          name: 'brave_web_search',
+          name: TOOL_NAMES.web,
           arguments: { query: 'dependency injection query' },
         });
       }
@@ -127,8 +120,8 @@ describe('braveMcpServer', () => {
         const toolList = await client.listTools();
         const toolNames = toolList.tools.map(tool => tool.name);
 
-        expect(toolNames).toEqual(EXPECTED_STANDARD_TOOL_NAMES);
-        expect(toolList.tools).toHaveLength(EXPECTED_STANDARD_TOOL_NAMES.length);
+        expect(toolNames).toEqual(expect.arrayContaining(ALL_TOOL_NAMES));
+        expect(toolList.tools).toHaveLength(ALL_TOOL_NAMES.length);
 
         for (const tool of toolList.tools) {
           const meta = tool._meta as Record<string, unknown> | undefined;

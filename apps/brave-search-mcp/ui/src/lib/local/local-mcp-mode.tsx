@@ -2,6 +2,7 @@ import type { ToolResult, WidgetProps } from '../../widget-props';
 import type { LocalSearchData } from './types';
 import { useCallback, useState } from 'react';
 import { useMcpApp } from '../../hooks/useMcpApp';
+import { TOOL_NAMES } from '../shared/tool-names';
 import LocalSearchApp from './LocalSearchApp';
 
 const APP_INFO = { name: 'Brave Local Search', version: '1.0.0' };
@@ -36,7 +37,7 @@ export default function LocalMcpAppMode() {
     setIsLoading(true);
     try {
       const result = await callServerTool({
-        name: 'brave_local_search',
+        name: TOOL_NAMES.local,
         arguments: {
           query: currentData.query,
           count: currentData.pageSize ?? currentData.count ?? 10,

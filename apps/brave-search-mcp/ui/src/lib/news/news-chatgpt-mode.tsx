@@ -8,6 +8,7 @@ import { useCallback, useState } from 'react';
 import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { extractToolStructuredContent, useChatGptBridge } from '../../hooks/useChatGptBridge';
 import { useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
+import { TOOL_NAMES } from '../shared/tool-names';
 import NewsSearchApp from './NewsSearchApp';
 
 /**
@@ -52,7 +53,7 @@ export default function NewsChatGPTMode() {
 
     setIsLoading(true);
     try {
-      const result = await callTool('brave_news_search', {
+      const result = await callTool(TOOL_NAMES.news, {
         query: currentData.query,
         count: currentData.pageSize ?? currentData.count ?? 10,
         offset,

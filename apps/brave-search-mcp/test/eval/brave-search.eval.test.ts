@@ -1,5 +1,6 @@
 import { EvalTest, MCPClientManager, TestAgent } from '@mcpjam/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { TOOL_NAMES } from '../../src/tool-names.js';
 
 const EVAL_MODEL = process.env.EVAL_MODEL ?? 'openai/gpt-5-mini';
 const EVAL_API_KEY = process.env.EVAL_API_KEY ?? process.env.OPENAI_API_KEY;
@@ -41,12 +42,12 @@ describe('brave search mcp evals (vitest + openai)', () => {
     }
   });
 
-  it('web search intent routes to brave_web_search', async () => {
+  it(`web search intent routes to ${TOOL_NAMES.web}`, async () => {
     const evalTest = new EvalTest({
       name: 'brave-web-search-routing',
       test: async (evalAgent) => {
         const result = await evalAgent.prompt('I want to see the latest TypeScript release notes and official docs. Can you find them?');
-        return result.hasToolCall('brave_web_search');
+        return result.hasToolCall(TOOL_NAMES.web);
       },
     });
 
@@ -65,11 +66,11 @@ describe('brave search mcp evals (vitest + openai)', () => {
       name: 'brave-web-then-video',
       test: async (evalAgent) => {
         const r1 = await evalAgent.prompt('I am setting up a home espresso corner. Can you find a few beginner guides?');
-        if (!r1.hasToolCall('brave_web_search'))
+        if (!r1.hasToolCall(TOOL_NAMES.web))
           return false;
 
         const r2 = await evalAgent.prompt('Nice, can you find beginner espresso tutorial videos on the same topic?', { context: [r1] });
-        return r2.hasToolCall('brave_video_search');
+        return r2.hasToolCall(TOOL_NAMES.video);
       },
     });
 
@@ -88,8 +89,8 @@ describe('brave search mcp evals (vitest + openai)', () => {
       name: 'brave-image-search-args',
       test: async (evalAgent) => {
         const result = await evalAgent.prompt('I am making a travel mood board for Iceland. Can you find images of the northern lights there?');
-        const args = result.getToolArguments('brave_image_search');
-        return result.hasToolCall('brave_image_search') && typeof args?.searchTerm === 'string';
+        const args = result.getToolArguments(TOOL_NAMES.image);
+        return result.hasToolCall(TOOL_NAMES.image) && typeof args?.searchTerm === 'string';
       },
     });
 

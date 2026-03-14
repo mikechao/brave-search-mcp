@@ -3,6 +3,7 @@ import type { BraveSearch, LocalDescriptionsSearchApiResponse } from 'brave-sear
 import type { LocalWebFallbackExecutor, ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../tool-names.js';
 import { formatPoiResults } from '../utils.js';
 import {
   buildPagedStructuredContent,
@@ -44,7 +45,7 @@ export const localSearchOutputSchema = createPagedSearchOutputSchema(localBusine
 export type BraveLocalSearchStructuredContent = z.infer<typeof localSearchOutputSchema>;
 
 export class BraveLocalSearchTool {
-  public readonly name = 'brave_local_search';
+  public readonly name = TOOL_NAMES.local;
   public readonly description = 'Searches for local businesses and places using Brave\'s Local Search API. '
     + 'Best for queries related to physical locations, businesses, restaurants, services, etc. '
     + 'Returns detailed information including:\n'

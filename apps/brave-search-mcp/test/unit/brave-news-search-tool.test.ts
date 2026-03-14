@@ -1,5 +1,6 @@
 import type { BraveSearch } from 'brave-search';
 import { describe, expect, it, vi } from 'vitest';
+import { TOOL_NAMES } from '../../src/tool-names.js';
 import { BraveNewsSearchTool } from '../../src/tools/BraveNewsSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';
@@ -183,7 +184,7 @@ describe('braveNewsSearchTool', () => {
     expect(consoleSpy).toHaveBeenCalled();
     expect(result).toMatchObject({
       isError: true,
-      content: [{ type: 'text', text: 'Error in brave_news_search: upstream failure' }],
+      content: [{ type: 'text', text: `Error in ${TOOL_NAMES.news}: upstream failure` }],
       _meta: {
         structuredContent: {
           query: 'boom',

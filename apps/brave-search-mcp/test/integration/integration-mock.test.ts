@@ -1,5 +1,6 @@
 import { MCPClientManager } from '@mcpjam/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-names.js';
 
 /**
  * Integration tests for Brave Search MCP Server using MockBraveSearch.
@@ -12,14 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 describe('brave search mcp server integration (mocked)', () => {
   let manager: MCPClientManager;
   const serverName = 'brave-search-mock';
-  const expectedToolNames = [
-    'brave_web_search',
-    'brave_image_search',
-    'brave_news_search',
-    'brave_video_search',
-    'brave_local_search',
-    'brave_llm_context_search',
-  ];
+  const expectedToolNames = ALL_TOOL_NAMES;
 
   beforeAll(async () => {
     manager = new MCPClientManager();
@@ -44,8 +38,8 @@ describe('brave search mcp server integration (mocked)', () => {
   });
 
   describe('tool execution with mocks', () => {
-    it('brave_web_search should return mocked results', async () => {
-      const result = await manager.executeTool(serverName, 'brave_web_search', {
+    it(`${TOOL_NAMES.web} should return mocked results`, async () => {
+      const result = await manager.executeTool(serverName, TOOL_NAMES.web, {
         query: 'test query',
         count: 3,
       });
@@ -62,8 +56,8 @@ describe('brave search mcp server integration (mocked)', () => {
       }
     }, 30000);
 
-    it('brave_image_search should return mocked results', async () => {
-      const result = await manager.executeTool(serverName, 'brave_image_search', {
+    it(`${TOOL_NAMES.image} should return mocked results`, async () => {
+      const result = await manager.executeTool(serverName, TOOL_NAMES.image, {
         query: 'test image',
         count: 3,
       });
@@ -72,8 +66,8 @@ describe('brave search mcp server integration (mocked)', () => {
       expect('content' in result).toBe(true);
     }, 30000);
 
-    it('brave_news_search should return mocked results', async () => {
-      const result = await manager.executeTool(serverName, 'brave_news_search', {
+    it(`${TOOL_NAMES.news} should return mocked results`, async () => {
+      const result = await manager.executeTool(serverName, TOOL_NAMES.news, {
         query: 'test news',
         count: 3,
       });
@@ -82,8 +76,8 @@ describe('brave search mcp server integration (mocked)', () => {
       expect('content' in result).toBe(true);
     }, 30000);
 
-    it('brave_video_search should return mocked results', async () => {
-      const result = await manager.executeTool(serverName, 'brave_video_search', {
+    it(`${TOOL_NAMES.video} should return mocked results`, async () => {
+      const result = await manager.executeTool(serverName, TOOL_NAMES.video, {
         query: 'test video',
         count: 3,
       });

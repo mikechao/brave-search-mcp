@@ -8,6 +8,7 @@ import { useCallback, useState } from 'react';
 import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { extractToolStructuredContent, useChatGptBridge } from '../../hooks/useChatGptBridge';
 import { useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
+import { TOOL_NAMES } from '../shared/tool-names';
 import VideoSearchApp from './VideoSearchApp';
 
 /**
@@ -53,7 +54,7 @@ export default function VideoChatGPTMode() {
 
     setIsLoading(true);
     try {
-      const result = await callTool('brave_video_search', {
+      const result = await callTool(TOOL_NAMES.video, {
         query: currentData.query,
         count: currentData.pageSize ?? currentData.count ?? 10,
         offset,

@@ -2,6 +2,7 @@ import type { ToolResult, WidgetProps } from '../../widget-props';
 import type { WebSearchData } from './types';
 import { useCallback, useState } from 'react';
 import { useMcpApp } from '../../hooks/useMcpApp';
+import { TOOL_NAMES } from '../shared/tool-names';
 import WebSearchApp from './WebSearchApp';
 
 const APP_INFO = { name: 'Brave Web Search', version: '1.0.0' };
@@ -36,7 +37,7 @@ export default function WebMcpAppMode() {
     setIsLoading(true);
     try {
       const result = await callServerTool({
-        name: 'brave_web_search',
+        name: TOOL_NAMES.web,
         arguments: {
           query: currentData.query,
           count: currentData.pageSize ?? currentData.count ?? 10,

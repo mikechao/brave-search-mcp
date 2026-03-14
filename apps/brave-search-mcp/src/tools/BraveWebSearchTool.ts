@@ -3,6 +3,7 @@ import type { BraveSearch } from 'brave-search';
 import type { ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../tool-names.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
@@ -36,7 +37,7 @@ export type BraveWebSearchStructuredContent = z.infer<typeof webSearchOutputSche
 export { webSearchOutputSchema };
 
 export class BraveWebSearchTool {
-  public readonly name = 'brave_web_search';
+  public readonly name = TOOL_NAMES.web;
   public readonly description = 'Performs a web search and returns titles, URLs, and short descriptions — not the full content of the pages. '
     + 'Use this to discover sources or get an overview of what is available on a topic. '
     + 'Maximum 20 results per request.';

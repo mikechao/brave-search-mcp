@@ -2,6 +2,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { ToolLogger } from './tool-helpers.js';
 import { z } from 'zod';
+import { TOOL_NAMES } from '../tool-names.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
@@ -51,7 +52,7 @@ export const newsSearchOutputSchema = createPagedSearchOutputSchema(newsItemSche
 export type BraveNewsSearchStructuredContent = z.infer<typeof newsSearchOutputSchema>;
 
 export class BraveNewsSearchTool {
-  public readonly name = 'brave_news_search';
+  public readonly name = TOOL_NAMES.news;
   public readonly description = 'Searches for news articles and returns titles, URLs, and short descriptions — not the full article content. '
     + 'Use this to find recent events or trending topics. '
     + 'Maximum 20 results per request.';
