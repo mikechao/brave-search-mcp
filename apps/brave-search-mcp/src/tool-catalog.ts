@@ -1,13 +1,35 @@
-const TOOL_NAMES = {
+export type ToolKey
+  = 'web'
+    | 'llmContext'
+    | 'image'
+    | 'news'
+    | 'local'
+    | 'video';
+
+export type WidgetToolVariant
+  = 'image'
+    | 'news'
+    | 'video'
+    | 'web'
+    | 'local';
+
+export interface ToolDefinition {
+  readonly key: ToolKey;
+  readonly name: string;
+  readonly manifestDescription: string;
+  readonly variant?: WidgetToolVariant;
+}
+
+export const TOOL_NAMES = {
   web: 'brave_web_search',
   llmContext: 'brave_llm_context_search',
   image: 'brave_image_search',
   news: 'brave_news_search',
   local: 'brave_local_search',
   video: 'brave_video_search',
-};
+} as const;
 
-const TOOL_NAME_BY_VARIANT = {
+const TOOL_NAME_BY_VARIANT: Record<WidgetToolVariant, string> = {
   web: TOOL_NAMES.web,
   image: TOOL_NAMES.image,
   news: TOOL_NAMES.news,
@@ -15,8 +37,7 @@ const TOOL_NAME_BY_VARIANT = {
   video: TOOL_NAMES.video,
 };
 
-// Keep this as plain JavaScript because the manifest sync scripts import it directly.
-const TOOL_DEFINITIONS = [
+export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     key: 'web',
     variant: 'web',
@@ -54,21 +75,13 @@ const TOOL_DEFINITIONS = [
   },
 ];
 
-const ALL_TOOL_NAMES = Object.values(TOOL_NAMES);
+export const ALL_TOOL_NAMES = Object.values(TOOL_NAMES);
 
-const MANIFEST_TOOL_ENTRIES = TOOL_DEFINITIONS.map(({ name, manifestDescription }) => ({
+export const MANIFEST_TOOL_ENTRIES = TOOL_DEFINITIONS.map(({ name, manifestDescription }) => ({
   name,
   description: manifestDescription,
 }));
 
-function toolNameForVariant(variant) {
+export function toolNameForVariant(variant: WidgetToolVariant): string {
   return TOOL_NAME_BY_VARIANT[variant];
 }
-
-export {
-  ALL_TOOL_NAMES,
-  MANIFEST_TOOL_ENTRIES,
-  TOOL_DEFINITIONS,
-  TOOL_NAMES,
-  toolNameForVariant,
-};

@@ -52,12 +52,12 @@
     "build:watch": "tsup --watch",
     "dev": "pnpm run build:watch",
     "build:ui": "node scripts/build-ui.js",
-    "sync:manifest:tools": "node scripts/sync-manifest-tools.js",
+    "check:manifest:tools": "vitest run test/unit/manifest-tool-names.test.ts",
     "lint": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
     "lint:check": "eslint . --ext .ts,.js,.mjs,.cjs",
     "pretypecheck": "pnpm run build:sdk",
     "typecheck": "tsc --noEmit && tsc --noEmit -p ui/tsconfig.json && tsc --noEmit -p test/tsconfig.json",
-    "check": "pnpm run lint:check && pnpm run typecheck",
+    "check": "pnpm run lint:check && pnpm run typecheck && pnpm run check:manifest:tools",
     "prebuild:test-server": "pnpm run build:sdk",
     "build:test-server": "tsup test/test-server.ts --format esm --target node20 --outDir .test-build --no-splitting --shims",
     "pretest:unit": "pnpm run build:sdk && pnpm run build:ui",
@@ -73,7 +73,7 @@
     "test:eval:smoke": "pnpm run build:test-server && EVAL_ITERATIONS=1 EVAL_MULTI_TURN_ITERATIONS=1 EVAL_MIN_ACCURACY=0 vitest run test/eval",
     "test:eval:watch": "pnpm run build:test-server && vitest test/eval",
     "test:coverage": "shx rm -rf coverage && vitest run test/unit --coverage",
-    "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/sync-manifest-tools.js && node scripts/cleanup-changesets.js"
+    "changeset:version": "changeset version && node scripts/sync-manifest-version.js && node scripts/cleanup-changesets.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.19.11",

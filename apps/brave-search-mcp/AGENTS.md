@@ -16,7 +16,7 @@
 - `pnpm run lint`: lint and auto-fix with ESLint.
 - `pnpm run lint:check`: lint without auto-fix (CI-friendly).
 - `pnpm run typecheck`: TypeScript type checking only.
-- `pnpm run check`: run lint check + typecheck.
+- `pnpm run check`: run lint check + typecheck + manifest tool drift validation.
 - `pnpm run test`: run the default unit + integration Vitest suite.
 - `pnpm run test:unit`: run the unit suite with SDK and UI build preparation.
 - `pnpm run test:integration`: run the integration suite with SDK, built server, and mocked test server preparation.

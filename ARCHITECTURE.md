@@ -54,6 +54,10 @@
   - One class per user-facing tool.
   - Own input schema, execution path, structured-content contract, and user-visible tool description.
   - Files: `src/tools/Brave*Tool.ts`.
+- `Tool Catalog and Names`:
+  - Own the canonical tool-name list, manifest tool metadata, and the small shared type surface for tool keys and widget variants.
+  - Keep one readable TypeScript source of truth for both runtime data and TypeScript types.
+  - Files: `src/tool-catalog.ts`, `src/tool-names.ts`.
 - `Tool Shared Helpers`:
   - Own shared result builders, error wrappers, schema helpers, and local fallback contract types.
   - File: `src/tools/tool-helpers.ts`.
@@ -70,6 +74,10 @@
   - Deployable MCP server package.
 - `/apps/brave-search-mcp/src`
   - Server bootstrap, transport wiring, tool classes, and UI resource registration only.
+- `/apps/brave-search-mcp/src/tool-catalog.ts`
+  - Canonical tool metadata and types used by server code, tests, and manifest validation.
+- `/apps/brave-search-mcp/src/tool-names.ts`
+  - Stable public re-export layer for tool-name consumers inside the app, tests, and UI wrapper.
 - `/apps/brave-search-mcp/src/tools`
   - Vertical search slices only. New search behavior must start here.
 - `/apps/brave-search-mcp/ui`
@@ -84,6 +92,7 @@
   - Brave HTTP integration code must live only in `packages/brave-search`.
   - App and test code must import the SDK from `brave-search`, never from `packages/brave-search/dist/*`.
   - MCP registration and transport code must live only in `apps/brave-search-mcp/src`.
+  - Tool-name consumers should import through `apps/brave-search-mcp/src/tool-names.ts`; `tool-catalog.ts` is the underlying source of truth, not the broad public surface.
   - UI host bridge code must live only in `apps/brave-search-mcp/ui/src/hooks`.
   - Tool classes may format tool outputs, but they must not read widget bundles directly.
   - Widget entrypoints must remain single-file HTML outputs suitable for iframe embedding.
@@ -95,6 +104,11 @@
   - `src/index.ts` validates env and creates `BraveMcpServer`.
   - `BraveMcpServer` routes to a tool class.
   - Tool class validates input with `zod`, calls `BraveSearch`, reshapes results, and returns MCP content.
+- Manifest validation flow:
+  - Canonical manifest tool entries are defined in `src/tool-catalog.ts`.
+  - `src/tool-names.ts` re-exports `MANIFEST_TOOL_ENTRIES` for TypeScript-facing callers and tests.
+  - `test/unit/manifest-tool-names.test.ts` compares `manifest.json` against that canonical array.
+  - `pnpm -C apps/brave-search-mcp run check:manifest:tools` and the package `check` script fail on drift instead of rewriting `manifest.json`.
 - Streamable HTTP flow:
   - Hono receives `/mcp`.
   - A fresh `McpServer` and transport are created per request.
@@ -168,6 +182,7 @@
   - NPM package for `brave-search-mcp`.
   - Static iframe-ready UI bundles inside `dist/ui`.
   - Manifest/package metadata for MCP packaging flows.
+  - `manifest.json` remains a checked-in artifact that is validated against source metadata rather than auto-synced by a maintenance script.
 - Environment differences:
   - Local development: pnpm workspace with package-local `dev` tasks; root `pnpm run dev` starts SDK and app watch workflows through Turbo.
   - Test: injected mock `BraveSearch` and dedicated test server entrypoint.
@@ -202,6 +217,9 @@
 - Rebuild the internal SDK explicitly in direct app workflows instead of relying on install-time or cached build output.
   - Rationale: documented commands such as `build`, `build:watch`, `check`, `typecheck`, and `test:unit` must work from a clean workspace.
   - Trade-off: some app commands do extra SDK build work up front to keep behavior predictable.
+- Keep one TypeScript source of truth for tool metadata and validate manifest drift explicitly.
+  - Rationale: `src/tool-catalog.ts` now holds both runtime values and exported types, and `check:manifest:tools` makes manifest mismatches visible without hidden mutation.
+  - Trade-off: contributors must update `manifest.json` intentionally when tool metadata changes, but the workflow is easier to read than a sync script plus handwritten `.d.ts` split.
 - Expose a dedicated root `test` command while keeping `check` separate.
   - Rationale: `check` stays a fast static-validation command, while `test` runs the app's executable unit + integration suite from the repo root.
   - Trade-off: contributors need to remember two validation commands, but each one keeps a clear purpose and predictable runtime cost.

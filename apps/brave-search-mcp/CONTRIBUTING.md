@@ -289,11 +289,13 @@ Only `apps/brave-search-mcp` is published to npm. The `brave-search` SDK is bund
 
    Select `brave-search-mcp` and choose the appropriate version bump (patch/minor/major).
 
-2. **Apply versions and sync manifest**
+2. **Apply versions and sync manifest version**
 
    ```bash
    pnpm -C apps/brave-search-mcp changeset:version
    ```
+
+   If tool names or tool descriptions changed, update `apps/brave-search-mcp/manifest.json` intentionally and run `pnpm -C apps/brave-search-mcp run check` before publishing.
 
 3. **Commit and push**
 
