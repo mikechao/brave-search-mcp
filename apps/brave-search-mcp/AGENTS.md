@@ -17,6 +17,9 @@
 - `pnpm run lint:check`: lint without auto-fix (CI-friendly).
 - `pnpm run typecheck`: TypeScript type checking only.
 - `pnpm run check`: run lint check + typecheck.
+- `pnpm run test`: run the default unit + integration Vitest suite.
+- `pnpm run test:unit`: run the unit suite with SDK and UI build preparation.
+- `pnpm run test:integration`: run the integration suite with SDK, built server, and mocked test server preparation.
 - `pnpm run changeset:version`: apply changesets and sync `manifest.json` version.
 
 ## Coding Style & Naming Conventions
@@ -27,8 +30,8 @@
 
 ## Testing Guidelines
 
-- No dedicated test suite is currently configured. If you add tests, document the framework and add commands here.
-- Keep new logic small and verifiable; run `pnpm run check` before opening a PR.
+- This workspace uses Vitest for unit, integration, and eval coverage.
+- Keep new logic small and verifiable; run `pnpm run check` and `pnpm run test` before opening a PR.
 
 ## Commit & Pull Request Guidelines
 

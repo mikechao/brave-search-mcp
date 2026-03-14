@@ -171,7 +171,8 @@
 - Environment differences:
   - Local development: pnpm workspace with package-local `dev` tasks; root `pnpm run dev` starts SDK and app watch workflows through Turbo.
   - Test: injected mock `BraveSearch` and dedicated test server entrypoint.
-  - Direct app build, check, typecheck, and test scripts rebuild the internal SDK explicitly before consuming it, so clean-state workflows do not rely on leftover `packages/brave-search/dist` output.
+  - Root `pnpm run test` delegates to `apps/brave-search-mcp` and serves as the repo's documented automated test entrypoint.
+  - Direct app build, check, typecheck, and test scripts rebuild the internal SDK explicitly before consuming it, and the integration test path also rebuilds the app server entrypoint before launching `dist/index.js`, so clean-state workflows do not rely on leftover `packages/brave-search/dist` or `apps/brave-search-mcp/dist` output.
   - Direct Vitest execution resolves `brave-search` through the workspace source entrypoint so package-root imports remain valid even when SDK `dist/` has been cleaned.
   - Production: built `dist` output with runtime env vars only.
   - UI build: Vite plus single-file bundling produces inline HTML assets from `ui/src/lib/*/(mcp-app.html|chatgpt-app.html)`.
@@ -201,6 +202,9 @@
 - Rebuild the internal SDK explicitly in direct app workflows instead of relying on install-time or cached build output.
   - Rationale: documented commands such as `build`, `build:watch`, `check`, `typecheck`, and `test:unit` must work from a clean workspace.
   - Trade-off: some app commands do extra SDK build work up front to keep behavior predictable.
+- Expose a dedicated root `test` command while keeping `check` separate.
+  - Rationale: `check` stays a fast static-validation command, while `test` runs the app's executable unit + integration suite from the repo root.
+  - Trade-off: contributors need to remember two validation commands, but each one keeps a clear purpose and predictable runtime cost.
 - Enforce read-only tool annotations.
   - Rationale: search tools should never mutate external systems.
   - Trade-off: richer workflows belong outside this server.
@@ -268,4 +272,3 @@ flowchart LR
 - Should HTTP mode gain first-class auth or rate limiting for safer internet exposure?
 - Should common result-formatting logic across search tools be consolidated further, or is current duplication the clearer trade-off?
 - Should widget and MCP App host support continue to share one UI codebase, or eventually split by host runtime?
-- Should the repo adopt a single documented test command at the root that includes the app’s Vitest suite?

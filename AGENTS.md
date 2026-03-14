@@ -13,6 +13,7 @@ Run commands from the repo root unless noted.
 - `pnpm run build` builds all packages via Turbo.
 - `pnpm run lint` runs ESLint with auto-fix.
 - `pnpm run check` runs lint (no fix) and TypeScript checks.
+- `pnpm run test` runs the app workspace's default Vitest suite from the repo root.
 - `pnpm run clean` removes build outputs.
 - `pnpm -C apps/brave-search-mcp build` builds only the MCP server package.
 - `BRAVE_API_KEY=... npx -y brave-search-mcp --http` runs the server locally in HTTP mode.
@@ -23,8 +24,8 @@ Run commands from the repo root unless noted.
 - Match existing naming patterns in each folder (e.g., PascalCase tool classes under `src/tools/`).
 
 ## Testing Guidelines
-- No dedicated test runner is configured in this repo today.
-- Use `pnpm run check` before opening a PR; add tests alongside new features if you introduce a framework.
+- The repo's canonical automated test command is `pnpm run test`.
+- Use `pnpm run check` and `pnpm run test` before opening a PR; add tests alongside new features if you introduce a framework.
 
 ## Commit & Pull Request Guidelines
 - Recent commits use short, imperative, sentence-case summaries (e.g., “Fix query spacing”).

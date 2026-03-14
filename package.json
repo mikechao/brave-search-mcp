@@ -6,6 +6,7 @@
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "check": "turbo run check",
+    "test": "pnpm -C apps/brave-search-mcp run test",
     "test:unit": "pnpm -C apps/brave-search-mcp run test:unit",
     "clean": "turbo run clean",
     "prepare": "husky install",

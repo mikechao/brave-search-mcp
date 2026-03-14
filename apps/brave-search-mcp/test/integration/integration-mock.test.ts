@@ -12,6 +12,14 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 describe('brave search mcp server integration (mocked)', () => {
   let manager: MCPClientManager;
   const serverName = 'brave-search-mock';
+  const expectedToolNames = [
+    'brave_web_search',
+    'brave_image_search',
+    'brave_news_search',
+    'brave_video_search',
+    'brave_local_search',
+    'brave_llm_context_search',
+  ];
 
   beforeAll(async () => {
     manager = new MCPClientManager();
@@ -26,16 +34,12 @@ describe('brave search mcp server integration (mocked)', () => {
   });
 
   describe('tool registration', () => {
-    it('should have all 5 tools registered', async () => {
+    it('should have all 6 tools registered', async () => {
       const tools = await manager.listTools(serverName);
       const toolNames = tools.tools.map(t => t.name);
 
-      expect(toolNames).toContain('brave_web_search');
-      expect(toolNames).toContain('brave_image_search');
-      expect(toolNames).toContain('brave_news_search');
-      expect(toolNames).toContain('brave_video_search');
-      expect(toolNames).toContain('brave_local_search');
-      expect(tools.tools).toHaveLength(5);
+      expect(toolNames).toEqual(expect.arrayContaining(expectedToolNames));
+      expect(tools.tools).toHaveLength(expectedToolNames.length);
     });
   });
 

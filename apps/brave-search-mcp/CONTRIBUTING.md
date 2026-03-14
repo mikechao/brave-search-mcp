@@ -64,13 +64,14 @@ brave-search-mcp/
 
 Run these from the **monorepo root**:
 
-| Command      | Description                 |
-| ------------ | --------------------------- |
-| `pnpm build` | Build all packages and apps |
-| `pnpm dev`   | Run development mode        |
-| `pnpm lint`  | Lint all packages           |
-| `pnpm check` | Typecheck and lint all      |
-| `pnpm clean` | Clean dist folders          |
+| Command      | Description                    |
+| ------------ | ------------------------------ |
+| `pnpm build` | Build all packages and apps    |
+| `pnpm dev`   | Run development mode           |
+| `pnpm lint`  | Lint all packages              |
+| `pnpm check` | Typecheck and lint all         |
+| `pnpm test`  | Run the default app test suite |
+| `pnpm clean` | Clean dist folders             |
 
 To run commands for a specific workspace:
 
@@ -105,12 +106,19 @@ No `package.json` script updates are required.
 
 ## Testing
 
-All test commands below are for the `apps/brave-search-mcp` workspace.
+The canonical repo-level test command is:
+
+```bash
+pnpm test
+```
+
+That command delegates to the `apps/brave-search-mcp` workspace and runs the default unit + integration suite. The targeted commands below are still useful when you want to focus on one slice of the test surface.
 
 ### Quick Test Matrix
 
 | Test Type         | Command                                                                     | Notes                                          |
 | ----------------- | --------------------------------------------------------------------------- | ---------------------------------------------- |
+| Default suite     | `pnpm test`                                                                 | Runs unit + integration from the repo root     |
 | Unit tests        | `pnpm -C apps/brave-search-mcp run test:unit`                               | Fast, deterministic                            |
 | Unit watch mode   | `pnpm -C apps/brave-search-mcp run test:unit:watch`                         | Re-runs on file changes                        |
 | Integration tests | `pnpm -C apps/brave-search-mcp run test:integration`                        | Runs against built server + mocked test server |
@@ -136,7 +144,7 @@ pnpm -C apps/brave-search-mcp run test:integration
 
 Notes:
 
-- `test:integration` builds and runs the local mocked test server automatically.
+- `test:integration` rebuilds the shared SDK, builds `dist/index.js`, and builds the local mocked test server automatically.
 - Integration tests also include a live-server suite.
 - Live API execution checks run only when `BRAVE_API_KEY` is set.
 
@@ -215,7 +223,7 @@ Before opening a PR, run:
 
 ```bash
 pnpm check
-pnpm -C apps/brave-search-mcp run test
+pnpm test
 ```
 
 ## Code Style
@@ -318,7 +326,7 @@ BRAVE_API_KEY=your_key_here node apps/brave-search-mcp/dist/index.js --http
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/my-feature`)
 3. Make your changes
-4. Run `pnpm check` to ensure linting and types pass
+4. Run `pnpm check` and `pnpm test` to ensure static checks and tests pass
 5. Commit your changes
 6. Push to your fork and open a Pull Request
 
