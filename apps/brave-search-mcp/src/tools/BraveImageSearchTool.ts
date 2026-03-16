@@ -11,7 +11,7 @@ import {
 } from './tool-helpers.js';
 
 const imageSearchInputSchema = z.object({
-  searchTerm: z.string().describe('The term to search the internet for images of'),
+  query: z.string().describe('The term to search the internet for images of'),
   count: z.number().min(1).max(20).optional().default(10).describe('The number of images to search for, minimum 1, maximum 20'),
 });
 
@@ -26,7 +26,7 @@ const imageSearchItemSchema = z.object({
 });
 
 export const imageSearchOutputSchema = z.object({
-  searchTerm: z.string(),
+  query: z.string(),
   count: z.number(),
   items: z.array(imageSearchItemSchema),
   error: z.string().optional(),
@@ -49,7 +49,7 @@ export class BraveImageSearchTool {
         `Error in ${this.name}: ${message}`,
         this.isUI
           ? {
-              searchTerm: input.searchTerm,
+              query: input.query,
               count: 0,
               items: [],
               error: message,
@@ -70,28 +70,28 @@ export class BraveImageSearchTool {
   }
 
   public async executeCore(input: z.infer<typeof imageSearchInputSchema>): Promise<CallToolResult> {
-    const { searchTerm, count } = input;
-    this.logMessage(`Searching for images of "${searchTerm}" with count ${count}`, 'debug');
+    const { query, count } = input;
+    this.logMessage(`Searching for images of "${query}" with count ${count}`, 'debug');
 
-    const imageResults = await this.braveSearch.imageSearch(searchTerm, {
+    const imageResults = await this.braveSearch.imageSearch(query, {
       count,
       safesearch: SafeSearchLevel.Strict,
     });
     if (!imageResults.results || imageResults.results.length === 0) {
-      this.logMessage(`No image results found for "${searchTerm}"`, 'info');
-      const text = `No image results found for "${searchTerm}"`;
+      this.logMessage(`No image results found for "${query}"`, 'info');
+      const text = `No image results found for "${query}"`;
       return buildStructuredToolResult(
         text,
         this.isUI
           ? {
-              searchTerm,
+              query,
               count: 0,
               items: [],
             }
           : undefined,
       );
     }
-    this.logMessage(`Found ${imageResults.results.length} images for "${searchTerm}"`, 'debug');
+    this.logMessage(`Found ${imageResults.results.length} images for "${query}"`, 'debug');
     const imageItems: BraveImageSearchItem[] = [];
     for (const result of imageResults.results) {
       // Use thumbnail.src (proxied through imgs.search.brave.com) for CSP compatibility
@@ -110,7 +110,7 @@ export class BraveImageSearchTool {
       });
     }
     const contentText = this.isUI
-      ? `Found ${imageItems.length} image results for "${searchTerm}". `
+      ? `Found ${imageItems.length} image results for "${query}". `
       + 'IMPORTANT: You CANNOT see the image titles, sources, URLs, metadata, or pixel contents. '
       + 'The user sees an image widget, but you have NO information about the individual results. '
       + 'Do NOT claim to recognize, describe, or analyze any image from this result set. '
@@ -132,7 +132,7 @@ export class BraveImageSearchTool {
       contentText,
       this.isUI
         ? {
-            searchTerm,
+            query,
             count: imageItems.length,
             items: imageItems,
           }

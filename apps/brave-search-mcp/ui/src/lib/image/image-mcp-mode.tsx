@@ -5,6 +5,11 @@ import { useCallback, useRef, useState } from 'react';
 import { useMcpApp } from '../../hooks/useMcpApp';
 import ImageSearchApp from './ImageSearchApp';
 
+interface ImageToolInput extends Record<string, unknown> {
+  query?: string;
+  count?: number;
+}
+
 const APP_INFO = { name: 'Brave Image Search', version: '1.0.0' };
 const MODEL_SUPPORTED_MIME_TYPES = new Set(['image/png', 'image/jpeg']);
 
@@ -64,7 +69,7 @@ export default function ImageMcpAppMode() {
     openLink,
     sendLog,
     requestDisplayMode,
-  } = useMcpApp({ appInfo: APP_INFO });
+  } = useMcpApp<ImageToolInput>({ appInfo: APP_INFO });
   const [contextImages, setContextImages] = useState<ContextImage[]>([]);
   const imageContentCacheRef = useRef<Record<string, { data: string; mimeType: string }>>({});
   const contextUpdateSequenceRef = useRef(0);
@@ -188,7 +193,7 @@ export default function ImageMcpAppMode() {
 
   // Derive initial loading state: tool invoked but no result yet
   const isInitialLoading = toolInputs !== null && toolResult === null;
-  const loadingQuery = (toolInputs?.searchTerm as string) ?? undefined;
+  const loadingQuery = toolInputs?.query;
 
   return (
     <ImageSearchApp

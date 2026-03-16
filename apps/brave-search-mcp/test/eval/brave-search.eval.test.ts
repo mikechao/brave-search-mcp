@@ -84,13 +84,13 @@ describe('brave search mcp evals (vitest + openai)', () => {
     expect(evalTest.accuracy()).toBeGreaterThanOrEqual(EVAL_MIN_ACCURACY);
   }, TEST_TIMEOUT_MS);
 
-  it('image search passes a string searchTerm argument', async () => {
+  it('image search passes a string query argument', async () => {
     const evalTest = new EvalTest({
       name: 'brave-image-search-args',
       test: async (evalAgent) => {
         const result = await evalAgent.prompt('I am making a travel mood board for Iceland. Can you find images of the northern lights there?');
         const args = result.getToolArguments(TOOL_NAMES.image);
-        return result.hasToolCall(TOOL_NAMES.image) && typeof args?.searchTerm === 'string';
+        return result.hasToolCall(TOOL_NAMES.image) && typeof args?.query === 'string';
       },
     });
 

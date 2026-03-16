@@ -51,7 +51,7 @@ export default function ImageChatGPTMode() {
   useOpenAiAppTheme();
 
   // Access tool input (arguments) for loading state detection
-  const toolInput = useToolInput() as { searchTerm?: string } | null;
+  const toolInput = useToolInput() as { query?: string } | null;
   const rawOutput = useToolOutput() as any;
   const rawMetadata = useToolResponseMetadata() as any;
   const toolData = (rawMetadata?.structuredContent ?? rawOutput) as ImageSearchData | null;
@@ -78,7 +78,7 @@ export default function ImageChatGPTMode() {
   // Derive initial loading state: tool invoked (has input) but no result yet
   const hasData = Boolean(toolData);
   const isInitialLoading = toolInput !== null && !hasData;
-  const loadingQuery = toolInput?.searchTerm;
+  const loadingQuery = toolInput?.query;
   const hasContextSupport = canSetWidgetState && canUploadFile && !contextDisabled;
 
   const syncWidgetState = useCallback((images: ContextImage[], fileIdMap: Record<string, string>) => {

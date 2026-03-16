@@ -64,6 +64,13 @@ describe('brave search mcp server integration (mocked)', () => {
 
       expect(result).toBeDefined();
       expect('content' in result).toBe(true);
+      expect('isError' in result ? result.isError : false).not.toBe(true);
+      if ('content' in result) {
+        const content = result.content as Array<{ type: string; text?: string }>;
+        expect(content).toBeDefined();
+        expect(content[0]?.type).toBe('text');
+        expect(content[0]?.text).toContain('Title: Test Image 1');
+      }
     }, 30000);
 
     it(`${TOOL_NAMES.news} should return mocked results`, async () => {

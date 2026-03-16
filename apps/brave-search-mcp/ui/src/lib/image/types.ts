@@ -23,7 +23,7 @@ export interface ContextImage {
 }
 
 export interface ImageSearchData {
-  searchTerm: string;
+  query: string;
   count: number;
   items: ImageItem[];
   error?: string;

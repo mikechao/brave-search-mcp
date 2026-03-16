@@ -55,7 +55,7 @@ describe('braveImageSearchTool', () => {
       ],
     } as unknown as Awaited<ReturnType<BraveSearch['imageSearch']>>);
 
-    const result = await tool.executeCore({ searchTerm: 'cats', count: 5 });
+    const result = await tool.executeCore({ query: 'cats', count: 5 });
 
     expect(mockBraveSearch.imageSearch).toHaveBeenCalledWith('cats', {
       count: 5,
@@ -89,12 +89,12 @@ describe('braveImageSearchTool', () => {
       results: [],
     } as unknown as Awaited<ReturnType<BraveSearch['imageSearch']>>);
 
-    const result = await tool.executeCore({ searchTerm: 'unknown', count: 3 });
+    const result = await tool.executeCore({ query: 'unknown', count: 3 });
 
     expect(getFirstTextContent(result)).toBe('No image results found for "unknown"');
     const structured = getMetaStructuredContent(result);
     expect(structured).toEqual({
-      searchTerm: 'unknown',
+      query: 'unknown',
       count: 0,
       items: [],
     });
@@ -166,14 +166,14 @@ describe('braveImageSearchTool', () => {
       ],
     } as unknown as Awaited<ReturnType<BraveSearch['imageSearch']>>);
 
-    const result = await tool.executeCore({ searchTerm: 'landscape', count: 10 });
+    const result = await tool.executeCore({ query: 'landscape', count: 10 });
 
     const text = getFirstTextContent(result);
     expect(text).toContain('Found 1 image results for "landscape".');
     expect(text).toContain('IMPORTANT: You CANNOT see the image titles, sources, URLs, metadata, or pixel contents.');
     const structured = getMetaStructuredContent(result);
     expect(structured).toEqual({
-      searchTerm: 'landscape',
+      query: 'landscape',
       count: 1,
       items: [
         {
@@ -199,7 +199,7 @@ describe('braveImageSearchTool', () => {
     );
     mockBraveSearch.imageSearch.mockRejectedValue(new Error('network down'));
 
-    const result = await tool.execute({ searchTerm: 'failure', count: 2 });
+    const result = await tool.execute({ query: 'failure', count: 2 });
 
     expect(result).toMatchObject({
       isError: true,
@@ -218,14 +218,14 @@ describe('braveImageSearchTool', () => {
     );
     mockBraveSearch.imageSearch.mockRejectedValue(new Error('timeout'));
 
-    const result = await tool.execute({ searchTerm: 'failure', count: 2 });
+    const result = await tool.execute({ query: 'failure', count: 2 });
 
     expect(result).toMatchObject({
       isError: true,
       content: [{ type: 'text', text: `Error in ${TOOL_NAMES.image}: timeout` }],
       _meta: {
         structuredContent: {
-          searchTerm: 'failure',
+          query: 'failure',
           count: 0,
           items: [],
           error: 'timeout',
@@ -245,10 +245,10 @@ describe('braveImageSearchTool', () => {
     );
 
     // Test that count=20 (the stated maximum in the description) is valid
-    const shouldSucceed = tool.inputSchema.safeParse({ searchTerm: 'test', count: 20 });
+    const shouldSucceed = tool.inputSchema.safeParse({ query: 'test', count: 20 });
 
     // Test that count=21 (one more than the stated maximum) is invalid
-    const shouldFail = tool.inputSchema.safeParse({ searchTerm: 'test', count: 21 });
+    const shouldFail = tool.inputSchema.safeParse({ query: 'test', count: 21 });
 
     expect(shouldSucceed.success).toBe(true);
     expect(shouldFail.success).toBe(false);

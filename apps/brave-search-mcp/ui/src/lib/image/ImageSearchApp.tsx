@@ -110,7 +110,7 @@ export default function ImageSearchApp({
     <SearchAppLayout
       variant="image"
       brandSub="Image Search"
-      query={data?.searchTerm}
+      query={data?.query}
       countLabel={`${data?.count ?? 0} results`}
       error={error}
       isInitialLoading={isInitialLoading}
