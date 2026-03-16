@@ -9,6 +9,7 @@ import {
   buildStructuredToolResult,
   executeTool,
   getErrorMessage,
+  isValidDateRange,
   webSearchOutputSchema,
 } from './tool-helpers.js';
 
@@ -18,7 +19,22 @@ const webSearchInputSchema = z.object({
   offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
   freshness: z.union([
     z.enum(['pd', 'pw', 'pm', 'py']),
-    z.string().regex(/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/, 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD'),
+    z.string().superRefine((value, ctx) => {
+      if (!/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/.test(value)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD',
+        });
+        return;
+      }
+
+      if (!isValidDateRange(value)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Date range must contain valid calendar dates and start date must not be after end date',
+        });
+      }
+    }),
   ])
     .optional()
     .describe(

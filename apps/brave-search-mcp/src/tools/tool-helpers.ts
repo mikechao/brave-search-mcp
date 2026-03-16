@@ -133,6 +133,24 @@ export function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+export function isValidDateRange(dateRange: string): boolean {
+  const match = dateRange.match(/^(\d{4}-\d{2}-\d{2})to(\d{4}-\d{2}-\d{2})$/);
+  if (!match)
+    return false;
+
+  const [, startDateStr, endDateStr] = match;
+  const startDate = new Date(startDateStr);
+  const endDate = new Date(endDateStr);
+
+  if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime()))
+    return false;
+
+  if (startDate.toISOString().slice(0, 10) !== startDateStr || endDate.toISOString().slice(0, 10) !== endDateStr)
+    return false;
+
+  return startDate.getTime() <= endDate.getTime();
+}
+
 export function buildDefaultErrorResult(toolName: string, error: unknown): CallToolResult {
   return {
     content: [{

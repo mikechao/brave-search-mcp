@@ -9,6 +9,7 @@ import {
   createPagedSearchOutputSchema,
   executeTool,
   getErrorMessage,
+  isValidDateRange,
 } from './tool-helpers.js';
 
 const newsSearchInputSchema = z.object({
@@ -17,7 +18,22 @@ const newsSearchInputSchema = z.object({
   offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
   freshness: z.union([
     z.enum(['pd', 'pw', 'pm', 'py']),
-    z.string().regex(/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/, 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD'),
+    z.string().superRefine((value, ctx) => {
+      if (!/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/.test(value)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD',
+        });
+        return;
+      }
+
+      if (!isValidDateRange(value)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'Date range must contain valid calendar dates and start date must not be after end date',
+        });
+      }
+    }),
   ])
     .optional()
     .describe(
@@ -84,7 +100,8 @@ export class BraveNewsSearchTool {
   }
 
   private safeParsePageAge(pageAge: string | undefined): number | undefined {
-    if (!pageAge) return undefined;
+    if (!pageAge)
+      return undefined;
     const date = new Date(pageAge);
     // Check if the date is valid - getTime() returns NaN for invalid dates
     return Number.isNaN(date.getTime()) ? undefined : date.getTime();
