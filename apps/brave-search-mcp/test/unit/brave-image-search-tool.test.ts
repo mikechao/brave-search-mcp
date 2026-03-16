@@ -233,4 +233,25 @@ describe('braveImageSearchTool', () => {
       },
     });
   });
+
+  it('validates count schema max matches description', () => {
+    // This is a regression test for the bug where schema allowed 50 but description said 20
+    // The description states "maximum 20", so we verify the schema enforces that limit
+    const log = createLogStub();
+    const tool = new BraveImageSearchTool(
+      log,
+      null as unknown as BraveSearch,
+      false,
+    );
+
+    // Test that count=20 (the stated maximum in the description) is valid
+    const shouldSucceed = tool.inputSchema.safeParse({ searchTerm: 'test', count: 20 });
+
+    // Test that count=21 (one more than the stated maximum) is invalid
+    const shouldFail = tool.inputSchema.safeParse({ searchTerm: 'test', count: 21 });
+
+    expect(shouldSucceed.success).toBe(true);
+    expect(shouldFail.success).toBe(false);
+    expect(shouldFail.error?.issues[0].message).toMatch(/(less than or equal to|<=)/);
+  });
 });

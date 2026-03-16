@@ -12,7 +12,7 @@ import {
 
 const imageSearchInputSchema = z.object({
   searchTerm: z.string().describe('The term to search the internet for images of'),
-  count: z.number().min(1).max(50).optional().default(10).describe('The number of images to search for, minimum 1, maximum 20'),
+  count: z.number().min(1).max(20).optional().default(10).describe('The number of images to search for, minimum 1, maximum 20'),
 });
 
 const imageSearchItemSchema = z.object({
