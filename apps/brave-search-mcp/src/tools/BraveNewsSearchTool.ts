@@ -2,7 +2,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { ToolLogger } from './tool-helpers.js';
 import { z } from 'zod';
-import { TOOL_NAMES } from '../tool-names.js';
+import { TOOL_NAMES } from '../tool-catalog.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { ALL_TOOL_NAMES, TOOL_NAMES, toolNameForVariant } from '../../src/tool-names.js';
+import { ALL_TOOL_NAMES, TOOL_NAMES, toolNameForVariant } from '../../src/tool-catalog.js';
 import { TOOL_NAMES as uiToolNames } from '../../ui/src/lib/shared/tool-names.js';
 
-describe('tool names wrappers', () => {
-  it('keeps the UI and server tool name wrappers aligned', () => {
+describe('tool catalog', () => {
+  it('keeps the UI helper aligned with the canonical tool catalog', () => {
     expect(uiToolNames).toEqual(TOOL_NAMES);
   });
 
-  it('maps each widget variant through the public TypeScript entrypoint', () => {
+  it('maps each widget variant from the canonical tool catalog', () => {
     expect(toolNameForVariant('web')).toBe(TOOL_NAMES.web);
     expect(toolNameForVariant('image')).toBe(TOOL_NAMES.image);
     expect(toolNameForVariant('news')).toBe(TOOL_NAMES.news);

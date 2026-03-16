@@ -3,7 +3,7 @@ import type { BraveSearch, LocalDescriptionsSearchApiResponse } from 'brave-sear
 import type { LocalWebFallbackExecutor, ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
-import { TOOL_NAMES } from '../tool-names.js';
+import { TOOL_NAMES } from '../tool-catalog.js';
 import { formatPoiResults } from '../utils.js';
 import {
   buildPagedStructuredContent,

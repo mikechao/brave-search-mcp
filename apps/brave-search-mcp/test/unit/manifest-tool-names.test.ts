@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import manifestJson from '../../manifest.json' with { type: 'json' };
-import { MANIFEST_TOOL_ENTRIES } from '../../src/tool-names.js';
+import { MANIFEST_TOOL_ENTRIES } from '../../src/tool-catalog.js';
 
 describe('manifest tool names', () => {
   it('matches the canonical manifest tool entries', () => {

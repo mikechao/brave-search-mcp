@@ -1,6 +1,6 @@
 import { EvalTest, MCPClientManager, TestAgent } from '@mcpjam/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { TOOL_NAMES } from '../../src/tool-names.js';
+import { TOOL_NAMES } from '../../src/tool-catalog.js';
 
 const EVAL_MODEL = process.env.EVAL_MODEL ?? 'openai/gpt-5-mini';
 const EVAL_API_KEY = process.env.EVAL_API_KEY ?? process.env.OPENAI_API_KEY;

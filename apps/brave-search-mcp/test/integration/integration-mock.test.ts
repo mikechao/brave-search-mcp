@@ -1,6 +1,6 @@
 import { MCPClientManager } from '@mcpjam/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-names.js';
+import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-catalog.js';
 
 /**
  * Integration tests for Brave Search MCP Server using MockBraveSearch.

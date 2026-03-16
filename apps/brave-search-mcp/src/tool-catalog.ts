@@ -29,14 +29,6 @@ export const TOOL_NAMES = {
   video: 'brave_video_search',
 } as const;
 
-const TOOL_NAME_BY_VARIANT: Record<WidgetToolVariant, string> = {
-  web: TOOL_NAMES.web,
-  image: TOOL_NAMES.image,
-  news: TOOL_NAMES.news,
-  local: TOOL_NAMES.local,
-  video: TOOL_NAMES.video,
-};
-
 export const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     key: 'web',
@@ -83,5 +75,5 @@ export const MANIFEST_TOOL_ENTRIES = TOOL_DEFINITIONS.map(({ name, manifestDescr
 }));
 
 export function toolNameForVariant(variant: WidgetToolVariant): string {
-  return TOOL_NAME_BY_VARIANT[variant];
+  return TOOL_NAMES[variant];
 }

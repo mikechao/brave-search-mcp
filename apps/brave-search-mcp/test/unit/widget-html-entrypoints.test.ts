@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createContext, runInContext } from 'node:vm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TOOL_NAMES } from '../../src/tool-names.js';
+import { TOOL_NAMES } from '../../src/tool-catalog.js';
 
 const DIST_UI_ROOT = path.resolve(process.cwd(), 'dist/ui/src/lib');
 const entrypoint = {

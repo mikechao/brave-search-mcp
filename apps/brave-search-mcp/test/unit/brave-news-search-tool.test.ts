@@ -1,6 +1,6 @@
 import type { BraveSearch } from 'brave-search';
 import { describe, expect, it, vi } from 'vitest';
-import { TOOL_NAMES } from '../../src/tool-names.js';
+import { TOOL_NAMES } from '../../src/tool-catalog.js';
 import { BraveNewsSearchTool } from '../../src/tools/BraveNewsSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 import { getFirstTextContent, getMetaStructuredContent } from './tool-result-helpers.js';

@@ -6,7 +6,7 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 import packageJson from '../../package.json' with { type: 'json' };
 import { BraveMcpServer } from '../../src/server.js';
-import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-names.js';
+import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-catalog.js';
 import { ALL_UI_RESOURCE_URIS, UI_RESOURCES } from '../../src/ui-resources.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 

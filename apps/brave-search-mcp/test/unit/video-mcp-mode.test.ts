@@ -2,7 +2,7 @@ import type { VideoSearchAppProps } from '../../ui/src/lib/video/VideoSearchApp.
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TOOL_NAMES } from '../../src/tool-names.js';
+import { TOOL_NAMES } from '../../src/tool-catalog.js';
 
 const mockState = vi.hoisted(() => {
   const updateModelContextMock = vi.fn().mockResolvedValue(undefined);

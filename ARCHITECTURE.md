@@ -57,7 +57,7 @@
 - `Tool Catalog and Names`:
   - Own the canonical tool-name list, manifest tool metadata, and the small shared type surface for tool keys and widget variants.
   - Keep one readable TypeScript source of truth for both runtime data and TypeScript types.
-  - Files: `src/tool-catalog.ts`, `src/tool-names.ts`.
+  - Files: `src/tool-catalog.ts`, `ui/src/lib/shared/tool-names.ts`.
 - `Tool Shared Helpers`:
   - Own shared result builders, error wrappers, schema helpers, and local fallback contract types.
   - File: `src/tools/tool-helpers.ts`.
@@ -76,8 +76,8 @@
   - Server bootstrap, transport wiring, tool classes, and UI resource registration only.
 - `/apps/brave-search-mcp/src/tool-catalog.ts`
   - Canonical tool metadata and types used by server code, tests, and manifest validation.
-- `/apps/brave-search-mcp/src/tool-names.ts`
-  - Stable public re-export layer for tool-name consumers inside the app, tests, and UI wrapper.
+- `/apps/brave-search-mcp/ui/src/lib/shared/tool-names.ts`
+  - Small UI-facing re-export that keeps widget imports short while still reading from the canonical catalog.
 - `/apps/brave-search-mcp/src/tools`
   - Vertical search slices only. New search behavior must start here.
 - `/apps/brave-search-mcp/ui`
@@ -92,7 +92,7 @@
   - Brave HTTP integration code must live only in `packages/brave-search`.
   - App and test code must import the SDK from `brave-search`, never from `packages/brave-search/dist/*`.
   - MCP registration and transport code must live only in `apps/brave-search-mcp/src`.
-  - Tool-name consumers should import through `apps/brave-search-mcp/src/tool-names.ts`; `tool-catalog.ts` is the underlying source of truth, not the broad public surface.
+  - Server, tool, and test code should import from `apps/brave-search-mcp/src/tool-catalog.ts`; UI code should use `apps/brave-search-mcp/ui/src/lib/shared/tool-names.ts` for shorter local imports.
   - UI host bridge code must live only in `apps/brave-search-mcp/ui/src/hooks`.
   - Tool classes may format tool outputs, but they must not read widget bundles directly.
   - Widget entrypoints must remain single-file HTML outputs suitable for iframe embedding.
@@ -106,7 +106,6 @@
   - Tool class validates input with `zod`, calls `BraveSearch`, reshapes results, and returns MCP content.
 - Manifest validation flow:
   - Canonical manifest tool entries are defined in `src/tool-catalog.ts`.
-  - `src/tool-names.ts` re-exports `MANIFEST_TOOL_ENTRIES` for TypeScript-facing callers and tests.
   - `test/unit/manifest-tool-names.test.ts` compares `manifest.json` against that canonical array.
   - `pnpm -C apps/brave-search-mcp run check:manifest:tools` and the package `check` script fail on drift instead of rewriting `manifest.json`.
 - Streamable HTTP flow:
