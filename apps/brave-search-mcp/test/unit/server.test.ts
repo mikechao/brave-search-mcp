@@ -6,11 +6,12 @@ import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { beforeEach, describe, expect, it } from 'vitest';
 import packageJson from '../../package.json' with { type: 'json' };
 import { BraveMcpServer } from '../../src/server.js';
-import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-catalog.js';
+import { TOOL_NAMES } from '../../src/tool-catalog.js';
 import { ALL_UI_RESOURCE_URIS, UI_RESOURCES } from '../../src/ui-resources.js';
 import { createMockBraveSearch } from '../mocks/index.js';
 
 const { version: SERVER_VERSION } = packageJson;
+const allToolNames = Object.values(TOOL_NAMES);
 const UI_TOOL_METADATA_EXPECTATIONS = {
   [TOOL_NAMES.image]: {
     invoking: 'Searching for images…',
@@ -120,8 +121,8 @@ describe('braveMcpServer', () => {
         const toolList = await client.listTools();
         const toolNames = toolList.tools.map(tool => tool.name);
 
-        expect(toolNames).toEqual(expect.arrayContaining(ALL_TOOL_NAMES));
-        expect(toolList.tools).toHaveLength(ALL_TOOL_NAMES.length);
+        expect(toolNames).toEqual(expect.arrayContaining(allToolNames));
+        expect(toolList.tools).toHaveLength(allToolNames.length);
 
         for (const tool of toolList.tools) {
           const meta = tool._meta as Record<string, unknown> | undefined;

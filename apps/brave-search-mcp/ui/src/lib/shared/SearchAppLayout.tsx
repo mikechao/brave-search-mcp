@@ -2,9 +2,10 @@
  * SearchAppLayout - Shared layout wrapper for all Brave Search widgets
  * Provides consistent header, error/empty states, and optional pagination
  */
+import type { WidgetToolVariant } from '@tool-catalog';
 import type { ReactNode } from 'react';
 import type { WidgetProps } from '../../widget-props';
-import { toolNameForVariant } from '@tool-catalog';
+import { TOOL_NAMES } from '@tool-catalog';
 import { FullscreenButton } from './FullscreenButton';
 import { PaginationButton } from './PaginationButton';
 
@@ -40,7 +41,7 @@ export interface ContextConfig {
 
 export interface SearchAppLayoutProps {
   /** Widget variant for CSS class */
-  variant: 'video' | 'web' | 'news' | 'local' | 'image';
+  variant: WidgetToolVariant;
   /** Subtitle shown after "Brave" in header (e.g., "Video Search") */
   brandSub: string;
   /** Search query to display */
@@ -144,7 +145,7 @@ export function SearchAppLayout({
         <div className="header-right">
           <div className="meta">
             <div className="term">
-              {hasData ? query : (isInitialLoading && loadingQuery ? loadingQuery : `Run ${toolNameForVariant(variant)} to see results`)}
+              {hasData ? query : (isInitialLoading && loadingQuery ? loadingQuery : `Run ${TOOL_NAMES[variant]} to see results`)}
             </div>
             <div className="count">
               {hasData ? countLabel : (isInitialLoading ? 'Searching...' : 'Awaiting tool output')}

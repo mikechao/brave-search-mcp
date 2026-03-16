@@ -1,6 +1,6 @@
 import { MCPClientManager } from '@mcpjam/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-catalog.js';
+import { TOOL_NAMES } from '../../src/tool-catalog.js';
 
 /**
  * Integration tests for Brave Search MCP Server using MCPJam SDK.
@@ -14,7 +14,7 @@ import { ALL_TOOL_NAMES, TOOL_NAMES } from '../../src/tool-catalog.js';
 describe('brave search mcp server integration', () => {
   let manager: MCPClientManager;
   const serverName = 'brave-search';
-  const expectedToolNames = ALL_TOOL_NAMES;
+  const expectedToolNames = Object.values(TOOL_NAMES);
 
   beforeAll(async () => {
     manager = new MCPClientManager();
