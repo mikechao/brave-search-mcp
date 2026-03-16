@@ -4,11 +4,11 @@ import type { ContextResult, WebSearchData } from './types';
  * Uses custom useOpenAiGlobal hook for reactive updates
  */
 import type { WebSearchAppProps } from './WebSearchApp';
+import { TOOL_NAMES } from '@tool-catalog';
 import { useCallback, useState } from 'react';
 import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { extractToolStructuredContent, useChatGptBridge } from '../../hooks/useChatGptBridge';
 import { useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';
-import { TOOL_NAMES } from '../shared/tool-names';
 import WebSearchApp from './WebSearchApp';
 
 /**

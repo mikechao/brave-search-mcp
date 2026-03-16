@@ -16,6 +16,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': new URL('./src', import.meta.url).pathname,
+      '@tool-catalog': new URL('./src/tool-catalog.ts', import.meta.url).pathname,
       'brave-search': new URL('../../packages/brave-search/src/index.ts', import.meta.url).pathname,
     },
   },

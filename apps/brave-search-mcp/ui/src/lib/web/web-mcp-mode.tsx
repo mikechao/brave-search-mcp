@@ -1,8 +1,8 @@
 import type { ToolResult, WidgetProps } from '../../widget-props';
 import type { WebSearchData } from './types';
+import { TOOL_NAMES } from '@tool-catalog';
 import { useCallback, useState } from 'react';
 import { useMcpApp } from '../../hooks/useMcpApp';
-import { TOOL_NAMES } from '../shared/tool-names';
 import WebSearchApp from './WebSearchApp';
 
 const APP_INFO = { name: 'Brave Web Search', version: '1.0.0' };

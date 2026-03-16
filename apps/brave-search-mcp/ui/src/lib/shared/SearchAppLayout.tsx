@@ -4,9 +4,9 @@
  */
 import type { ReactNode } from 'react';
 import type { WidgetProps } from '../../widget-props';
+import { toolNameForVariant } from '@tool-catalog';
 import { FullscreenButton } from './FullscreenButton';
 import { PaginationButton } from './PaginationButton';
-import { toolNameForVariant } from './tool-names';
 
 interface SpinnerProps {
   size: number;

@@ -57,7 +57,7 @@
 - `Tool Catalog and Names`:
   - Own the canonical tool-name list, manifest tool metadata, and the small shared type surface for tool keys and widget variants.
   - Keep one readable TypeScript source of truth for both runtime data and TypeScript types.
-  - Files: `src/tool-catalog.ts`, `ui/src/lib/shared/tool-names.ts`.
+  - File: `src/tool-catalog.ts`.
 - `Tool Shared Helpers`:
   - Own shared result builders, error wrappers, schema helpers, and local fallback contract types.
   - File: `src/tools/tool-helpers.ts`.
@@ -76,8 +76,6 @@
   - Server bootstrap, transport wiring, tool classes, and UI resource registration only.
 - `/apps/brave-search-mcp/src/tool-catalog.ts`
   - Canonical tool metadata and types used by server code, tests, and manifest validation.
-- `/apps/brave-search-mcp/ui/src/lib/shared/tool-names.ts`
-  - Small UI-facing re-export that keeps widget imports short while still reading from the canonical catalog.
 - `/apps/brave-search-mcp/src/tools`
   - Vertical search slices only. New search behavior must start here.
 - `/apps/brave-search-mcp/ui`
@@ -92,7 +90,7 @@
   - Brave HTTP integration code must live only in `packages/brave-search`.
   - App and test code must import the SDK from `brave-search`, never from `packages/brave-search/dist/*`.
   - MCP registration and transport code must live only in `apps/brave-search-mcp/src`.
-  - Server, tool, and test code should import from `apps/brave-search-mcp/src/tool-catalog.ts`; UI code should use `apps/brave-search-mcp/ui/src/lib/shared/tool-names.ts` for shorter local imports.
+  - Server, tool, and test code should import from `apps/brave-search-mcp/src/tool-catalog.ts`; UI code should reach the same module through the configured `@tool-catalog` alias.
   - UI host bridge code must live only in `apps/brave-search-mcp/ui/src/hooks`.
   - Tool classes may format tool outputs, but they must not read widget bundles directly.
   - Widget entrypoints must remain single-file HTML outputs suitable for iframe embedding.

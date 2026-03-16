@@ -1,10 +1,10 @@
+import { TOOL_NAMES as aliasToolNames } from '@tool-catalog';
 import { describe, expect, it } from 'vitest';
 import { ALL_TOOL_NAMES, TOOL_NAMES, toolNameForVariant } from '../../src/tool-catalog.js';
-import { TOOL_NAMES as uiToolNames } from '../../ui/src/lib/shared/tool-names.js';
 
 describe('tool catalog', () => {
-  it('keeps the UI helper aligned with the canonical tool catalog', () => {
-    expect(uiToolNames).toEqual(TOOL_NAMES);
+  it('resolves the alias to the canonical tool catalog', () => {
+    expect(aliasToolNames).toEqual(TOOL_NAMES);
   });
 
   it('maps each widget variant from the canonical tool catalog', () => {

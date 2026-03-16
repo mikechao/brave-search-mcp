@@ -1,9 +1,9 @@
 import type { DisplayMode, ToolResult } from '../../widget-props';
 import type { ContextVideo, VideoSearchData } from './types';
 import type { VideoSearchAppProps } from './VideoSearchApp';
+import { TOOL_NAMES } from '@tool-catalog';
 import { useCallback, useMemo, useState } from 'react';
 import { useMcpApp } from '../../hooks/useMcpApp';
-import { TOOL_NAMES } from '../shared/tool-names';
 import VideoSearchApp from './VideoSearchApp';
 
 interface VideoToolInput extends Record<string, unknown> {
