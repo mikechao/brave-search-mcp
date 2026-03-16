@@ -9,43 +9,15 @@ import {
   buildStructuredToolResult,
   createPagedSearchOutputSchema,
   executeTool,
+  freshnessInputSchema,
   getErrorMessage,
-  isValidDateRange,
 } from './tool-helpers.js';
 
 const videoSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for videos of'),
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
   offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
-  freshness: z.union([
-    z.enum(['pd', 'pw', 'pm', 'py']),
-    z.string().superRefine((value, ctx) => {
-      if (!/^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/.test(value)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD',
-        });
-        return;
-      }
-
-      if (!isValidDateRange(value)) {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'Date range must contain valid calendar dates and start date must not be after end date',
-        });
-      }
-    }),
-  ])
-    .optional()
-    .describe(
-      `Filters search results by when they were discovered.
-The following values are supported:
-- pd: Discovered within the last 24 hours.
-- pw: Discovered within the last 7 Days.
-- pm: Discovered within the last 31 Days.
-- py: Discovered within the last 365 Days.
-- YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)`,
-    ),
+  freshness: freshnessInputSchema,
 });
 
 const videoItemSchema = z.object({

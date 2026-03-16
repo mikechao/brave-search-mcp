@@ -6,10 +6,19 @@ import {
   buildStructuredToolResult,
   createPagedSearchOutputSchema,
   executeTool,
+  freshnessInputSchema,
   getErrorMessage,
   webResultSchema,
   webSearchOutputSchema,
 } from '../../src/tools/tool-helpers.js';
+
+const expectedFreshnessDescription = `Filters search results by when they were discovered.
+The following values are supported:
+- pd: Discovered within the last 24 hours.
+- pw: Discovered within the last 7 Days.
+- pm: Discovered within the last 31 Days.
+- py: Discovered within the last 365 Days.
+- YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)`;
 
 describe('toolHelpers', () => {
   it('returns executeCore results when no error occurs', async () => {
@@ -227,6 +236,37 @@ describe('toolHelpers', () => {
     });
 
     expect(parsed.success).toBe(true);
+  });
+
+  it('exports a shared freshness schema that accepts enum values and custom ranges', () => {
+    expect(freshnessInputSchema.safeParse('pd').success).toBe(true);
+    expect(freshnessInputSchema.safeParse('2026-01-01to2026-01-31').success).toBe(true);
+  });
+
+  it('keeps the shared freshness schema optional', () => {
+    expect(freshnessInputSchema.safeParse(undefined).success).toBe(true);
+  });
+
+  it('rejects malformed freshness ranges with the format message', () => {
+    const result = freshnessInputSchema.safeParse('2026/01/01to2026/01/31');
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toHaveLength(1);
+      expect(result.error.issues[0].message).toBe('Date range must be in format YYYY-MM-DDtoYYYY-MM-DD');
+    }
+  });
+
+  it('rejects reversed freshness ranges with the calendar validation message', () => {
+    const result = freshnessInputSchema.safeParse('2026-12-31to2026-01-01');
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues).toHaveLength(1);
+      expect(result.error.issues[0].message).toBe('Date range must contain valid calendar dates and start date must not be after end date');
+    }
+  });
+
+  it('preserves the shared freshness description metadata', () => {
+    expect(freshnessInputSchema.description).toBe(expectedFreshnessDescription);
   });
 
   it('normalizes error messages for widget-backed tools', () => {

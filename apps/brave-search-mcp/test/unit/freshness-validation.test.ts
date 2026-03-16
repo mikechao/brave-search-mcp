@@ -4,6 +4,14 @@ import { BraveNewsSearchTool } from '../../src/tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from '../../src/tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from '../../src/tools/BraveWebSearchTool.js';
 
+const expectedFreshnessDescription = `Filters search results by when they were discovered.
+The following values are supported:
+- pd: Discovered within the last 24 hours.
+- pw: Discovered within the last 7 Days.
+- pm: Discovered within the last 31 Days.
+- py: Discovered within the last 365 Days.
+- YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)`;
+
 function createLogStub() {
   return () => {};
 }
@@ -36,6 +44,17 @@ describe('freshness date validation', () => {
         });
         expect(result.success).toBe(true);
       }
+    });
+
+    it('accepts omitted freshness because the field remains optional', () => {
+      const result = tool.inputSchema.safeParse({
+        query: 'test',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('preserves freshness description metadata on the public schema shape', () => {
+      expect(tool.inputSchema.shape.freshness.description).toBe(expectedFreshnessDescription);
     });
 
     it('rejects invalid month (returns NaN) with exactly one error', () => {
@@ -130,6 +149,13 @@ describe('freshness date validation', () => {
       expect(result.success).toBe(true);
     });
 
+    it('accepts omitted freshness because the field remains optional', () => {
+      const result = tool.inputSchema.safeParse({
+        query: 'test',
+      });
+      expect(result.success).toBe(true);
+    });
+
     it('rejects malformed format with exactly one error', () => {
       const result = tool.inputSchema.safeParse({
         query: 'test',
@@ -166,6 +192,13 @@ describe('freshness date validation', () => {
       const result = tool.inputSchema.safeParse({
         query: 'test',
         freshness: '2026-01-01to2026-01-31',
+      });
+      expect(result.success).toBe(true);
+    });
+
+    it('accepts omitted freshness because the field remains optional', () => {
+      const result = tool.inputSchema.safeParse({
+        query: 'test',
       });
       expect(result.success).toBe(true);
     });

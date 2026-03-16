@@ -26,6 +26,17 @@ export type LocalWebFallbackExecutor = (
   input: LocalWebFallbackInput,
 ) => Promise<CallToolResult>;
 
+const FRESHNESS_DATE_RANGE_PATTERN = /^\d{4}-\d{2}-\d{2}to\d{4}-\d{2}-\d{2}$/;
+const FRESHNESS_FORMAT_ERROR = 'Date range must be in format YYYY-MM-DDtoYYYY-MM-DD';
+const FRESHNESS_DATE_VALIDATION_ERROR = 'Date range must contain valid calendar dates and start date must not be after end date';
+const FRESHNESS_DESCRIPTION = `Filters search results by when they were discovered.
+The following values are supported:
+- pd: Discovered within the last 24 hours.
+- pw: Discovered within the last 7 Days.
+- pm: Discovered within the last 31 Days.
+- py: Discovered within the last 365 Days.
+- YYYY-MM-DDtoYYYY-MM-DD: Custom date range (e.g., 2022-04-01to2022-07-30)`;
+
 const pagedSearchOutputBaseShape = {
   query: z.string(),
   count: z.number(),
@@ -48,6 +59,28 @@ export const webResultSchema = z.object({
     width: z.number().optional(),
   }).optional(),
 });
+
+export const freshnessInputSchema = z.union([
+  z.enum(['pd', 'pw', 'pm', 'py']),
+  z.string().superRefine((value, ctx) => {
+    if (!FRESHNESS_DATE_RANGE_PATTERN.test(value)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: FRESHNESS_FORMAT_ERROR,
+      });
+      return;
+    }
+
+    if (!isValidDateRange(value)) {
+      ctx.addIssue({
+        code: 'custom',
+        message: FRESHNESS_DATE_VALIDATION_ERROR,
+      });
+    }
+  }),
+])
+  .optional()
+  .describe(FRESHNESS_DESCRIPTION);
 
 export const webSearchOutputSchema = createPagedSearchOutputSchema(webResultSchema);
 
