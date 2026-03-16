@@ -197,4 +197,80 @@ describe('braveNewsSearchTool', () => {
       },
     });
   });
+
+  it('handles invalid pageAge by treating it as missing (pushes to end)', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const log = createLogStub();
+    const tool = new BraveNewsSearchTool(log, mockBraveSearch as unknown as BraveSearch, false);
+
+    mockBraveSearch.newsSearch.mockResolvedValue({
+      type: 'news',
+      query: { original: 'test' },
+      results: [
+        {
+          type: 'news_result',
+          title: 'Valid middle date',
+          url: 'https://example.com/middle',
+          description: 'middle',
+          age: '2 days ago',
+          page_age: '2026-01-15T10:00:00Z',
+          meta_url: { netloc: 'middle.example.com' },
+        },
+        {
+          type: 'news_result',
+          title: 'Invalid date',
+          url: 'https://example.com/invalid',
+          description: 'invalid',
+          age: 'unknown',
+          page_age: 'not-a-valid-date',
+          meta_url: { netloc: 'invalid.example.com' },
+        },
+        {
+          type: 'news_result',
+          title: 'Valid recent date',
+          url: 'https://example.com/recent',
+          description: 'recent',
+          age: '1 hour ago',
+          page_age: '2026-01-20T10:00:00Z',
+          meta_url: { netloc: 'recent.example.com' },
+        },
+        {
+          type: 'news_result',
+          title: 'Empty pageAge',
+          url: 'https://example.com/empty',
+          description: 'empty',
+          age: 'unknown',
+          page_age: '',
+          meta_url: { netloc: 'empty.example.com' },
+        },
+        {
+          type: 'news_result',
+          title: 'Valid old date',
+          url: 'https://example.com/old',
+          description: 'old',
+          age: '1 week ago',
+          page_age: '2026-01-10T10:00:00Z',
+          meta_url: { netloc: 'old.example.com' },
+        },
+      ],
+    } as unknown as Awaited<ReturnType<BraveSearch['newsSearch']>>);
+
+    const result = await tool.executeCore({ query: 'test', count: 10, offset: 0 });
+    const text = getFirstTextContent(result);
+
+    // Verify ordering: recent > middle > old > (invalid and empty at end)
+    const recentIdx = text.indexOf('Valid recent date');
+    const middleIdx = text.indexOf('Valid middle date');
+    const oldIdx = text.indexOf('Valid old date');
+    const invalidIdx = text.indexOf('Invalid date');
+    const emptyIdx = text.indexOf('Empty pageAge');
+
+    // Valid dates should be ordered correctly (recent first)
+    expect(recentIdx).toBeLessThan(middleIdx);
+    expect(middleIdx).toBeLessThan(oldIdx);
+
+    // Invalid and empty pageAge should come after all valid dates
+    expect(oldIdx).toBeLessThan(invalidIdx);
+    expect(oldIdx).toBeLessThan(emptyIdx);
+  });
 });

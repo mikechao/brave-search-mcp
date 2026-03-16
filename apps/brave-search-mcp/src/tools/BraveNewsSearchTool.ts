@@ -83,6 +83,13 @@ export class BraveNewsSearchTool {
     };
   }
 
+  private safeParsePageAge(pageAge: string | undefined): number | undefined {
+    if (!pageAge) return undefined;
+    const date = new Date(pageAge);
+    // Check if the date is valid - getTime() returns NaN for invalid dates
+    return Number.isNaN(date.getTime()) ? undefined : date.getTime();
+  }
+
   public async execute(input: z.infer<typeof newsSearchInputSchema>): Promise<CallToolResult> {
     return executeTool({
       toolName: this.name,
@@ -153,13 +160,17 @@ export class BraveNewsSearchTool {
 
     // Sort by pageAge (most recent first)
     newsItems.sort((a, b) => {
-      if (!a.pageAge && !b.pageAge)
+      const timeA = this.safeParsePageAge(a.pageAge);
+      const timeB = this.safeParsePageAge(b.pageAge);
+
+      // Use explicit undefined check - timestamp 0 is valid and should not be treated as missing
+      if (timeA === undefined && timeB === undefined)
         return 0;
-      if (!a.pageAge)
-        return 1; // Items without pageAge go to the end
-      if (!b.pageAge)
+      if (timeA === undefined)
+        return 1; // Items without valid pageAge go to the end
+      if (timeB === undefined)
         return -1;
-      return new Date(b.pageAge).getTime() - new Date(a.pageAge).getTime();
+      return timeB - timeA; // Most recent first
     });
 
     // In UI mode, return minimal text - widget controls model context
