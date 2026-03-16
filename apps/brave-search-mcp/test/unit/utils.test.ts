@@ -115,6 +115,74 @@ describe('utils', () => {
     });
   });
 
+  describe('formatPoiResults edge cases', () => {
+    it('handles missing postal_address gracefully', () => {
+      const poiData = {
+        type: 'local_pois',
+        results: [{
+          type: 'location_result',
+          id: 'poi-no-address',
+          title: 'No Address Place',
+          // postal_address is intentionally missing
+        }],
+      } as Parameters<typeof formatPoiResults>[0];
+
+      const poiDescriptions = {
+        type: 'local_descriptions',
+        results: [],
+      } as Parameters<typeof formatPoiResults>[1];
+
+      // Should not crash
+      const formatted = formatPoiResults(poiData, poiDescriptions);
+      expect(formatted).toHaveLength(1);
+      expect(formatted[0]).toContain('Address: No address found');
+    });
+
+    it('displays 0-star ratings correctly', () => {
+      const poiData = {
+        type: 'local_pois',
+        results: [{
+          type: 'location_result',
+          id: 'poi-zero-rating',
+          title: 'Zero Star Place',
+          postal_address: { displayAddress: '123 Main St' },
+          rating: { ratingValue: 0, reviewCount: 5 },
+        }],
+      } as Parameters<typeof formatPoiResults>[0];
+
+      const poiDescriptions = {
+        type: 'local_descriptions',
+        results: [],
+      } as Parameters<typeof formatPoiResults>[1];
+
+      const formatted = formatPoiResults(poiData, poiDescriptions);
+      expect(formatted[0]).toContain('Ratings: 0 (5) reviews');
+      expect(formatted[0]).not.toContain('N/A');
+    });
+
+    it('handles undefined reviewCount gracefully', () => {
+      const poiData = {
+        type: 'local_pois',
+        results: [{
+          type: 'location_result',
+          id: 'poi-no-reviews',
+          title: 'No Reviews Place',
+          postal_address: { displayAddress: '123 Main St' },
+          rating: { ratingValue: 4.5 }, // reviewCount is missing
+        }],
+      } as Parameters<typeof formatPoiResults>[0];
+
+      const poiDescriptions = {
+        type: 'local_descriptions',
+        results: [],
+      } as Parameters<typeof formatPoiResults>[1];
+
+      const formatted = formatPoiResults(poiData, poiDescriptions);
+      expect(formatted[0]).toContain('Ratings: 4.5 (0) reviews');
+      expect(formatted[0]).not.toContain('undefined');
+    });
+  });
+
   describe('formatVideoResults', () => {
     it('formats video results and handles optional fields', () => {
       const input = [

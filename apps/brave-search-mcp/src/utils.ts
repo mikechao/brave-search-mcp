@@ -5,14 +5,17 @@ export function formatPoiResults(poiData: LocalPoiSearchApiResponse, poiDesc: Lo
     const description = poiDesc.results.find(locationDescription => locationDescription.id === poi.id);
     const coords = poi.coordinates;
     const coordsText = coords ? `Coordinates: ${coords[0]}, ${coords[1]}\n` : '';
+    const address = poi.postal_address?.displayAddress ?? 'No address found';
+    const ratingValue = poi.rating?.ratingValue ?? 0;
+    const reviewCount = poi.rating?.reviewCount ?? 0;
     return `Name: ${poi.title}\n`
       + `${poi.serves_cuisine ? `Cuisine: ${poi.serves_cuisine.join(', ')}\n` : ''}`
-      + `Address: ${poi.postal_address.displayAddress}\n${
+      + `Address: ${address}\n${
         coordsText
       }Phone: ${poi.contact?.telephone || 'No phone number found'}\n`
       + `Email: ${poi.contact?.email || 'No email found'}\n`
       + `Price Range: ${poi.price_range || 'No price range found'}\n`
-      + `Ratings: ${poi.rating?.ratingValue || 'N/A'} (${poi.rating?.reviewCount}) reviews\n`
+      + `Ratings: ${ratingValue} (${reviewCount}) reviews\n`
       + `Hours:\n ${(poi.opening_hours) ? formatOpeningHours(poi.opening_hours) : 'No opening hours found'}\n`
       + `Description: ${(description) ? description.description : 'No description found'}\n`;
   });
