@@ -113,6 +113,86 @@ describe('utils', () => {
       expect(formatted[1]).toContain('Hours:\n No opening hours found');
       expect(formatted[1]).toContain('Description: No description found');
     });
+
+    it('formats opening hours correctly with multiple time slots per day', () => {
+      const poiData = {
+        type: 'local_pois',
+        results: [
+          {
+            type: 'location_result',
+            id: 'poi-multi-slots',
+            title: 'Lunch Bistro',
+            postal_address: {
+              type: 'PostalAddress',
+              displayAddress: '123 Main St',
+            },
+            opening_hours: {
+              current_day: [
+                {
+                  abbr_name: 'Mon',
+                  full_name: 'Monday',
+                  opens: '09:00',
+                  closes: '12:00',
+                },
+                {
+                  abbr_name: 'Mon',
+                  full_name: 'Monday',
+                  opens: '13:00',
+                  closes: '17:00',
+                },
+              ],
+              days: [
+                [
+                  {
+                    abbr_name: 'Mon',
+                    full_name: 'Monday',
+                    opens: '09:00',
+                    closes: '12:00',
+                  },
+                  {
+                    abbr_name: 'Mon',
+                    full_name: 'Monday',
+                    opens: '13:00',
+                    closes: '17:00',
+                  },
+                ],
+                [
+                  {
+                    abbr_name: 'Tue',
+                    full_name: 'Tuesday',
+                    opens: '10:00',
+                    closes: '14:00',
+                  },
+                ],
+              ],
+            },
+          },
+        ],
+      } as Parameters<typeof formatPoiResults>[0];
+
+      const poiDescriptions = {
+        type: 'local_descriptions',
+        results: [],
+      } as Parameters<typeof formatPoiResults>[1];
+
+      const formatted = formatPoiResults(poiData, poiDescriptions);
+
+      expect(formatted).toHaveLength(1);
+      const hoursText = formatted[0];
+
+      // Before the fix, the Today section contains array coercion artifacts:
+      // "Today: Monday 09:00 - 12:00\n,Monday 13:00 - 17:00"
+      // After the fix, clean inline format:
+      // "Today: Monday 09:00 - 12:00, Monday 13:00 - 17:00"
+      expect(hoursText).not.toContain('Monday 09:00 - 12:00\n,Monday 13:00 - 17:00');
+      expect(hoursText).toContain('Today: Monday 09:00 - 12:00, Monday 13:00 - 17:00');
+
+      // Weekly section should have one line per day with proper spacing
+      // The template returns \nWeekly:\n followed by lines joined with \n
+      expect(hoursText).toContain('Weekly:\nMonday 09:00 - 12:00, Monday 13:00 - 17:00\nTuesday 10:00 - 14:00');
+      // No missing spaces after commas in multi-slot days
+      expect(hoursText).not.toContain('Monday 09:00 - 12:00,Monday 13:00');
+    });
   });
 
   describe('formatPoiResults edge cases', () => {

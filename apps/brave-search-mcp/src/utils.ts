@@ -42,12 +42,12 @@ export function formatVideoResults(results: VideoResult[]) {
 
 function formatOpeningHours(data: OpeningHours): string {
   const today = data.current_day.map((day) => {
-    return `${day.full_name} ${day.opens} - ${day.closes}\n`;
+    return `${day.full_name} ${day.opens} - ${day.closes}`;
   });
   const weekly = data.days.map((daySlot) => {
     return daySlot.map((day) => {
       return `${day.full_name} ${day.opens} - ${day.closes}`;
     });
   });
-  return `Today: ${today}\nWeekly:\n${weekly.join('\n')}`;
+  return `Today: ${today.join(', ')}\nWeekly:\n${weekly.map(daySlots => daySlots.join(', ')).join('\n')}`;
 }
