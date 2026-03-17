@@ -7,6 +7,7 @@ import { TOOL_NAMES } from '../tool-catalog.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
+  buildToolErrorResult,
   createPagedSearchOutputSchema,
   executeTool,
   getErrorMessage,
@@ -96,31 +97,24 @@ export class BraveLocalSearchTool {
     private isUI: boolean = false,
   ) {}
 
-  private buildErrorResult(input: z.infer<typeof localSearchInputSchema>, error: unknown): CallToolResult {
-    const message = getErrorMessage(error);
-    return {
-      ...buildStructuredToolResult(
-        `Error in ${this.name}: ${message}`,
-        this.isUI
-          ? buildPagedStructuredContent({
-              query: input.query,
-              count: input.count ?? 10,
-              offset: input.offset ?? 0,
-              items: [],
-              extra: { error: message },
-            })
-          : undefined,
-      ),
-      isError: true,
-    };
-  }
-
   public async execute(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {
     return executeTool({
       toolName: this.name,
       input,
       executeCore: value => this.executeCore(value),
-      buildErrorResult: (value, error) => this.buildErrorResult(value, error),
+      buildErrorResult: (value, error) => buildToolErrorResult(
+        this.name,
+        error,
+        this.isUI
+          ? buildPagedStructuredContent({
+              query: value.query,
+              count: value.count ?? 10,
+              offset: value.offset ?? 0,
+              items: [],
+              extra: { error: getErrorMessage(error) },
+            })
+          : undefined,
+      ),
     });
   }
 

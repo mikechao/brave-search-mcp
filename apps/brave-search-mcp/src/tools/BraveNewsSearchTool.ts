@@ -6,6 +6,7 @@ import { TOOL_NAMES } from '../tool-catalog.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
+  buildToolErrorResult,
   createPagedSearchOutputSchema,
   executeTool,
   freshnessInputSchema,
@@ -53,24 +54,6 @@ export class BraveNewsSearchTool {
     private isUI: boolean = false,
   ) {}
 
-  private buildErrorResult(input: z.infer<typeof newsSearchInputSchema>, error: unknown): CallToolResult {
-    const message = getErrorMessage(error);
-    return {
-      ...buildStructuredToolResult(
-        `Error in ${this.name}: ${message}`,
-        this.isUI
-          ? buildPagedStructuredContent({
-              query: input.query,
-              count: input.count ?? 10,
-              items: [],
-              extra: { error: message },
-            })
-          : undefined,
-      ),
-      isError: true,
-    };
-  }
-
   private safeParsePageAge(pageAge: string | undefined): number | undefined {
     if (!pageAge)
       return undefined;
@@ -84,7 +67,18 @@ export class BraveNewsSearchTool {
       toolName: this.name,
       input,
       executeCore: value => this.executeCore(value),
-      buildErrorResult: (value, error) => this.buildErrorResult(value, error),
+      buildErrorResult: (value, error) => buildToolErrorResult(
+        this.name,
+        error,
+        this.isUI
+          ? buildPagedStructuredContent({
+              query: value.query,
+              count: value.count ?? 10,
+              items: [],
+              extra: { error: getErrorMessage(error) },
+            })
+          : undefined,
+      ),
     });
   }
 

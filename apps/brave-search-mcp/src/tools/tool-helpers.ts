@@ -194,6 +194,20 @@ export function buildDefaultErrorResult(toolName: string, error: unknown): CallT
   };
 }
 
+export function buildToolErrorResult(
+  toolName: string,
+  error: unknown,
+  structuredContent?: object,
+): CallToolResult {
+  return {
+    ...buildStructuredToolResult(
+      `Error in ${toolName}: ${getErrorMessage(error)}`,
+      structuredContent,
+    ),
+    isError: true,
+  };
+}
+
 export async function executeTool<TInput>({
   toolName,
   input,

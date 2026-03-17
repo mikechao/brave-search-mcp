@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
 import {
   buildStructuredToolResult,
+  buildToolErrorResult,
   executeTool,
   getErrorMessage,
 } from './tool-helpers.js';
@@ -42,30 +43,23 @@ export class BraveImageSearchTool {
 
   constructor(private logMessage: ToolLogger, private braveSearch: BraveSearch, private isUI: boolean = false) {}
 
-  private buildErrorResult(input: z.infer<typeof imageSearchInputSchema>, error: unknown): CallToolResult {
-    const message = getErrorMessage(error);
-    return {
-      ...buildStructuredToolResult(
-        `Error in ${this.name}: ${message}`,
-        this.isUI
-          ? {
-              query: input.query,
-              count: 0,
-              items: [],
-              error: message,
-            }
-          : undefined,
-      ),
-      isError: true,
-    };
-  }
-
   public async execute(input: z.infer<typeof imageSearchInputSchema>): Promise<CallToolResult> {
     return executeTool({
       toolName: this.name,
       input,
       executeCore: value => this.executeCore(value),
-      buildErrorResult: (value, error) => this.buildErrorResult(value, error),
+      buildErrorResult: (value, error) => buildToolErrorResult(
+        this.name,
+        error,
+        this.isUI
+          ? {
+              query: value.query,
+              count: 0,
+              items: [],
+              error: getErrorMessage(error),
+            }
+          : undefined,
+      ),
     });
   }
 
