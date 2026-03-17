@@ -11,6 +11,11 @@ import { VideoPipView } from './VideoPipView';
 
 const EMPTY_CONTEXT_VIDEOS: ContextVideo[] = [];
 
+interface PendingPipAttempt {
+  id: number;
+  requestCompleted: boolean;
+}
+
 export interface VideoSearchAppProps extends WidgetProps {
   /** Callback to load a different page of results */
   onLoadPage?: (offset: number) => Promise<void>;
@@ -46,13 +51,18 @@ export default function VideoSearchApp({
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
   const [internalLoading, setInternalLoading] = useState(false);
   const [pipFailed, setPipFailed] = useState(false); // Track if PiP request failed
+  const [pendingPipAttempt, setPendingPipAttempt] = useState<PendingPipAttempt | null>(null);
   const isLoading = externalIsLoading ?? internalLoading;
 
   // Track previous display mode to detect host-initiated PiP exit
   const prevDisplayModeRef = useRef(displayMode);
+  const latestDisplayModeRef = useRef(displayMode);
+  const latestPendingPipAttemptRef = useRef<PendingPipAttempt | null>(null);
+  const nextPipAttemptIdRef = useRef(0);
 
   // Check if host supports PiP mode
   const supportsPip = availableDisplayModes?.includes('pip') ?? false;
+  const canAttemptPip = supportsPip && Boolean(requestDisplayMode);
 
   // Access structured content from _meta (new location) or top-level (legacy)
   const data = (toolResult?._meta?.structuredContent ?? toolResult?.structuredContent) as VideoSearchData | undefined;
@@ -93,6 +103,7 @@ export default function VideoSearchApp({
   // Handle host-initiated PiP exit (user dismissed PiP via host controls)
   // We need to clear activeVideo when host exits PiP mode
   useEffect(() => {
+    latestDisplayModeRef.current = displayMode;
     const wasInPip = prevDisplayModeRef.current === 'pip';
     const exitedPip = wasInPip && displayMode !== 'pip';
     prevDisplayModeRef.current = displayMode;
@@ -106,16 +117,71 @@ export default function VideoSearchApp({
     }
   }, [displayMode, activeVideo]);
 
+  useEffect(() => {
+    latestPendingPipAttemptRef.current = pendingPipAttempt;
+  }, [pendingPipAttempt]);
+
+  useEffect(() => {
+    if (pendingPipAttempt === null)
+      return;
+
+    if (displayMode === 'pip') {
+      const timeoutId = setTimeout(() => {
+        setPipFailed(false);
+        setPendingPipAttempt(null);
+      }, 0);
+
+      return () => clearTimeout(timeoutId);
+    }
+
+    if (!pendingPipAttempt.requestCompleted)
+      return;
+
+    const attemptId = pendingPipAttempt.id;
+    const timeoutId = setTimeout(() => {
+      if (latestPendingPipAttemptRef.current?.id !== attemptId)
+        return;
+
+      if (latestDisplayModeRef.current !== 'pip')
+        setPipFailed(true);
+
+      setPendingPipAttempt(null);
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [displayMode, pendingPipAttempt]);
+
   const handlePlay = async (video: VideoItem) => {
     setActiveVideo(video);
     setPipFailed(false); // Reset on new play
+    setPendingPipAttempt(null);
 
     // Auto-enter PiP mode if host supports it
-    if (supportsPip && requestDisplayMode) {
-      const actualMode = await requestDisplayMode('pip');
-      // If PiP wasn't set (host returned different mode or undefined), fall back to modal
-      if (actualMode !== 'pip') {
-        setPipFailed(true);
+    if (canAttemptPip && requestDisplayMode) {
+      const attemptId = nextPipAttemptIdRef.current + 1;
+      nextPipAttemptIdRef.current = attemptId;
+      setPendingPipAttempt({
+        id: attemptId,
+        requestCompleted: false,
+      });
+
+      try {
+        await requestDisplayMode('pip');
+        setPendingPipAttempt((current) => {
+          if (current?.id !== attemptId)
+            return current;
+
+          return {
+            ...current,
+            requestCompleted: true,
+          };
+        });
+      }
+      catch {
+        if (latestPendingPipAttemptRef.current?.id === attemptId) {
+          setPendingPipAttempt(null);
+          setPipFailed(true);
+        }
       }
     }
   };
@@ -123,6 +189,7 @@ export default function VideoSearchApp({
   const handleCloseModal = async () => {
     setActiveVideo(null);
     setPipFailed(false);
+    setPendingPipAttempt(null);
     // If in PiP mode, request return to inline
     if (displayMode === 'pip' && requestDisplayMode) {
       await requestDisplayMode('inline');
@@ -250,7 +317,7 @@ export default function VideoSearchApp({
       </SearchAppLayout>
 
       {/* Show modal when PiP is not supported, or when PiP request failed */}
-      {activeVideo && (!supportsPip || pipFailed) && (
+      {activeVideo && (!canAttemptPip || pipFailed) && (
         <VideoEmbedModal video={activeVideo} onClose={handleCloseModal} />
       )}
     </>
