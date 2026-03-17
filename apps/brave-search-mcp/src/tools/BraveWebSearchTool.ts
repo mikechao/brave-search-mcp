@@ -1,9 +1,11 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
+import type { UiToolSpecConfig } from '../ui-config.js';
 import type { ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
+import { OPENAI_CDN_RESOURCE_DOMAIN } from '../ui-config.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
@@ -32,6 +34,28 @@ export class BraveWebSearchTool {
     + 'Maximum 20 results per request.';
 
   public readonly inputSchema = webSearchInputSchema;
+
+  public readonly uiSpec: UiToolSpecConfig = {
+    mcpAppResourceUri: 'ui://brave-web-search/mcp-app.html',
+    chatgptResourceUri: 'ui://brave-web-search/chatgpt-widget.html',
+    title: 'Brave Web Search',
+    mcpApp: {
+      description: 'Brave Web Search UI (MCP-APP)',
+      bundlePath: 'src/lib/web/mcp-app.html',
+      csp: { resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
+    },
+    chatgptWidget: {
+      registrationName: 'brave-web-search-chatgpt',
+      description: 'Brave Web Search Widget (ChatGPT)',
+      bundlePath: 'src/lib/web/chatgpt-app.html',
+      csp: { resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN] },
+    },
+    toolMeta: {
+      widgetAccessible: true,
+      invokingText: 'Searching the web…',
+      invokedText: 'Search complete.',
+    },
+  };
 
   constructor(
     private logMessage: ToolLogger,

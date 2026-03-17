@@ -7,8 +7,27 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import packageJson from '../../package.json' with { type: 'json' };
 import { BraveMcpServer } from '../../src/server.js';
 import { TOOL_NAMES } from '../../src/tool-catalog.js';
-import { ALL_UI_RESOURCE_URIS, UI_RESOURCES } from '../../src/ui-resources.js';
 import { createMockBraveSearch } from '../mocks/index.js';
+
+const ALL_UI_RESOURCE_URIS = [
+  'ui://brave-image-search/mcp-app.html',
+  'ui://brave-image-search/chatgpt-widget.html',
+  'ui://brave-news-search/mcp-app.html',
+  'ui://brave-news-search/chatgpt-widget.html',
+  'ui://brave-video-search/mcp-app.html',
+  'ui://brave-video-search/chatgpt-widget.html',
+  'ui://brave-web-search/mcp-app.html',
+  'ui://brave-web-search/chatgpt-widget.html',
+  'ui://brave-local-search/mcp-app.html',
+  'ui://brave-local-search/chatgpt-widget.html',
+];
+const UI_RESOURCES = {
+  image: { mcpApp: ALL_UI_RESOURCE_URIS[0], chatgpt: ALL_UI_RESOURCE_URIS[1] },
+  news: { mcpApp: ALL_UI_RESOURCE_URIS[2], chatgpt: ALL_UI_RESOURCE_URIS[3] },
+  video: { mcpApp: ALL_UI_RESOURCE_URIS[4], chatgpt: ALL_UI_RESOURCE_URIS[5] },
+  web: { mcpApp: ALL_UI_RESOURCE_URIS[6], chatgpt: ALL_UI_RESOURCE_URIS[7] },
+  local: { mcpApp: ALL_UI_RESOURCE_URIS[8], chatgpt: ALL_UI_RESOURCE_URIS[9] },
+};
 
 const { version: SERVER_VERSION } = packageJson;
 const allToolNames = Object.values(TOOL_NAMES);

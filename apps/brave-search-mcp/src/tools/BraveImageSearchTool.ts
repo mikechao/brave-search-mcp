@@ -1,9 +1,11 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
+import type { UiToolSpecConfig } from '../ui-config.js';
 import type { ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
+import { OPENAI_CDN_RESOURCE_DOMAIN } from '../ui-config.js';
 import {
   buildStructuredToolResult,
   buildToolErrorResult,
@@ -40,6 +42,33 @@ export class BraveImageSearchTool {
   public readonly name = TOOL_NAMES.image;
   public readonly description = 'A tool for searching the web for images using the Brave Search API.';
   public readonly inputSchema = imageSearchInputSchema;
+
+  public readonly uiSpec: UiToolSpecConfig = {
+    mcpAppResourceUri: 'ui://brave-image-search/mcp-app.html',
+    chatgptResourceUri: 'ui://brave-image-search/chatgpt-widget.html',
+    title: 'Brave Image Search',
+    mcpApp: {
+      description: 'Brave Image Search UI (MCP-APP)',
+      bundlePath: 'src/lib/image/mcp-app.html',
+      csp: {
+        connectDomains: ['https://imgs.search.brave.com'],
+        resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+      },
+    },
+    chatgptWidget: {
+      registrationName: 'brave-image-search-chatgpt',
+      description: 'Brave Image Search Widget (ChatGPT)',
+      bundlePath: 'src/lib/image/chatgpt-app.html',
+      csp: {
+        connect_domains: ['https://imgs.search.brave.com'],
+        resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+      },
+    },
+    toolMeta: {
+      invokingText: 'Searching for images…',
+      invokedText: 'Images found.',
+    },
+  };
 
   constructor(private logMessage: ToolLogger, private braveSearch: BraveSearch, private isUI: boolean = false) {}
 

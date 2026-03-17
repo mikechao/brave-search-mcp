@@ -1,9 +1,11 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
+import type { UiToolSpecConfig } from '../ui-config.js';
 import type { ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
+import { OPENAI_CDN_RESOURCE_DOMAIN } from '../ui-config.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
@@ -77,6 +79,34 @@ export class BraveVideoSearchTool {
     + 'Maximum 20 results per request.';
 
   public readonly inputSchema = videoSearchInputSchema;
+
+  public readonly uiSpec: UiToolSpecConfig = {
+    mcpAppResourceUri: 'ui://brave-video-search/mcp-app.html',
+    chatgptResourceUri: 'ui://brave-video-search/chatgpt-widget.html',
+    title: 'Brave Video Search',
+    mcpApp: {
+      description: 'Brave Video Search UI (MCP-APP)',
+      bundlePath: 'src/lib/video/mcp-app.html',
+      csp: {
+        resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+        frameDomains: ['https://www.youtube.com', 'https://player.vimeo.com'],
+      },
+    },
+    chatgptWidget: {
+      registrationName: 'brave-video-search-chatgpt',
+      description: 'Brave Video Search Widget (ChatGPT)',
+      bundlePath: 'src/lib/video/chatgpt-app.html',
+      csp: {
+        resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com', OPENAI_CDN_RESOURCE_DOMAIN],
+        frame_domains: ['https://www.youtube.com', 'https://youtube.com', 'https://player.vimeo.com', 'https://vimeo.com'],
+      },
+    },
+    toolMeta: {
+      widgetAccessible: true,
+      invokingText: 'Searching for videos…',
+      invokedText: 'Videos found.',
+    },
+  };
 
   constructor(
     private logMessage: ToolLogger,

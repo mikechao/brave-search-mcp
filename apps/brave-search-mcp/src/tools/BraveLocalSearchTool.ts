@@ -1,9 +1,11 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch, LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse, OpeningHours } from 'brave-search';
+import type { UiToolSpecConfig } from '../ui-config.js';
 import type { LocalWebFallbackExecutor, ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
+import { OPENAI_CDN_RESOURCE_DOMAIN } from '../ui-config.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
@@ -89,6 +91,44 @@ export class BraveLocalSearchTool {
     + 'Automatically falls back to web search on the first page if no local results are found.';
 
   public readonly inputSchema = localSearchInputSchema;
+
+  public readonly uiSpec: UiToolSpecConfig = {
+    mcpAppResourceUri: 'ui://brave-local-search/mcp-app.html',
+    chatgptResourceUri: 'ui://brave-local-search/chatgpt-widget.html',
+    title: 'Brave Local Search',
+    mcpApp: {
+      description: 'Brave Local Search UI (MCP-APP)',
+      bundlePath: 'src/lib/local/mcp-app.html',
+      csp: {
+        resourceDomains: [
+          'https://tile.openstreetmap.org',
+          'https://a.tile.openstreetmap.org',
+          'https://b.tile.openstreetmap.org',
+          'https://c.tile.openstreetmap.org',
+          OPENAI_CDN_RESOURCE_DOMAIN,
+        ],
+      },
+    },
+    chatgptWidget: {
+      registrationName: 'brave-local-search-chatgpt',
+      description: 'Brave Local Search Widget (ChatGPT)',
+      bundlePath: 'src/lib/local/chatgpt-app.html',
+      csp: {
+        resource_domains: [
+          'https://tile.openstreetmap.org',
+          'https://a.tile.openstreetmap.org',
+          'https://b.tile.openstreetmap.org',
+          'https://c.tile.openstreetmap.org',
+          OPENAI_CDN_RESOURCE_DOMAIN,
+        ],
+      },
+    },
+    toolMeta: {
+      widgetAccessible: true,
+      invokingText: 'Searching local businesses…',
+      invokedText: 'Places found.',
+    },
+  };
 
   constructor(
     private logMessage: ToolLogger,

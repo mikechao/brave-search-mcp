@@ -1,8 +1,10 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
+import type { UiToolSpecConfig } from '../ui-config.js';
 import type { ToolLogger } from './tool-helpers.js';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
+import { OPENAI_CDN_RESOURCE_DOMAIN } from '../ui-config.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
@@ -47,6 +49,32 @@ export class BraveNewsSearchTool {
     + 'Maximum 20 results per request.';
 
   public readonly inputSchema = newsSearchInputSchema;
+
+  public readonly uiSpec: UiToolSpecConfig = {
+    mcpAppResourceUri: 'ui://brave-news-search/mcp-app.html',
+    chatgptResourceUri: 'ui://brave-news-search/chatgpt-widget.html',
+    title: 'Brave News Search',
+    mcpApp: {
+      description: 'Brave News Search UI (MCP-APP)',
+      bundlePath: 'src/lib/news/mcp-app.html',
+      csp: {
+        resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+      },
+    },
+    chatgptWidget: {
+      registrationName: 'brave-news-search-chatgpt',
+      description: 'Brave News Search Widget (ChatGPT)',
+      bundlePath: 'src/lib/news/chatgpt-app.html',
+      csp: {
+        resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
+      },
+    },
+    toolMeta: {
+      widgetAccessible: true,
+      invokingText: 'Searching for news…',
+      invokedText: 'News articles found.',
+    },
+  };
 
   constructor(
     private logMessage: ToolLogger,

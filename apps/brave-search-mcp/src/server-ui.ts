@@ -5,14 +5,16 @@ import type { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import type { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import type { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import type { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
+import type { OpenAIWidgetCsp, ResourceCsp, UiSearchToolTarget, UiToolSpecConfig } from './ui-config.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
-import { UI_RESOURCES } from './ui-resources.js';
 
-const CHATGPT_MIME_TYPE = 'text/html+skybridge';
-const OPENAI_CDN_RESOURCE_DOMAIN = 'https://cdn.openai.com';
-const OPENAI_WIDGET_DOMAIN = 'mc-brave-search-mcp';
+import { registerAppResource, registerAppTool, RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
+import {
+  CHATGPT_MIME_TYPE,
+  OPENAI_WIDGET_DOMAIN,
+
+} from './ui-config.js';
 
 type LogLevel
   = 'error'
@@ -23,51 +25,6 @@ type LogLevel
     | 'critical'
     | 'alert'
     | 'emergency';
-
-interface ResourceCsp {
-  connectDomains?: string[];
-  resourceDomains?: string[];
-  frameDomains?: string[];
-  baseUriDomains?: string[];
-}
-
-interface OpenAIWidgetCsp {
-  connect_domains?: string[];
-  resource_domains?: string[];
-  redirect_domains?: string[];
-  frame_domains?: string[];
-}
-
-interface UiSearchToolTarget {
-  name: string;
-  description: string;
-  inputSchema: {
-    shape: unknown;
-  };
-  execute: (input: never) => Promise<unknown>;
-}
-
-interface UiToolSpec {
-  resourceKey: keyof typeof UI_RESOURCES;
-  title: string;
-  tool: UiSearchToolTarget;
-  mcpApp: {
-    description: string;
-    bundlePath: string;
-    csp?: ResourceCsp;
-  };
-  chatgptWidget: {
-    registrationName: string;
-    description: string;
-    bundlePath: string;
-    csp?: OpenAIWidgetCsp;
-  };
-  toolMeta: {
-    invokingText: string;
-    invokedText: string;
-    widgetAccessible?: true;
-  };
-}
 
 interface UiSearchTools {
   image: BraveImageSearchTool;
@@ -119,151 +76,6 @@ interface RegisterChatgptWidgetResourceOptions extends RegisterUiResourceOptions
 }
 
 type ReadOnlyToolAnnotations = RegisterUiSearchToolsOptions['annotations'];
-
-function getUiToolSpecs(tools: UiSearchTools): UiToolSpec[] {
-  return [
-    {
-      resourceKey: 'image',
-      title: 'Brave Image Search',
-      tool: tools.image,
-      mcpApp: {
-        description: 'Brave Image Search UI (MCP-APP)',
-        bundlePath: 'src/lib/image/mcp-app.html',
-        csp: {
-          connectDomains: ['https://imgs.search.brave.com'],
-          resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-        },
-      },
-      chatgptWidget: {
-        registrationName: 'brave-image-search-chatgpt',
-        description: 'Brave Image Search Widget (ChatGPT)',
-        bundlePath: 'src/lib/image/chatgpt-app.html',
-        csp: {
-          connect_domains: ['https://imgs.search.brave.com'],
-          resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-        },
-      },
-      toolMeta: {
-        invokingText: 'Searching for images…',
-        invokedText: 'Images found.',
-      },
-    },
-    {
-      resourceKey: 'news',
-      title: 'Brave News Search',
-      tool: tools.news,
-      mcpApp: {
-        description: 'Brave News Search UI (MCP-APP)',
-        bundlePath: 'src/lib/news/mcp-app.html',
-        csp: {
-          resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-        },
-      },
-      chatgptWidget: {
-        registrationName: 'brave-news-search-chatgpt',
-        description: 'Brave News Search Widget (ChatGPT)',
-        bundlePath: 'src/lib/news/chatgpt-app.html',
-        csp: {
-          resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-        },
-      },
-      toolMeta: {
-        widgetAccessible: true,
-        invokingText: 'Searching for news…',
-        invokedText: 'News articles found.',
-      },
-    },
-    {
-      resourceKey: 'video',
-      title: 'Brave Video Search',
-      tool: tools.video,
-      mcpApp: {
-        description: 'Brave Video Search UI (MCP-APP)',
-        bundlePath: 'src/lib/video/mcp-app.html',
-        csp: {
-          resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-          frameDomains: ['https://www.youtube.com', 'https://player.vimeo.com'],
-        },
-      },
-      chatgptWidget: {
-        registrationName: 'brave-video-search-chatgpt',
-        description: 'Brave Video Search Widget (ChatGPT)',
-        bundlePath: 'src/lib/video/chatgpt-app.html',
-        csp: {
-          resource_domains: ['https://imgs.search.brave.com', 'https://i.ytimg.com', OPENAI_CDN_RESOURCE_DOMAIN],
-          frame_domains: ['https://www.youtube.com', 'https://youtube.com', 'https://player.vimeo.com', 'https://vimeo.com'],
-        },
-      },
-      toolMeta: {
-        widgetAccessible: true,
-        invokingText: 'Searching for videos…',
-        invokedText: 'Videos found.',
-      },
-    },
-    {
-      resourceKey: 'web',
-      title: 'Brave Web Search',
-      tool: tools.web,
-      mcpApp: {
-        description: 'Brave Web Search UI (MCP-APP)',
-        bundlePath: 'src/lib/web/mcp-app.html',
-        csp: {
-          resourceDomains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-        },
-      },
-      chatgptWidget: {
-        registrationName: 'brave-web-search-chatgpt',
-        description: 'Brave Web Search Widget (ChatGPT)',
-        bundlePath: 'src/lib/web/chatgpt-app.html',
-        csp: {
-          resource_domains: ['https://imgs.search.brave.com', OPENAI_CDN_RESOURCE_DOMAIN],
-        },
-      },
-      toolMeta: {
-        widgetAccessible: true,
-        invokingText: 'Searching the web…',
-        invokedText: 'Search complete.',
-      },
-    },
-    {
-      resourceKey: 'local',
-      title: 'Brave Local Search',
-      tool: tools.local,
-      mcpApp: {
-        description: 'Brave Local Search UI (MCP-APP)',
-        bundlePath: 'src/lib/local/mcp-app.html',
-        csp: {
-          resourceDomains: [
-            'https://tile.openstreetmap.org',
-            'https://a.tile.openstreetmap.org',
-            'https://b.tile.openstreetmap.org',
-            'https://c.tile.openstreetmap.org',
-            OPENAI_CDN_RESOURCE_DOMAIN,
-          ],
-        },
-      },
-      chatgptWidget: {
-        registrationName: 'brave-local-search-chatgpt',
-        description: 'Brave Local Search Widget (ChatGPT)',
-        bundlePath: 'src/lib/local/chatgpt-app.html',
-        csp: {
-          resource_domains: [
-            'https://tile.openstreetmap.org',
-            'https://a.tile.openstreetmap.org',
-            'https://b.tile.openstreetmap.org',
-            'https://c.tile.openstreetmap.org',
-            OPENAI_CDN_RESOURCE_DOMAIN,
-          ],
-        },
-      },
-      toolMeta: {
-        widgetAccessible: true,
-        invokingText: 'Searching local businesses…',
-        invokedText: 'Places found.',
-      },
-    },
-  ];
-}
 
 function buildResourceMeta({
   csp,
@@ -392,7 +204,7 @@ function buildToolMeta({
 }: {
   mcpAppResourceUri: string;
   chatgptResourceUri: string;
-  toolMeta: UiToolSpec['toolMeta'];
+  toolMeta: UiToolSpecConfig['toolMeta'];
 }): Record<string, unknown> {
   return {
     'ui': { resourceUri: mcpAppResourceUri },
@@ -406,33 +218,31 @@ function buildToolMeta({
 function registerUiTool({
   server,
   annotations,
-  spec,
-  mcpAppResourceUri,
-  chatgptResourceUri,
+  tool,
+  uiSpec,
 }: {
   server: McpServer;
   annotations: ReadOnlyToolAnnotations;
-  spec: UiToolSpec;
-  mcpAppResourceUri: string;
-  chatgptResourceUri: string;
+  tool: UiSearchToolTarget;
+  uiSpec: UiToolSpecConfig;
 }): void {
   // The Apps SDK expects a narrower schema/handler shape here than our shared tool interface exposes,
   // so we keep the casts at this boundary instead of spreading them through the main control flow.
   registerAppTool(
     server,
-    spec.tool.name,
+    tool.name,
     {
-      title: spec.title,
-      description: spec.tool.description,
-      inputSchema: spec.tool.inputSchema.shape as never,
+      title: uiSpec.title,
+      description: tool.description,
+      inputSchema: tool.inputSchema.shape as never,
       annotations,
       _meta: buildToolMeta({
-        mcpAppResourceUri,
-        chatgptResourceUri,
-        toolMeta: spec.toolMeta,
+        mcpAppResourceUri: uiSpec.mcpAppResourceUri,
+        chatgptResourceUri: uiSpec.chatgptResourceUri,
+        toolMeta: uiSpec.toolMeta,
       }),
     },
-    spec.tool.execute.bind(spec.tool) as never,
+    tool.execute.bind(tool) as never,
   );
 }
 
@@ -443,36 +253,38 @@ export function registerUiSearchTools({
   annotations,
   tools,
 }: RegisterUiSearchToolsOptions): void {
-  for (const spec of getUiToolSpecs(tools)) {
-    const { mcpApp: mcpAppResourceUri, chatgpt: chatgptResourceUri } = UI_RESOURCES[spec.resourceKey];
+  for (const tool of Object.values(tools)) {
+    const toolTarget = tool as UiSearchToolTarget;
+    const uSpec = toolTarget.uiSpec;
+    if (!uSpec)
+      continue;
 
     registerMcpAppResource({
       server,
       distDir,
-      resourceUri: mcpAppResourceUri,
-      description: spec.mcpApp.description,
-      bundlePath: spec.mcpApp.bundlePath,
+      resourceUri: uSpec.mcpAppResourceUri,
+      description: uSpec.mcpApp.description,
+      bundlePath: uSpec.mcpApp.bundlePath,
       log,
-      csp: spec.mcpApp.csp,
+      csp: uSpec.mcpApp.csp,
     });
 
     registerChatgptWidgetResource({
       server,
       distDir,
-      registrationName: spec.chatgptWidget.registrationName,
-      resourceUri: chatgptResourceUri,
-      description: spec.chatgptWidget.description,
-      bundlePath: spec.chatgptWidget.bundlePath,
+      registrationName: uSpec.chatgptWidget.registrationName,
+      resourceUri: uSpec.chatgptResourceUri,
+      description: uSpec.chatgptWidget.description,
+      bundlePath: uSpec.chatgptWidget.bundlePath,
       log,
-      csp: spec.chatgptWidget.csp,
+      csp: uSpec.chatgptWidget.csp,
     });
 
     registerUiTool({
       server,
       annotations,
-      spec,
-      mcpAppResourceUri,
-      chatgptResourceUri,
+      tool: toolTarget,
+      uiSpec: uSpec,
     });
   }
 }
