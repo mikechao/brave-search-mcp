@@ -114,7 +114,7 @@
     "tsup": "^8.0.1",
     "typescript": "^5.8.2",
     "vite": "^8.0.0",
-    "vite-plugin-singlefile": "^2.1.0",
+    "vite-plugin-singlefile": "^2.3.2",
     "vitest": "^4.0.18"
   }
 }
