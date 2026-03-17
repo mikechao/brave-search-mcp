@@ -32,12 +32,8 @@ export default defineConfig({
   build: {
     sourcemap: isDevelopment ? 'inline' : undefined,
     cssMinify: !isDevelopment,
-    minify: isDevelopment ? false : 'terser',
-    terserOptions: {
-      compress: { passes: 2 },
-      mangle: { toplevel: true },
-    },
-    rollupOptions: {
+    minify: !isDevelopment,
+    rolldownOptions: {
       input: inputPath,
     },
     outDir: path.resolve(process.cwd(), 'dist/ui'),
