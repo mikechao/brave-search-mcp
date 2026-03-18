@@ -43,6 +43,7 @@ const pagedSearchOutputBaseShape = {
   pageSize: z.number().optional(),
   returnedCount: z.number().optional(),
   offset: z.number().optional(),
+  moreResultsAvailable: z.boolean().optional(),
   error: z.string().optional(),
 } satisfies z.ZodRawShape;
 
@@ -90,6 +91,7 @@ export type PagedStructuredContent<TItem, TExtra extends object = Record<string,
   pageSize: number;
   returnedCount: number;
   offset?: number;
+  moreResultsAvailable?: boolean;
   items: TItem[];
 } & TExtra;
 
@@ -99,6 +101,7 @@ interface BuildPagedStructuredContentInput<TItem, TExtra extends object> {
   items: TItem[];
   offset?: number;
   returnedCount?: number;
+  moreResultsAvailable?: boolean;
   extra?: TExtra;
 }
 
@@ -149,6 +152,7 @@ export function buildPagedStructuredContent<
   items,
   offset,
   returnedCount,
+  moreResultsAvailable,
   extra,
 }: BuildPagedStructuredContentInput<TItem, TExtra>): PagedStructuredContent<TItem, TExtra> {
   return {
@@ -157,6 +161,7 @@ export function buildPagedStructuredContent<
     pageSize: count,
     returnedCount: returnedCount ?? items.length,
     ...(offset !== undefined ? { offset } : {}),
+    ...(moreResultsAvailable !== undefined ? { moreResultsAvailable } : {}),
     items,
     ...(extra ?? {} as TExtra),
   };

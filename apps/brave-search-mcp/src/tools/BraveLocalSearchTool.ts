@@ -151,6 +151,7 @@ export class BraveLocalSearchTool {
               count: value.count ?? 10,
               offset: value.offset ?? 0,
               items: [],
+              moreResultsAvailable: false,
               extra: { error: getErrorMessage(error) },
             })
           : undefined,
@@ -168,6 +169,7 @@ export class BraveLocalSearchTool {
       safesearch: SafeSearchLevel.Strict,
       result_filter: 'locations',
     });
+    const moreResultsAvailable = results.query.more_results_available;
     const locationResults = results.locations?.results ?? [];
 
     // Only the initial page falls back to web search when no local ids are available.
@@ -194,6 +196,9 @@ export class BraveLocalSearchTool {
               offset: 0,
               items: [],
               returnedCount: webFallbackItems.length,
+              moreResultsAvailable: parsedWebResult.success
+                ? (parsedWebResult.data.moreResultsAvailable ?? false)
+                : false,
               extra: {
                 webFallbackItems,
                 fallbackToWeb: true,
@@ -215,6 +220,7 @@ export class BraveLocalSearchTool {
               count: requestedCount,
               offset: requestedOffset,
               items: [],
+              moreResultsAvailable,
             })
           : undefined,
       );
@@ -308,6 +314,7 @@ export class BraveLocalSearchTool {
               count: requestedCount,
               offset: offset ?? 0,
               items: [],
+              moreResultsAvailable: false,
             })
           : undefined,
       );
@@ -337,6 +344,7 @@ export class BraveLocalSearchTool {
             query,
             count: requestedCount,
             offset: requestedOffset,
+            moreResultsAvailable,
             items: localItems,
           })
         : undefined,

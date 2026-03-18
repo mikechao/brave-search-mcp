@@ -12,6 +12,7 @@ interface LocalStructuredContent {
   pageSize?: number;
   returnedCount?: number;
   offset?: number;
+  moreResultsAvailable?: boolean;
   items: Array<{
     id?: string;
     name: string;
@@ -105,7 +106,7 @@ describe('braveLocalSearchTool', () => {
 
     mockBraveSearch.webSearch.mockResolvedValue({
       type: 'search',
-      query: { original: 'brunch' },
+      query: { original: 'brunch', more_results_available: false },
       locations: { results: [] },
     } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
 
@@ -118,6 +119,7 @@ describe('braveLocalSearchTool', () => {
           pageSize: 2,
           returnedCount: 1,
           offset: 0,
+          moreResultsAvailable: false,
           items: [
             {
               title: 'Brunch Guide',
@@ -156,6 +158,7 @@ describe('braveLocalSearchTool', () => {
         },
       ],
       fallbackToWeb: true,
+      moreResultsAvailable: false,
     });
   });
 
@@ -172,7 +175,7 @@ describe('braveLocalSearchTool', () => {
 
     mockBraveSearch.webSearch.mockResolvedValue({
       type: 'search',
-      query: { original: 'late night food' },
+      query: { original: 'late night food', more_results_available: false },
       locations: { results: [] },
     } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
 
@@ -207,6 +210,7 @@ describe('braveLocalSearchTool', () => {
       items: [],
       webFallbackItems: [],
       fallbackToWeb: true,
+      moreResultsAvailable: false,
     });
   });
 
@@ -223,7 +227,7 @@ describe('braveLocalSearchTool', () => {
 
     mockBraveSearch.webSearch.mockResolvedValue({
       type: 'search',
-      query: { original: 'dim sum' },
+      query: { original: 'dim sum', more_results_available: false },
       locations: { results: [] },
     } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
 
@@ -253,6 +257,7 @@ describe('braveLocalSearchTool', () => {
       items: [],
       webFallbackItems: [],
       fallbackToWeb: true,
+      moreResultsAvailable: false,
     });
     expect(log).toHaveBeenCalledWith(
       expect.stringContaining('Invalid web fallback structured content for "dim sum"'),
@@ -273,7 +278,7 @@ describe('braveLocalSearchTool', () => {
 
     mockBraveSearch.webSearch.mockResolvedValue({
       type: 'search',
-      query: { original: 'coffee seattle' },
+      query: { original: 'coffee seattle', more_results_available: true },
       locations: {
         results: [{ id: 'loc-2' }],
       },
@@ -328,6 +333,7 @@ describe('braveLocalSearchTool', () => {
     expect(text).toContain('Found 1 local places for "coffee seattle".');
     expect(text).toContain('You CANNOT see the business names');
     const structured = getMetaStructuredContent<LocalStructuredContent>(result);
+    expect(structured.moreResultsAvailable).toBe(true);
     expect(structured.items[0]).toEqual({
       id: 'loc-2',
       name: 'Cafe Prime',
@@ -362,7 +368,7 @@ describe('braveLocalSearchTool', () => {
 
     mockBraveSearch.webSearch.mockImplementation(async (_query: string, options?: { offset?: number }) => ({
       type: 'search',
-      query: { original: 'coffee seattle' },
+      query: { original: 'coffee seattle', more_results_available: true },
       locations: {
         results: options?.offset === 1
           ? [{ id: 'loc-3' }, { id: 'loc-4' }]
@@ -450,6 +456,7 @@ describe('braveLocalSearchTool', () => {
       pageSize: 2,
       returnedCount: 2,
       offset: 1,
+      moreResultsAvailable: true,
       items: [
         {
           id: 'loc-3',
@@ -502,7 +509,7 @@ describe('braveLocalSearchTool', () => {
 
     mockBraveSearch.webSearch.mockResolvedValue({
       type: 'search',
-      query: { original: 'coffee seattle' },
+      query: { original: 'coffee seattle', more_results_available: false },
       locations: { results: [] },
     } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
 
@@ -529,6 +536,7 @@ describe('braveLocalSearchTool', () => {
       pageSize: 2,
       returnedCount: 0,
       offset: 1,
+      moreResultsAvailable: false,
       items: [],
     });
   });
@@ -616,6 +624,7 @@ describe('braveLocalSearchTool', () => {
       pageSize: 5,
       returnedCount: 0,
       offset: 1,
+      moreResultsAvailable: false,
       items: [],
     });
   });

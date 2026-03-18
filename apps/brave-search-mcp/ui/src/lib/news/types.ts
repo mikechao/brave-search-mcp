@@ -23,6 +23,7 @@ export interface NewsSearchData {
   pageSize?: number;
   returnedCount?: number;
   offset?: number;
+  moreResultsAvailable?: boolean;
   items: NewsItem[];
   error?: string;
 }

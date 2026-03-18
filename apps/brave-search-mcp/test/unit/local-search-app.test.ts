@@ -73,6 +73,7 @@ describe('localSearchApp', () => {
         pageSize: 2,
         returnedCount: 0,
         offset: 1,
+        moreResultsAvailable: false,
         items: [],
       }),
       onLoadPage: vi.fn(async () => {}),
@@ -81,6 +82,7 @@ describe('localSearchApp', () => {
     expect(markup).toContain('No places found');
     expect(markup).toContain('aria-label="Pagination"');
     expect(markup).toContain('Page 2');
+    expect(markup).toMatch(/<button[^>]*(?:disabled=""[^>]*aria-label="Next page"|aria-label="Next page"[^>]*disabled="")/);
     expect(markup).not.toContain('No fallback results');
   });
 });

@@ -103,6 +103,7 @@ export class BraveNewsSearchTool {
               query: value.query,
               count: value.count ?? 10,
               items: [],
+              moreResultsAvailable: false,
               extra: { error: getErrorMessage(error) },
             })
           : undefined,
@@ -118,6 +119,7 @@ export class BraveNewsSearchTool {
       offset,
       ...(freshness ? { freshness } : {}),
     });
+    const moreResultsAvailable = newsResult.query.more_results_available;
     if (!newsResult.results || newsResult.results.length === 0) {
       this.logMessage(`No news results found for "${query}"`);
       const text = `No news results found for "${query}"`;
@@ -129,6 +131,7 @@ export class BraveNewsSearchTool {
               count: requestedCount,
               offset,
               items: [],
+              moreResultsAvailable,
             })
           : undefined,
       );
@@ -207,6 +210,7 @@ export class BraveNewsSearchTool {
             query,
             count: requestedCount,
             offset,
+            moreResultsAvailable,
             items: newsItems,
           })
         : undefined,

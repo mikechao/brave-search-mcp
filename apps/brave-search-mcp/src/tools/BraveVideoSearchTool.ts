@@ -127,6 +127,7 @@ export class BraveVideoSearchTool {
               query: value.query,
               count: value.count ?? 10,
               items: [],
+              moreResultsAvailable: false,
               extra: { error: getErrorMessage(error) },
             })
           : undefined,
@@ -143,6 +144,7 @@ export class BraveVideoSearchTool {
       safesearch: SafeSearchLevel.Strict,
       ...(freshness ? { freshness } : {}),
     });
+    const moreResultsAvailable = videoSearchResults.query.more_results_available;
 
     if (!videoSearchResults.results || videoSearchResults.results.length === 0) {
       this.logMessage(`No video results found for "${query}"`);
@@ -155,6 +157,7 @@ export class BraveVideoSearchTool {
               count: requestedCount,
               offset,
               items: [],
+              moreResultsAvailable,
             })
           : undefined,
       );
@@ -239,6 +242,7 @@ export class BraveVideoSearchTool {
             query,
             count: requestedCount,
             offset,
+            moreResultsAvailable,
             items: videoItems,
           })
         : undefined,

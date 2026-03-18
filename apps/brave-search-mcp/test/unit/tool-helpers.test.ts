@@ -129,6 +129,7 @@ describe('toolHelpers', () => {
       query: 'brunch',
       count: 3,
       offset: 2,
+      moreResultsAvailable: false,
       items: [
         { title: 'A' },
         { title: 'B' },
@@ -144,6 +145,7 @@ describe('toolHelpers', () => {
       pageSize: 3,
       returnedCount: 2,
       offset: 2,
+      moreResultsAvailable: false,
       items: [
         { title: 'A' },
         { title: 'B' },
@@ -203,6 +205,7 @@ describe('toolHelpers', () => {
       pageSize: 2,
       returnedCount: 1,
       offset: 0,
+      moreResultsAvailable: false,
       items: [],
       webFallbackItems: [
         {
@@ -225,6 +228,7 @@ describe('toolHelpers', () => {
       pageSize: 5,
       returnedCount: 1,
       offset: 0,
+      moreResultsAvailable: true,
       items: [
         {
           title: 'OSS Home',

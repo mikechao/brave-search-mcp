@@ -11,6 +11,7 @@ interface NewsStructuredContent {
   pageSize?: number;
   returnedCount?: number;
   offset?: number;
+  moreResultsAvailable?: boolean;
   items: Array<{
     title: string;
     url: string;
@@ -92,7 +93,7 @@ describe('braveNewsSearchTool', () => {
 
     mockBraveSearch.newsSearch.mockResolvedValue({
       type: 'news',
-      query: { original: 'tech' },
+      query: { original: 'tech', more_results_available: true },
       results: [
         {
           type: 'news_result',
@@ -139,6 +140,7 @@ describe('braveNewsSearchTool', () => {
     expect(text).toContain('click the + icon');
     const structured = getMetaStructuredContent<NewsStructuredContent>(result);
     expect(structured.returnedCount).toBe(2);
+    expect(structured.moreResultsAvailable).toBe(true);
     expect(structured.items[0].title).toBe('First');
     expect(structured.items[0].source).toBe('a.example.com');
     expect(structured.items[1].source).toBe('b.example.com');
@@ -151,7 +153,7 @@ describe('braveNewsSearchTool', () => {
 
     mockBraveSearch.newsSearch.mockResolvedValue({
       type: 'news',
-      query: { original: 'none' },
+      query: { original: 'none', more_results_available: false },
       results: [],
     } as unknown as Awaited<ReturnType<BraveSearch['newsSearch']>>);
 
@@ -165,6 +167,7 @@ describe('braveNewsSearchTool', () => {
       count: 5,
       pageSize: 5,
       returnedCount: 0,
+      moreResultsAvailable: false,
       items: [],
     });
     expect(log).toHaveBeenCalledWith(
@@ -191,6 +194,7 @@ describe('braveNewsSearchTool', () => {
           count: 3,
           pageSize: 3,
           returnedCount: 0,
+          moreResultsAvailable: false,
           items: [],
           error: 'upstream failure',
         },

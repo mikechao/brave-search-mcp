@@ -18,6 +18,7 @@ export interface WebSearchData {
   pageSize?: number;
   returnedCount?: number;
   offset?: number;
+  moreResultsAvailable?: boolean;
   items: WebResultItem[];
   error?: string;
 }

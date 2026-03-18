@@ -25,6 +25,7 @@ export interface LocalSearchData {
   pageSize?: number;
   returnedCount?: number;
   offset?: number;
+  moreResultsAvailable?: boolean;
   items: LocalBusinessItem[];
   webFallbackItems?: WebResultItem[];
   fallbackToWeb?: boolean;

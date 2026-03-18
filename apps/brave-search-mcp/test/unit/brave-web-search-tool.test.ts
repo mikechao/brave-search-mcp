@@ -12,6 +12,7 @@ interface WebStructuredContent {
   pageSize?: number;
   returnedCount?: number;
   offset?: number;
+  moreResultsAvailable?: boolean;
   items: Array<{
     title: string;
     url: string;
@@ -95,7 +96,7 @@ describe('braveWebSearchTool', () => {
 
     mockBraveSearch.webSearch.mockResolvedValue({
       type: 'search',
-      query: { original: 'open source' },
+      query: { original: 'open source', more_results_available: false },
       web: {
         type: 'search',
         results: [
@@ -134,6 +135,7 @@ describe('braveWebSearchTool', () => {
       count: 10,
       pageSize: 10,
       returnedCount: 1,
+      moreResultsAvailable: false,
       items: [
         {
           title: 'OSS Home',
@@ -159,7 +161,7 @@ describe('braveWebSearchTool', () => {
 
     mockBraveSearch.webSearch.mockResolvedValue({
       type: 'search',
-      query: { original: 'none' },
+      query: { original: 'none', more_results_available: false },
       web: {
         type: 'search',
         results: [],
@@ -176,6 +178,7 @@ describe('braveWebSearchTool', () => {
       count: 5,
       pageSize: 5,
       returnedCount: 0,
+      moreResultsAvailable: false,
       items: [],
     });
     expect(log).toHaveBeenCalledWith(
@@ -203,6 +206,7 @@ describe('braveWebSearchTool', () => {
           count: 3,
           pageSize: 3,
           returnedCount: 0,
+          moreResultsAvailable: false,
           items: [],
           error: 'web upstream failed',
         },

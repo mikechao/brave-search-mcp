@@ -131,4 +131,41 @@ describe('videoSearchApp', () => {
     expect(container.querySelector('.video-pip-container')).not.toBeNull();
     expect(container.querySelector('.video-modal-backdrop')).toBeNull();
   });
+
+  it('disables next pagination when Brave says no more results are available', async () => {
+    const props = createProps({
+      toolResult: {
+        structuredContent: {
+          query: 'typescript videos',
+          count: 1,
+          pageSize: 1,
+          returnedCount: 1,
+          offset: 0,
+          moreResultsAvailable: false,
+          items: [
+            {
+              title: 'TypeScript in Practice',
+              url: 'https://example.com/video-1',
+              description: 'Learn TypeScript',
+              duration: '10:00',
+              views: '1000',
+              creator: 'Code Channel',
+              age: '2 days ago',
+              embedId: 'abc123xyz89',
+              embedType: 'youtube',
+            },
+          ],
+        },
+      },
+      onLoadPage: vi.fn(async () => {}),
+    });
+
+    await renderApp(props);
+
+    const nextButton = container.querySelector('button[aria-label="Next page"]');
+    if (!(nextButton instanceof HTMLButtonElement))
+      throw new TypeError('Expected Next page button to exist');
+
+    expect(nextButton.hasAttribute('disabled')).toBe(true);
+  });
 });

@@ -76,6 +76,7 @@ export class BraveWebSearchTool {
               query: value.query,
               count: value.count ?? 10,
               items: [],
+              moreResultsAvailable: false,
               extra: { error: getErrorMessage(error) },
             })
           : undefined,
@@ -92,6 +93,7 @@ export class BraveWebSearchTool {
       safesearch: SafeSearchLevel.Strict,
       ...(freshness ? { freshness } : {}),
     });
+    const moreResultsAvailable = results.query.more_results_available;
 
     if (!results.web || results.web?.results.length === 0) {
       this.logMessage(`No results found for "${query}"`, 'info');
@@ -104,6 +106,7 @@ export class BraveWebSearchTool {
               count: requestedCount,
               offset,
               items: [],
+              moreResultsAvailable,
             })
           : undefined,
       );
@@ -161,6 +164,7 @@ export class BraveWebSearchTool {
             query,
             count: requestedCount,
             offset,
+            moreResultsAvailable,
             items: webItems,
           })
         : undefined,

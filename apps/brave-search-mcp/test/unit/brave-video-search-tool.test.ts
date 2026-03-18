@@ -12,6 +12,7 @@ interface VideoStructuredContent {
   pageSize?: number;
   returnedCount?: number;
   offset?: number;
+  moreResultsAvailable?: boolean;
   items: Array<{
     title: string;
     url: string;
@@ -111,7 +112,7 @@ describe('braveVideoSearchTool', () => {
 
     mockBraveSearch.videoSearch.mockResolvedValue({
       type: 'video',
-      query: { original: 'music videos' },
+      query: { original: 'music videos', more_results_available: true },
       results: [
         {
           type: 'video_result',
@@ -156,6 +157,7 @@ describe('braveVideoSearchTool', () => {
     expect(text).toContain('click the + icon');
     const structured = getMetaStructuredContent<VideoStructuredContent>(result);
     expect(structured.returnedCount).toBe(2);
+    expect(structured.moreResultsAvailable).toBe(true);
     expect(structured.items[0]).toMatchObject({
       title: 'YT clip',
       embedType: 'youtube',
@@ -175,7 +177,7 @@ describe('braveVideoSearchTool', () => {
 
     mockBraveSearch.videoSearch.mockResolvedValue({
       type: 'video',
-      query: { original: 'none' },
+      query: { original: 'none', more_results_available: false },
       results: [],
     } as unknown as Awaited<ReturnType<BraveSearch['videoSearch']>>);
 
@@ -189,6 +191,7 @@ describe('braveVideoSearchTool', () => {
       count: 4,
       pageSize: 4,
       returnedCount: 0,
+      moreResultsAvailable: false,
       items: [],
     });
     expect(log).toHaveBeenCalledWith(
@@ -215,6 +218,7 @@ describe('braveVideoSearchTool', () => {
           count: 2,
           pageSize: 2,
           returnedCount: 0,
+          moreResultsAvailable: false,
           items: [],
           error: 'video upstream failed',
         },

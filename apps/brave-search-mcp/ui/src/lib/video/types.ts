@@ -24,6 +24,7 @@ export interface VideoSearchData {
   pageSize?: number;
   returnedCount?: number;
   offset?: number;
+  moreResultsAvailable?: boolean;
   items: VideoItem[];
   error?: string;
 }

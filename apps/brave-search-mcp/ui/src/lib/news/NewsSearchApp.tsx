@@ -54,7 +54,7 @@ export default function NewsSearchApp({
   // Pagination logic - Brave News API has max offset of 9
   const MAX_OFFSET = 9;
   const hasPrevious = currentOffset > 0;
-  const hasNext = currentOffset < MAX_OFFSET && items.length > 0;
+  const hasNext = currentOffset < MAX_OFFSET && (data?.moreResultsAvailable ?? items.length > 0);
   const canPaginate = Boolean(onLoadPage) && hasData && !error;
 
   // Context selection helpers
