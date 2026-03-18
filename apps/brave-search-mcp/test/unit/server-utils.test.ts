@@ -275,6 +275,40 @@ describe('server-utils', () => {
     expect(exitSpy).toHaveBeenCalledWith(0);
   });
 
+  it('startStreamableHttpServer starts when Promise.withResolvers is unavailable', async () => {
+    process.env.PORT = '4567';
+
+    const originalWithResolversDescriptor = Object.getOwnPropertyDescriptor(Promise, 'withResolvers');
+    Object.defineProperty(Promise, 'withResolvers', {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+
+    try {
+      const server = createServerLike();
+      const createServer = vi.fn(() => server as never);
+      const processOnSpy = vi.spyOn(process, 'on').mockReturnValue(process);
+
+      await startStreamableHttpServer(createServer);
+
+      expect(mockState.serveMock).toHaveBeenCalledWith(
+        expect.objectContaining({ port: 4567 }),
+        expect.any(Function),
+      );
+      expect(processOnSpy).toHaveBeenCalledWith('SIGINT', expect.any(Function));
+      expect(processOnSpy).toHaveBeenCalledWith('SIGTERM', expect.any(Function));
+    }
+    finally {
+      if (originalWithResolversDescriptor) {
+        Object.defineProperty(Promise, 'withResolvers', originalWithResolversDescriptor);
+      }
+      else {
+        Reflect.deleteProperty(Promise, 'withResolvers');
+      }
+    }
+  });
+
   it('startStreamableHttpServer returns 500 JSON when request handling throws', async () => {
     const error = new Error('connect failed');
     const server = createServerLike({

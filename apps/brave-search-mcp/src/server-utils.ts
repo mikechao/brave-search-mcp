@@ -134,7 +134,10 @@ export async function startStreamableHttpServer(
     }
   });
 
-  const { promise, resolve, reject: _reject } = Promise.withResolvers<void>();
+  let resolveServerStarted!: () => void;
+  const promise = new Promise<void>((resolve) => {
+    resolveServerStarted = resolve;
+  });
 
   const httpServer = serve({
     fetch: app.fetch,
@@ -142,7 +145,7 @@ export async function startStreamableHttpServer(
     hostname,
   }, () => {
     console.log(`Server listening on http://${hostname}:${port}/mcp`);
-    resolve();
+    resolveServerStarted();
   });
 
   const shutdown = () => {

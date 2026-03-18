@@ -311,10 +311,10 @@ Only `apps/brave-search-mcp` is published to npm. The `brave-search` SDK is bund
 
 ### Pre-release Verification
 
-Before releasing, verify the build works:
+Before releasing, verify the built HTTP server works on the minimum supported Node version:
 
 ```bash
-BRAVE_API_KEY=your_key_here node apps/brave-search-mcp/dist/index.js --http
+HOST=127.0.0.1 ALLOWED_HOSTS=localhost,127.0.0.1 BRAVE_API_KEY=your_key_here npx -y node@20.19.0 apps/brave-search-mcp/dist/index.js --http
 ```
 
 ### Changeset Guidelines
