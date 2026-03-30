@@ -6,6 +6,10 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@mikechao/brave-search-mcp/badge" alt="Brave Search MCP server" />
 </a>
 
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/mikechao-brave-search-mcp).
+
 ## Features
 
 - **Web Search**: Perform a regular search on the web
