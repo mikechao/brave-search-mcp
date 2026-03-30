@@ -29,7 +29,8 @@
       "minimatch@>=10.0.0 <10.2.3": "10.2.3",
       "path-to-regexp@>=8.0.0 <8.4.0": "8.4.0",
       "qs@>=6.7.0 <=6.14.1": "6.14.2",
-      "undici": "7.24.0"
+      "undici": "7.24.0",
+      "vite-prerender-plugin@<0.5.13": "0.5.13"
     }
   },
   "packageManager": "pnpm@10.30.1+sha512.3590e550d5384caa39bd5c7c739f72270234b2f6059e13018f975c313b1eb9fefcc09714048765d4d9efe961382c312e624572c0420762bdc5d5940cdf9be73a"

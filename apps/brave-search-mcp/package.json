@@ -92,7 +92,7 @@
     "@changesets/cli": "^2.28.1",
     "@eslint-react/eslint-plugin": "^2.13.0",
     "@mcpjam/sdk": "^0.8.2",
-    "@preact/preset-vite": "^2.10.4",
+    "@preact/preset-vite": "^2.10.5",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^22.13.14",
     "@types/react": "^19.2.0",

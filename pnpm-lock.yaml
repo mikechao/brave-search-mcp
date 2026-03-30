@@ -17,6 +17,7 @@ overrides:
   path-to-regexp@>=8.0.0 <8.4.0: 8.4.0
   qs@>=6.7.0 <=6.14.1: 6.14.2
   undici: 7.24.0
+  vite-prerender-plugin@<0.5.13: 0.5.13
 
 importers:
 
@@ -75,8 +76,8 @@ importers:
         specifier: ^0.8.2
         version: 0.8.2
       '@preact/preset-vite':
-        specifier: ^2.10.4
-        version: 2.10.4(@babel/core@7.28.6)(preact@10.28.4)(rollup@4.59.0)(vite@8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+        specifier: ^2.10.5
+        version: 2.10.5(@babel/core@7.28.6)(preact@10.28.4)(rollup@4.59.0)(vite@8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       '@tailwindcss/postcss':
         specifier: ^4.1.18
         version: 4.1.18
@@ -1143,8 +1144,8 @@ packages:
   '@posthog/core@1.20.0':
     resolution: {integrity: sha512-e/F20we0t6bPMuDOVOe53f908s23vuKEpFKNXmZcx4bSYsPkjRN49akIIHU621HBJdcsFx537vhJYKZxu8uS9w==}
 
-  '@preact/preset-vite@2.10.4':
-    resolution: {integrity: sha512-L7RQRs2GiG0lLUz7JSg07vU6lhlzdIthH0eqYZmRR70tTB9ikKCq2LHr+PZzhzIOco3Dioi6P6e/fjAmDUMJbQ==}
+  '@preact/preset-vite@2.10.5':
+    resolution: {integrity: sha512-p0vJpxiVO7KWWazWny3LUZ+saXyZKWv6Ju0bYMWNJRp2YveufRPgSUB1C4MTqGJfz07EehMgfN+AJNwQy+w6Iw==}
     peerDependencies:
       '@babel/core': 7.x
       vite: 2.x || 3.x || 4.x || 5.x || 6.x || 7.x || 8.x
@@ -5191,10 +5192,10 @@ packages:
       rollup: ^4.59.0
       vite: ^5.4.11 || ^6.0.0 || ^7.0.0 || ^8.0.0
 
-  vite-prerender-plugin@0.5.12:
-    resolution: {integrity: sha512-EiwhbMn+flg14EysbLTmZSzq8NGTxhytgK3bf4aGRF1evWLGwZiHiUJ1KZDvbxgKbMf2pG6fJWGEa3UZXOnR1g==}
+  vite-prerender-plugin@0.5.13:
+    resolution: {integrity: sha512-IKSpYkzDBsKAxa05naRbj7GvNVMSdww/Z/E89oO3xndz+gWnOBOKOAbEXv7qDhktY/j3vHgJmoV1pPzqU2tx9g==}
     peerDependencies:
-      vite: 5.x || 6.x || 7.x
+      vite: 5.x || 6.x || 7.x || 8.x
 
   vite@7.3.1:
     resolution: {integrity: sha512-w+N7Hifpc3gRjZ63vYBXA56dvvRlNWRczTdmCBBa+CotUzAPf5b7YMdMR/8CQoeYE5LX3W4wj6RYTgonm1b9DA==}
@@ -6440,7 +6441,7 @@ snapshots:
     dependencies:
       cross-spawn: 7.0.6
 
-  '@preact/preset-vite@2.10.4(@babel/core@7.28.6)(preact@10.28.4)(rollup@4.59.0)(vite@8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))':
+  '@preact/preset-vite@2.10.5(@babel/core@7.28.6)(preact@10.28.4)(rollup@4.59.0)(vite@8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))':
     dependencies:
       '@babel/core': 7.28.6
       '@babel/plugin-transform-react-jsx': 7.28.6(@babel/core@7.28.6)
@@ -6452,7 +6453,7 @@ snapshots:
       magic-string: 0.30.21
       picocolors: 1.1.1
       vite: 8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
-      vite-prerender-plugin: 0.5.12(vite@8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+      vite-prerender-plugin: 0.5.13(vite@8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       zimmerframe: 1.1.4
     transitivePeerDependencies:
       - preact
@@ -10964,7 +10965,7 @@ snapshots:
       rollup: 4.59.0
       vite: 8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)
 
-  vite-prerender-plugin@0.5.12(vite@8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)):
+  vite-prerender-plugin@0.5.13(vite@8.0.0(@types/node@22.19.3)(esbuild@0.27.2)(jiti@2.6.1)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)):
     dependencies:
       kolorist: 1.8.0
       magic-string: 0.30.21
