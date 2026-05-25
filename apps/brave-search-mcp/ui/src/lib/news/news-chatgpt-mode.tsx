@@ -4,8 +4,8 @@
  */
 import type { NewsSearchAppProps } from './NewsSearchApp';
 import type { ContextArticle, NewsSearchData } from './types';
-import { TOOL_NAMES } from '@tool-catalog';
 import { useCallback, useState } from 'react';
+import { TOOL_NAMES } from '../../../../src/tool-catalog';
 import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { extractToolStructuredContent, useChatGptBridge } from '../../hooks/useChatGptBridge';
 import { useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';

@@ -4,8 +4,8 @@ import type { ContextVideo, VideoSearchData } from './types';
  * Uses custom useOpenAiGlobal hook for reactive updates
  */
 import type { VideoSearchAppProps } from './VideoSearchApp';
-import { TOOL_NAMES } from '@tool-catalog';
 import { useCallback, useState } from 'react';
+import { TOOL_NAMES } from '../../../../src/tool-catalog';
 import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { extractToolStructuredContent, useChatGptBridge } from '../../hooks/useChatGptBridge';
 import { useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';

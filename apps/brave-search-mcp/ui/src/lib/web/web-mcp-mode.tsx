@@ -1,7 +1,7 @@
 import type { ToolResult, WidgetProps } from '../../widget-props';
 import type { WebSearchData } from './types';
-import { TOOL_NAMES } from '@tool-catalog';
 import { useCallback, useState } from 'react';
+import { TOOL_NAMES } from '../../../../src/tool-catalog';
 import { useMcpApp } from '../../hooks/useMcpApp';
 import WebSearchApp from './WebSearchApp';
 

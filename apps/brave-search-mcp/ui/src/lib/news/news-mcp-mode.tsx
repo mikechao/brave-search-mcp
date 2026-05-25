@@ -4,8 +4,8 @@
 import type { DisplayMode, ToolResult } from '../../widget-props';
 import type { NewsSearchAppProps } from './NewsSearchApp';
 import type { ContextArticle, NewsSearchData } from './types';
-import { TOOL_NAMES } from '@tool-catalog';
 import { useCallback, useMemo, useState } from 'react';
+import { TOOL_NAMES } from '../../../../src/tool-catalog';
 import { useMcpApp } from '../../hooks/useMcpApp';
 import NewsSearchApp from './NewsSearchApp';
 

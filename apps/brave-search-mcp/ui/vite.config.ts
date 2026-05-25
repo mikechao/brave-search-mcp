@@ -20,8 +20,6 @@ export default defineConfig({
   plugins: [preact({ reactAliasesEnabled: false }), viteSingleFile()],
   resolve: {
     alias: [
-      { find: /^@\//, replacement: `${srcDir}/` },
-      { find: '@tool-catalog', replacement: path.resolve(process.cwd(), 'src/tool-catalog.ts') },
       { find: 'react-dom/test-utils', replacement: 'preact/test-utils' },
       { find: 'react-dom', replacement: 'preact/compat' },
       { find: 'react/jsx-runtime', replacement: 'preact/jsx-runtime' },
