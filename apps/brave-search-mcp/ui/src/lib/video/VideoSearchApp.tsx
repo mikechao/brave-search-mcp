@@ -112,7 +112,7 @@ export default function VideoSearchApp({
       // Host exited PiP mode, close the video
       // Using setTimeout to avoid the lint warning about direct setState in useEffect
       // This is intentional reactive behavior based on host context changes
-      const timeoutId = setTimeout(() => setActiveVideo(null), 0);
+      const timeoutId = setTimeout(setActiveVideo, 0, null);
       return () => clearTimeout(timeoutId);
     }
   }, [displayMode, activeVideo]);

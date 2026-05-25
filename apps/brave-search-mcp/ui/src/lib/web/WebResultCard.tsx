@@ -3,7 +3,7 @@
  */
 import type { WebResultItem } from './types';
 import { Check, Globe, Plus } from '@openai/apps-sdk-ui/components/Icon';
-import { memo, useMemo } from 'react';
+import { createElement, memo, useMemo } from 'react';
 import { sanitizeHtml, stripHtml } from '../shared/sanitize';
 
 interface WebResultCardProps {
@@ -50,16 +50,16 @@ function WebResultCardComponent({ item, index, onOpenLink, isInContext, onToggle
       const element = node as HTMLElement;
       const tagName = element.tagName.toLowerCase();
       if (tagName === 'br')
-        return <br key={key} />;
+        return createElement('br', { key });
 
       if (!ALLOWED_DESCRIPTION_TAGS.has(tagName))
         return element.textContent;
 
-      const Tag = (tagName === 'p' ? 'span' : tagName) as React.ElementType;
+      const tag = tagName === 'p' ? 'span' : tagName;
       const children = Array.from(element.childNodes).map((child, index) => (
         toReactNode(child, `${key}-${index}`)
       ));
-      return <Tag key={key}>{children}</Tag>;
+      return createElement(tag, { key }, children);
     };
 
     return Array.from(container.childNodes).map((node, index) =>
