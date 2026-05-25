@@ -81,7 +81,7 @@
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@openai/apps-sdk-ui": "^0.2.2",
     "brave-search": "workspace:*",
-    "hono": "^4.12.7",
+    "hono": "^4.12.23",
     "pigeon-maps": "^0.22.1",
     "preact": "^10.28.4",
     "snarkdown": "^2.0.0",
