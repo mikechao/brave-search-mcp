@@ -2,7 +2,7 @@ import type { DisplayMode, ToolResult } from '../../widget-props';
 import type { ContextVideo, VideoSearchData } from './types';
 import type { VideoSearchAppProps } from './VideoSearchApp';
 import { useCallback, useMemo, useState } from 'react';
-import { TOOL_NAMES } from '../../../../src/tool-catalog';
+import { TOOL_NAMES } from '#tool-catalog';
 import { useMcpApp } from '../../hooks/useMcpApp';
 import VideoSearchApp from './VideoSearchApp';
 

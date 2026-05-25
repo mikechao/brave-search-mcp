@@ -23,6 +23,9 @@
     "brave-search",
     "brave-search-mcp"
   ],
+  "imports": {
+    "#tool-catalog": "./src/tool-catalog.ts"
+  },
   "main": "dist/index.js",
   "bin": {
     "brave-search-mcp": "dist/index.js"

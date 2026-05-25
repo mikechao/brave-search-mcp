@@ -5,7 +5,7 @@ import type { ContextVideo, VideoSearchData } from './types';
  */
 import type { VideoSearchAppProps } from './VideoSearchApp';
 import { useCallback, useState } from 'react';
-import { TOOL_NAMES } from '../../../../src/tool-catalog';
+import { TOOL_NAMES } from '#tool-catalog';
 import { useOpenAiAppTheme } from '../../hooks/useAppTheme';
 import { extractToolStructuredContent, useChatGptBridge } from '../../hooks/useChatGptBridge';
 import { useToolInput, useToolOutput, useToolResponseMetadata } from '../../hooks/useOpenAiGlobal';

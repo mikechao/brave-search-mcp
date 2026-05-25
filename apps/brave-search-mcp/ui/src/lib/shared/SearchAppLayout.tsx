@@ -3,9 +3,9 @@ import type { ReactNode } from 'react';
  * SearchAppLayout - Shared layout wrapper for all Brave Search widgets
  * Provides consistent header, error/empty states, and optional pagination
  */
-import type { WidgetToolVariant } from '../../../../src/tool-catalog';
+import type { WidgetToolVariant } from '#tool-catalog';
 import type { WidgetProps } from '../../widget-props';
-import { TOOL_NAMES } from '../../../../src/tool-catalog';
+import { TOOL_NAMES } from '#tool-catalog';
 import { FullscreenButton } from './FullscreenButton';
 import { PaginationButton } from './PaginationButton';
 
