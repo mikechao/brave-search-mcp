@@ -1,9 +1,10 @@
 import type { BraveSearch } from 'brave-search';
 import type { MockBraveSearch } from '../mocks/index.js';
+import type { ToolInterceptor } from '../../src/tools/tool-helpers.js';
 import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import packageJson from '../../package.json' with { type: 'json' };
 import { BraveMcpServer } from '../../src/server.js';
 import { TOOL_NAMES } from '../../src/tool-catalog.js';
@@ -131,6 +132,71 @@ describe('braveMcpServer', () => {
         'dependency injection query',
         expect.objectContaining({ count: 10 }),
       );
+    });
+
+    it('should thread built interceptors through direct and fallback tool execution', async () => {
+      const seenContexts: Array<{ toolName: string; isFallback: boolean }> = [];
+      const interceptors: readonly ToolInterceptor[] = [
+        {
+          async before(context) {
+            seenContexts.push({ toolName: context.toolName, isFallback: context.isFallback });
+          },
+        },
+      ];
+      const buildInterceptorsSpy = vi
+        .spyOn(
+          BraveMcpServer.prototype as unknown as { buildInterceptors: () => readonly ToolInterceptor[] },
+          'buildInterceptors',
+        )
+        .mockReturnValue(interceptors);
+
+      mockBraveSearch.webSearch
+        .mockResolvedValueOnce({
+          type: 'search',
+          query: { original: 'pizza near me', more_results_available: false },
+          locations: { results: [] },
+        } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>)
+        .mockResolvedValueOnce({
+          type: 'search',
+          query: { original: 'pizza near me', more_results_available: false },
+          web: {
+            results: [
+              {
+                title: 'Pizza Place',
+                url: 'https://example.com/pizza',
+                description: 'Pizza nearby',
+                meta_url: {
+                  netloc: 'example.com',
+                  hostname: 'example.com',
+                  favicon: 'https://example.com/favicon.ico',
+                },
+              },
+            ],
+          },
+        } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
+
+      const interceptedServer = new BraveMcpServer(
+        'fake-api-key',
+        false,
+        mockBraveSearch as unknown as BraveSearch,
+      );
+      const { client, close } = await createConnectedClient(interceptedServer);
+
+      try {
+        await client.callTool({
+          name: TOOL_NAMES.local,
+          arguments: { query: 'pizza near me', count: 2, offset: 0 },
+        });
+      }
+      finally {
+        buildInterceptorsSpy.mockRestore();
+        await close();
+      }
+
+      expect(seenContexts).toEqual([
+        { toolName: TOOL_NAMES.local, isFallback: false },
+        { toolName: TOOL_NAMES.web, isFallback: true },
+      ]);
     });
 
     it('should register standard tools without UI metadata when isUI=false', async () => {

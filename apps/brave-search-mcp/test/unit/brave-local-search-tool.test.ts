@@ -1,4 +1,5 @@
 import type { BraveSearch } from 'brave-search';
+import type { ToolInterceptor, ToolInterceptorContext } from '../../src/tools/tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { describe, expect, it, vi } from 'vitest';
 import { TOOL_NAMES } from '../../src/tool-catalog.js';
@@ -962,5 +963,51 @@ describe('formatPoiResults edge cases', () => {
     const formatted = formatPoiResults(poiData, poiDescriptions);
     expect(formatted[0]).toContain('Ratings: 4.5 (0) reviews');
     expect(formatted[0]).not.toContain('undefined');
+  });
+});
+
+describe('braveLocalSearchTool interceptors', () => {
+  it('passes interceptors to executeTool with isFallback false on direct execute', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const capturedContexts: ToolInterceptorContext[] = [];
+    const spyInterceptor: ToolInterceptor = {
+      async before(ctx) { capturedContexts.push({ ...ctx }); },
+    };
+    const tool = new BraveLocalSearchTool(
+      vi.fn(),
+      mockBraveSearch as unknown as BraveSearch,
+      vi.fn().mockResolvedValue({ content: [{ type: 'text', text: 'fallback' }] }),
+      false,
+      [spyInterceptor],
+    );
+
+    mockBraveSearch.webSearch.mockResolvedValue({
+      type: 'search',
+      query: { original: 'pizza near me' },
+      locations: { results: [{ id: '1' }] },
+    } as unknown as Awaited<ReturnType<BraveSearch['webSearch']>>);
+
+    mockBraveSearch.localPoiSearch.mockResolvedValue({
+      type: 'local_pois',
+      results: [{
+        id: '1',
+        name: 'Pizza Place',
+        address: { street_address: '1 Main St', city: 'Springfield', state: 'IL', country: 'US' },
+        coordinates: { latitude: 0, longitude: 0 },
+        phone: '',
+        rating: { ratingValue: 4.5, ratingCount: 10 },
+      }],
+    } as unknown as Awaited<ReturnType<BraveSearch['localPoiSearch']>>);
+
+    mockBraveSearch.localDescriptionsSearch.mockResolvedValue({
+      type: 'local_descriptions',
+      results: [],
+    } as unknown as Awaited<ReturnType<BraveSearch['localDescriptionsSearch']>>);
+
+    await tool.execute({ query: 'pizza near me', count: 1 });
+
+    expect(capturedContexts).toHaveLength(1);
+    expect(capturedContexts[0]?.toolName).toBe(TOOL_NAMES.local);
+    expect(capturedContexts[0]?.isFallback).toBe(false);
   });
 });

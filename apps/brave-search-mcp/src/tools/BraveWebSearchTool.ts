@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { UiToolSpecConfig } from '../ui-config.js';
-import type { ToolLogger } from './tool-helpers.js';
+import type { ToolInterceptor, ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
@@ -23,6 +23,7 @@ const webSearchInputSchema = z.object({
   freshness: freshnessInputSchema,
 });
 
+export type BraveWebSearchInput = z.infer<typeof webSearchInputSchema>;
 export type BraveWebSearchStructuredContent = z.infer<typeof webSearchOutputSchema>;
 
 export { webSearchOutputSchema };
@@ -61,6 +62,7 @@ export class BraveWebSearchTool {
     private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
+    private interceptors: readonly ToolInterceptor[] = [],
   ) {}
 
   public async execute(input: z.infer<typeof webSearchInputSchema>): Promise<CallToolResult> {
@@ -81,6 +83,7 @@ export class BraveWebSearchTool {
             })
           : undefined,
       ),
+      interceptors: this.interceptors,
     });
   }
 

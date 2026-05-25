@@ -1,4 +1,4 @@
-import type { LocalWebFallbackExecutor, ToolLogger } from './tools/tool-helpers.js';
+import type { LocalWebFallbackExecutor, ToolInterceptor, ToolLogger } from './tools/tool-helpers.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
@@ -11,6 +11,7 @@ import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
+import { buildToolErrorResult, executeTool } from './tools/tool-helpers.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const { version: SERVER_VERSION } = packageJson;
@@ -68,15 +69,24 @@ export class BraveMcpServer {
 
     const braveSearch = braveSearchInstance ?? new BraveSearch(braveSearchApiKey);
     const log: ToolLogger = this.log.bind(this);
+    const activeInterceptors = this.buildInterceptors();
 
     // Keep tool creation inline so the server's main wiring stays easy to scan.
-    const image = new BraveImageSearchTool(log, braveSearch, isUI);
-    const web = new BraveWebSearchTool(log, braveSearch, isUI);
-    const executeWebFallback: LocalWebFallbackExecutor = input => web.executeCore(input);
-    const local = new BraveLocalSearchTool(log, braveSearch, executeWebFallback, isUI);
-    const news = new BraveNewsSearchTool(log, braveSearch, isUI);
-    const video = new BraveVideoSearchTool(log, braveSearch, isUI);
-    const llmContext = new BraveLLMContextSearchTool(log, braveSearch, isUI);
+    const image = new BraveImageSearchTool(log, braveSearch, isUI, activeInterceptors);
+    const web = new BraveWebSearchTool(log, braveSearch, isUI, activeInterceptors);
+    const executeWebFallback: LocalWebFallbackExecutor = input =>
+      executeTool({
+        toolName: web.name,
+        input,
+        executeCore: value => web.executeCore(value),
+        buildErrorResult: (_value, error) => buildToolErrorResult(web.name, error),
+        interceptors: activeInterceptors,
+        isFallback: true,
+      });
+    const local = new BraveLocalSearchTool(log, braveSearch, executeWebFallback, isUI, activeInterceptors);
+    const news = new BraveNewsSearchTool(log, braveSearch, isUI, activeInterceptors);
+    const video = new BraveVideoSearchTool(log, braveSearch, isUI, activeInterceptors);
+    const llmContext = new BraveLLMContextSearchTool(log, braveSearch, isUI, activeInterceptors);
 
     this.tools = {
       image,
@@ -88,6 +98,11 @@ export class BraveMcpServer {
     };
 
     this.registerConfiguredTools(isUI);
+  }
+
+  private buildInterceptors(): readonly ToolInterceptor[] {
+    // Future: read BRAVE_MCP_POLICY_FILE, BRAVE_MCP_REQUEST_LIMIT, etc. and build interceptors.
+    return [];
   }
 
   private registerConfiguredTools(isUI: boolean): void {

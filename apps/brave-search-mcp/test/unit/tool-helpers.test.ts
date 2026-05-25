@@ -1,4 +1,5 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { ToolInterceptor } from '../../src/tools/tool-helpers.js';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import {
@@ -276,5 +277,154 @@ describe('toolHelpers', () => {
   it('normalizes error messages for widget-backed tools', () => {
     expect(getErrorMessage(new Error('timeout'))).toBe('timeout');
     expect(getErrorMessage('plain failure')).toBe('plain failure');
+  });
+
+  describe('interceptors', () => {
+    const successInput = { query: 'hello' };
+
+    function makeSuccessCore() {
+      return vi.fn(async () => ({ content: [{ type: 'text' as const, text: 'ok' }] }));
+    }
+
+    it('calls executeCore normally when no interceptors are registered', async () => {
+      const executeCore = makeSuccessCore();
+      const result = await executeTool({
+        toolName: 'test_tool',
+        input: successInput,
+        executeCore,
+      });
+      expect(executeCore).toHaveBeenCalledOnce();
+      expect(result.isError).toBeFalsy();
+    });
+
+    it('calls before() on each interceptor in registration order before executeCore', async () => {
+      const order: number[] = [];
+      const interceptors: ToolInterceptor[] = [
+        { async before() { order.push(1); } },
+        { async before() { order.push(2); } },
+      ];
+      const executeCore = makeSuccessCore();
+      await executeTool({ toolName: 'test_tool', input: successInput, executeCore, interceptors });
+      expect(order).toEqual([1, 2]);
+      expect(executeCore).toHaveBeenCalledOnce();
+    });
+
+    it('short-circuits on first deny, does not call executeCore', async () => {
+      const executeCore = makeSuccessCore();
+      const interceptors: ToolInterceptor[] = [
+        { async before() { return { allow: false, reason: 'blocked' }; } },
+      ];
+      const result = await executeTool({ toolName: 'test_tool', input: successInput, executeCore, interceptors });
+      expect(executeCore).not.toHaveBeenCalled();
+      expect(result.isError).toBe(true);
+      const text = (result.content[0] as { type: 'text'; text: string }).text;
+      expect(text).toContain('[POLICY:DENIED] blocked');
+    });
+
+    it('uses default deny message when reason is omitted', async () => {
+      const executeCore = makeSuccessCore();
+      const interceptors: ToolInterceptor[] = [
+        { async before() { return { allow: false }; } },
+      ];
+      const result = await executeTool({ toolName: 'test_tool', input: successInput, executeCore, interceptors });
+      const text = (result.content[0] as { type: 'text'; text: string }).text;
+      expect(text).toContain('[POLICY:DENIED] request denied');
+    });
+
+    it('calls after() with outcome success after executeCore resolves', async () => {
+      const capturedOutcome: string[] = [];
+      const interceptors: ToolInterceptor[] = [
+        { async after(ctx) { capturedOutcome.push(ctx.outcome); } },
+      ];
+      await executeTool({ toolName: 'test_tool', input: successInput, executeCore: makeSuccessCore(), interceptors });
+      expect(capturedOutcome).toEqual(['success']);
+    });
+
+    it('calls after() with outcome error when executeCore throws', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const capturedOutcome: string[] = [];
+      const interceptors: ToolInterceptor[] = [
+        { async after(ctx) { capturedOutcome.push(ctx.outcome); } },
+      ];
+      const result = await executeTool({
+        toolName: 'test_tool',
+        input: successInput,
+        executeCore: async () => { throw new Error('fail'); },
+        interceptors,
+      });
+      expect(capturedOutcome).toEqual(['error']);
+      expect(result.isError).toBe(true);
+      consoleSpy.mockRestore();
+    });
+
+    it('calls after() with outcome denied when before() denies', async () => {
+      const capturedOutcome: string[] = [];
+      const interceptors: ToolInterceptor[] = [
+        {
+          async before() { return { allow: false, reason: 'denied' }; },
+          async after(ctx) { capturedOutcome.push(ctx.outcome); },
+        },
+      ];
+      await executeTool({ toolName: 'test_tool', input: successInput, executeCore: makeSuccessCore(), interceptors });
+      expect(capturedOutcome).toEqual(['denied']);
+    });
+
+    it('frozen input is a different object reference and mutations in before() do not affect executeCore input', async () => {
+      let receivedInput: Record<string, unknown> | undefined;
+      const interceptors: ToolInterceptor[] = [
+        {
+          async before(ctx) {
+            try {
+              (ctx.input as Record<string, unknown>).query = 'mutated';
+            }
+            catch {
+              // Object.freeze prevents mutation in strict mode; this is expected
+            }
+          },
+        },
+      ];
+      await executeTool({
+        toolName: 'test_tool',
+        input: successInput,
+        executeCore: async (input) => {
+          receivedInput = input as Record<string, unknown>;
+          return { content: [{ type: 'text' as const, text: 'ok' }] };
+        },
+        interceptors,
+      });
+      expect(receivedInput?.query).toBe('hello');
+    });
+
+    it('isFallback is false by default and true when set', async () => {
+      const capturedFallback: boolean[] = [];
+      const interceptors: ToolInterceptor[] = [
+        { async before(ctx) { capturedFallback.push(ctx.isFallback); } },
+      ];
+      await executeTool({ toolName: 'test_tool', input: successInput, executeCore: makeSuccessCore(), interceptors });
+      await executeTool({ toolName: 'test_tool', input: successInput, executeCore: makeSuccessCore(), interceptors, isFallback: true });
+      expect(capturedFallback).toEqual([false, true]);
+    });
+
+    it('an error thrown inside before() propagates as a tool error result', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const interceptors: ToolInterceptor[] = [
+        { async before() { throw new Error('interceptor boom'); } },
+      ];
+      const result = await executeTool({ toolName: 'test_tool', input: successInput, executeCore: makeSuccessCore(), interceptors });
+      expect(result.isError).toBe(true);
+      consoleSpy.mockRestore();
+    });
+
+    it('an error thrown inside after() does not suppress the tool result', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const interceptors: ToolInterceptor[] = [
+        { async after() { throw new Error('after boom'); } },
+      ];
+      const result = await executeTool({ toolName: 'test_tool', input: successInput, executeCore: makeSuccessCore(), interceptors });
+      expect(result.isError).toBeFalsy();
+      expect(result.content[0]).toMatchObject({ type: 'text', text: 'ok' });
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringMatching(/Error in after\(\) interceptor/), expect.any(Error));
+      consoleSpy.mockRestore();
+    });
   });
 });

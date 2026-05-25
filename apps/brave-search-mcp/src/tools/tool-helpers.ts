@@ -105,11 +105,33 @@ interface BuildPagedStructuredContentInput<TItem, TExtra extends object> {
   extra?: TExtra;
 }
 
+export type ToolExecutionOutcome = 'success' | 'error' | 'denied';
+
+export interface ToolInterceptorContext<TInput extends Record<string, unknown> = Record<string, unknown>> {
+  toolName: string;
+  input: Readonly<TInput>;
+  isFallback: boolean;
+  startedAtMs: number;
+}
+
+export interface PreInterceptorResult {
+  allow: boolean;
+  reason?: string;
+  code?: string;
+}
+
+export interface ToolInterceptor<TInput extends Record<string, unknown> = Record<string, unknown>> {
+  before?: (context: ToolInterceptorContext<TInput>) => Promise<PreInterceptorResult | void>;
+  after?: (context: ToolInterceptorContext<TInput> & { outcome: ToolExecutionOutcome; endedAtMs: number }) => Promise<void>;
+}
+
 interface ExecuteToolOptions<TInput> {
   toolName: string;
   input: TInput;
   executeCore: (input: TInput) => Promise<CallToolResult>;
   buildErrorResult?: (input: TInput, error: unknown) => CallToolResult;
+  interceptors?: readonly ToolInterceptor[];
+  isFallback?: boolean;
 }
 
 export function createPagedSearchOutputSchema<
@@ -218,12 +240,51 @@ export async function executeTool<TInput>({
   input,
   executeCore,
   buildErrorResult,
+  interceptors,
+  isFallback = false,
 }: ExecuteToolOptions<TInput>): Promise<CallToolResult> {
+  const startedAtMs = Date.now();
+  const frozenInput = Object.freeze({ ...(input as Record<string, unknown>) }) as Readonly<Record<string, unknown>>;
+  const context: ToolInterceptorContext = { toolName, input: frozenInput, isFallback, startedAtMs };
+
+  async function runAfterHooks(outcome: ToolExecutionOutcome): Promise<void> {
+    if (!interceptors?.length)
+      return;
+    for (const interceptor of interceptors) {
+      if (interceptor.after) {
+        try {
+          await interceptor.after({ ...context, outcome, endedAtMs: Date.now() });
+        }
+        catch (err) {
+          console.error(`Error in after() interceptor for ${toolName}:`, err);
+        }
+      }
+    }
+  }
+
   try {
-    return await executeCore(input);
+    // Run before() hooks in order; short-circuit on first deny
+    for (const interceptor of interceptors ?? []) {
+      if (interceptor.before) {
+        const result = await interceptor.before(context);
+        if (result && result.allow === false) {
+          const denyError = new Error(`[POLICY:DENIED] ${result.reason ?? 'request denied'}`);
+          const denyResult = buildErrorResult
+            ? buildErrorResult(input, denyError)
+            : buildDefaultErrorResult(toolName, denyError);
+          await runAfterHooks('denied');
+          return denyResult;
+        }
+      }
+    }
+
+    const toolResult = await executeCore(input);
+    await runAfterHooks('success');
+    return toolResult;
   }
   catch (error) {
     console.error(`Error executing ${toolName}:`, error);
+    await runAfterHooks('error');
     return buildErrorResult
       ? buildErrorResult(input, error)
       : buildDefaultErrorResult(toolName, error);

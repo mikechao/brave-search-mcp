@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch, LocalDescriptionsSearchApiResponse, LocalPoiSearchApiResponse, OpeningHours } from 'brave-search';
 import type { UiToolSpecConfig } from '../ui-config.js';
-import type { LocalWebFallbackExecutor, ToolLogger } from './tool-helpers.js';
+import type { LocalWebFallbackExecutor, ToolInterceptor, ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
@@ -79,6 +79,8 @@ export const localSearchOutputSchema = createPagedSearchOutputSchema(localBusine
 
 export type BraveLocalSearchStructuredContent = z.infer<typeof localSearchOutputSchema>;
 
+export type BraveLocalSearchInput = z.infer<typeof localSearchInputSchema>;
+
 export class BraveLocalSearchTool {
   public readonly name = TOOL_NAMES.local;
   public readonly description = 'Searches for local businesses and places using Brave\'s Local Search API. '
@@ -135,6 +137,7 @@ export class BraveLocalSearchTool {
     private braveSearch: BraveSearch,
     private executeWebFallback: LocalWebFallbackExecutor,
     private isUI: boolean = false,
+    private interceptors: readonly ToolInterceptor[] = [],
   ) {}
 
   public async execute(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {
@@ -156,6 +159,7 @@ export class BraveLocalSearchTool {
             })
           : undefined,
       ),
+      interceptors: this.interceptors,
     });
   }
 

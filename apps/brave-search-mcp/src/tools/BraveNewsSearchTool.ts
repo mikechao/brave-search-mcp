@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { UiToolSpecConfig } from '../ui-config.js';
-import type { ToolLogger } from './tool-helpers.js';
+import type { ToolInterceptor, ToolLogger } from './tool-helpers.js';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
 import { OPENAI_CDN_RESOURCE_DOMAIN } from '../ui-config.js';
@@ -21,6 +21,8 @@ const newsSearchInputSchema = z.object({
   offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
   freshness: freshnessInputSchema,
 });
+
+export type BraveNewsSearchInput = z.infer<typeof newsSearchInputSchema>;
 
 const newsItemSchema = z.object({
   title: z.string(),
@@ -80,6 +82,7 @@ export class BraveNewsSearchTool {
     private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
+    private interceptors: readonly ToolInterceptor[] = [],
   ) {}
 
   private safeParsePageAge(pageAge: string | undefined): number | undefined {
@@ -108,6 +111,7 @@ export class BraveNewsSearchTool {
             })
           : undefined,
       ),
+      interceptors: this.interceptors,
     });
   }
 

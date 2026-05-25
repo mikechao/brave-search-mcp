@@ -1,4 +1,5 @@
 import type { BraveSearch } from 'brave-search';
+import type { ToolInterceptor } from '../../src/tools/tool-helpers.js';
 import { describe, expect, it, vi } from 'vitest';
 import { BraveLLMContextSearchTool } from '../../src/tools/BraveLLMContextSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
@@ -349,5 +350,21 @@ describe('braveLLMContextSearchTool', () => {
       'No LLM context results found for "banana ripening"',
       'info',
     );
+  });
+});
+
+describe('braveLLMContextSearchTool interceptors', () => {
+  it('deny interceptor produces isError result', async () => {
+    const mockBraveSearch = createMockBraveSearch();
+    const log = vi.fn();
+    const denyInterceptor: ToolInterceptor = {
+      async before() { return { allow: false, reason: 'test policy deny' }; },
+    };
+    const tool = new BraveLLMContextSearchTool(log, mockBraveSearch as unknown as BraveSearch, false, [denyInterceptor]);
+
+    const result = await tool.execute({ query: 'why are bananas yellow' });
+
+    expect(result.isError).toBe(true);
+    expect(getFirstTextContent(result)).toContain('[POLICY:DENIED]');
   });
 });

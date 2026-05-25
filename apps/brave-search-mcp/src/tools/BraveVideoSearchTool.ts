@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { UiToolSpecConfig } from '../ui-config.js';
-import type { ToolLogger } from './tool-helpers.js';
+import type { ToolInterceptor, ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
@@ -22,6 +22,8 @@ const videoSearchInputSchema = z.object({
   offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
   freshness: freshnessInputSchema,
 });
+
+export type BraveVideoSearchInput = z.infer<typeof videoSearchInputSchema>;
 
 const videoItemSchema = z.object({
   title: z.string(),
@@ -112,6 +114,7 @@ export class BraveVideoSearchTool {
     private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
+    private interceptors: readonly ToolInterceptor[] = [],
   ) {}
 
   public async execute(input: z.infer<typeof videoSearchInputSchema>): Promise<CallToolResult> {
@@ -132,6 +135,7 @@ export class BraveVideoSearchTool {
             })
           : undefined,
       ),
+      interceptors: this.interceptors,
     });
   }
 

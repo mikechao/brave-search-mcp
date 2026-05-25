@@ -1,9 +1,9 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch, ContextThresholdMode } from 'brave-search';
-import type { ToolLogger } from './tool-helpers.js';
+import type { ToolInterceptor, ToolLogger } from './tool-helpers.js';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
-import { executeTool } from './tool-helpers.js';
+import { buildToolErrorResult, executeTool } from './tool-helpers.js';
 
 const COMPACT_DEFAULTS = {
   count: 8,
@@ -45,6 +45,8 @@ const llmContextSearchInputSchema = z.object({
   maxOutputChars: z.number().int().min(1000).max(100000).default(COMPACT_DEFAULTS.maxOutputChars).optional().describe(`Approximate maximum serialized response size in compact mode. Default ${COMPACT_DEFAULTS.maxOutputChars}.`),
 });
 
+export type BraveLLMContextSearchInput = z.infer<typeof llmContextSearchInputSchema>;
+
 export class BraveLLMContextSearchTool {
   public readonly name = TOOL_NAMES.llmContext;
   public readonly description = 'Best for questions that require reading and synthesizing web page content, '
@@ -59,6 +61,7 @@ export class BraveLLMContextSearchTool {
     private logMessage: ToolLogger,
     private braveSearch: BraveSearch,
     private isUI: boolean = false,
+    private interceptors: readonly ToolInterceptor[] = [],
   ) {}
 
   public async execute(input: z.infer<typeof llmContextSearchInputSchema>): Promise<CallToolResult> {
@@ -66,6 +69,8 @@ export class BraveLLMContextSearchTool {
       toolName: this.name,
       input,
       executeCore: value => this.executeCore(value),
+      buildErrorResult: (_value, error) => buildToolErrorResult(this.name, error),
+      interceptors: this.interceptors,
     });
   }
 

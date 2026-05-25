@@ -1,7 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { BraveSearch } from 'brave-search';
 import type { UiToolSpecConfig } from '../ui-config.js';
-import type { ToolLogger } from './tool-helpers.js';
+import type { ToolInterceptor, ToolLogger } from './tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
@@ -17,6 +17,8 @@ const imageSearchInputSchema = z.object({
   query: z.string().describe('The term to search the internet for images of'),
   count: z.number().min(1).max(20).optional().default(10).describe('The number of images to search for, minimum 1, maximum 20'),
 });
+
+export type BraveImageSearchInput = z.infer<typeof imageSearchInputSchema>;
 
 const imageSearchItemSchema = z.object({
   title: z.string(),
@@ -70,7 +72,7 @@ export class BraveImageSearchTool {
     },
   };
 
-  constructor(private logMessage: ToolLogger, private braveSearch: BraveSearch, private isUI: boolean = false) {}
+  constructor(private logMessage: ToolLogger, private braveSearch: BraveSearch, private isUI: boolean = false, private interceptors: readonly ToolInterceptor[] = []) {}
 
   public async execute(input: z.infer<typeof imageSearchInputSchema>): Promise<CallToolResult> {
     return executeTool({
@@ -89,6 +91,7 @@ export class BraveImageSearchTool {
             }
           : undefined,
       ),
+      interceptors: this.interceptors,
     });
   }
 
