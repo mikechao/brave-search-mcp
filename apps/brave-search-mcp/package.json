@@ -116,8 +116,8 @@
     "terser": "^5.16.0",
     "tsup": "^8.0.1",
     "typescript": "^6.0.3",
-    "vite": "^8.0.0",
-    "vite-plugin-singlefile": "^2.3.2",
+    "vite": "^8.0.14",
+    "vite-plugin-singlefile": "^2.3.3",
     "vitest": "^4.0.18"
   }
 }
