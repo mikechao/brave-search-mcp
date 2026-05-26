@@ -104,4 +104,29 @@ describe('index entrypoint', () => {
     expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to start MCP server:', startupError);
     expect(exitSpy).toHaveBeenCalledWith(1);
   });
+
+  it('logs and exits when BraveMcpServer throws (e.g., bad policy file)', async () => {
+    let capturedCreateServer: (() => McpServer) | undefined;
+    mockState.startServerMock.mockImplementation((createServer: () => McpServer) => {
+      capturedCreateServer = createServer;
+      return Promise.resolve();
+    });
+    const policyError = new Error('Policy file error: could not read "/bad/path.json": ENOENT');
+    // eslint-disable-next-line prefer-arrow-callback
+    mockState.braveMcpServerMock.mockImplementation(function () {
+      throw policyError;
+    });
+
+    await importIndexModule();
+
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+
+    capturedCreateServer!();
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      `Error: Failed to start server: ${policyError.message}`,
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
 });

@@ -13,7 +13,13 @@ function createServer(): McpServer {
     process.exit(1);
   }
   const isUI = process.argv.includes('--ui');
-  return new BraveMcpServer(BRAVE_API_KEY, isUI).serverInstance;
+  try {
+    return new BraveMcpServer(BRAVE_API_KEY, isUI).serverInstance;
+  }
+  catch (err) {
+    console.error(`Error: Failed to start server: ${err instanceof Error ? err.message : String(err)}`);
+    process.exit(1);
+  }
 }
 
 const http = process.argv.includes('--http');

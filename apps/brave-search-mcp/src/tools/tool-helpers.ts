@@ -118,6 +118,7 @@ export interface PreInterceptorResult {
   allow: boolean;
   reason?: string;
   code?: string;
+  redactedInput?: Readonly<Record<string, unknown>>;
 }
 
 export interface ToolInterceptor<TInput extends Record<string, unknown> = Record<string, unknown>> {
@@ -262,11 +263,17 @@ export async function executeTool<TInput>({
     }
   }
 
+  let effectiveInput: TInput = input;
+  // beforeContext accumulates redactions so each successive before() hook sees
+  // the output of prior redactions. context (used by after() hooks) is never
+  // mutated so audit interceptors always see the original input.
+  let beforeContext: ToolInterceptorContext = context;
+
   try {
     // Run before() hooks in order; short-circuit on first deny
     for (const interceptor of interceptors ?? []) {
       if (interceptor.before) {
-        const result = await interceptor.before(context);
+        const result = await interceptor.before(beforeContext);
         if (result && result.allow === false) {
           const denyError = new Error(`[POLICY:DENIED] ${result.reason ?? 'request denied'}`);
           const denyResult = buildErrorResult
@@ -275,10 +282,14 @@ export async function executeTool<TInput>({
           await runAfterHooks('denied');
           return denyResult;
         }
+        if (result?.redactedInput) {
+          effectiveInput = { ...result.redactedInput } as TInput;
+          beforeContext = { ...context, input: Object.freeze({ ...result.redactedInput }) };
+        }
       }
     }
 
-    const toolResult = await executeCore(input);
+    const toolResult = await executeCore(effectiveInput);
     await runAfterHooks('success');
     return toolResult;
   }

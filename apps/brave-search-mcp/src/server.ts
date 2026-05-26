@@ -1,9 +1,11 @@
 import type { LocalWebFallbackExecutor, ToolInterceptor, ToolLogger } from './tools/tool-helpers.js';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
 import packageJson from '../package.json' with { type: 'json' };
+import { loadPolicyRulesSync } from './policy-loader.js';
 import { registerUiSearchTools } from './server-ui.js';
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
 import { BraveLLMContextSearchTool } from './tools/BraveLLMContextSearchTool.js';
@@ -11,6 +13,7 @@ import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from './tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
+import { QueryPolicyInterceptor } from './tools/QueryPolicyInterceptor.js';
 import { buildToolErrorResult, executeTool } from './tools/tool-helpers.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
@@ -101,8 +104,14 @@ export class BraveMcpServer {
   }
 
   private buildInterceptors(): readonly ToolInterceptor[] {
-    // Future: read BRAVE_MCP_POLICY_FILE, BRAVE_MCP_REQUEST_LIMIT, etc. and build interceptors.
-    return [];
+    const interceptors: ToolInterceptor[] = [];
+    const policyFile = process.env.BRAVE_MCP_POLICY_FILE;
+    if (policyFile) {
+      const rules = loadPolicyRulesSync(policyFile);
+      const redactMode = (process.env.BRAVE_MCP_POLICY_REDACT ?? '').toLowerCase() === 'true';
+      interceptors.push(new QueryPolicyInterceptor(rules, redactMode));
+    }
+    return interceptors;
   }
 
   private registerConfiguredTools(isUI: boolean): void {

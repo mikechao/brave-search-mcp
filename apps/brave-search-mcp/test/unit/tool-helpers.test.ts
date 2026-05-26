@@ -426,5 +426,71 @@ describe('toolHelpers', () => {
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringMatching(/Error in after\(\) interceptor/), expect.any(Error));
       consoleSpy.mockRestore();
     });
+
+    it('passes redactedInput from before() to executeCore instead of original input', async () => {
+      const capturedInput: unknown[] = [];
+      const interceptors: ToolInterceptor[] = [
+        {
+          async before() {
+            return { allow: true, redactedInput: { query: '[REDACTED]' } };
+          },
+        },
+      ];
+      await executeTool({
+        toolName: 'test_tool',
+        input: { query: 'forbidden term' },
+        executeCore: async (input) => {
+          capturedInput.push(input);
+          return { content: [{ type: 'text' as const, text: 'ok' }] };
+        },
+        interceptors,
+      });
+      expect(capturedInput).toHaveLength(1);
+      expect((capturedInput[0] as Record<string, unknown>).query).toBe('[REDACTED]');
+    });
+
+    it('each successive before() hook receives input accumulated from prior redactions', async () => {
+      const seenBySecond: unknown[] = [];
+      const interceptors: ToolInterceptor[] = [
+        {
+          async before(ctx) {
+            return { allow: true, redactedInput: { ...ctx.input, query: '[REDACTED]' } };
+          },
+        },
+        {
+          async before(ctx) {
+            seenBySecond.push(ctx.input.query);
+          },
+        },
+      ];
+      await executeTool({
+        toolName: 'test_tool',
+        input: { query: 'secret' },
+        executeCore: makeSuccessCore(),
+        interceptors,
+      });
+      expect(seenBySecond[0]).toBe('[REDACTED]');
+    });
+
+    it('after() hooks always see the original input even when before() hooks returned redactedInput', async () => {
+      const seenInAfter: unknown[] = [];
+      const interceptors: ToolInterceptor[] = [
+        {
+          async before(ctx) {
+            return { allow: true, redactedInput: { ...ctx.input, query: '[REDACTED]' } };
+          },
+          async after(ctx) {
+            seenInAfter.push(ctx.input.query);
+          },
+        },
+      ];
+      await executeTool({
+        toolName: 'test_tool',
+        input: { query: 'original' },
+        executeCore: makeSuccessCore(),
+        interceptors,
+      });
+      expect(seenInAfter[0]).toBe('original');
+    });
   });
 });

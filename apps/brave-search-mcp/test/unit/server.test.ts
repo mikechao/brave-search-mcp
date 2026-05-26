@@ -1,6 +1,6 @@
 import type { BraveSearch } from 'brave-search';
-import type { MockBraveSearch } from '../mocks/index.js';
 import type { ToolInterceptor } from '../../src/tools/tool-helpers.js';
+import type { MockBraveSearch } from '../mocks/index.js';
 import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
