@@ -106,6 +106,13 @@ export class BraveMcpServer {
   }
 
   private buildInterceptors(): readonly ToolInterceptor[] {
+    // Interceptor order matters: policy → guardrail → audit.
+    // - Policy runs first so denied queries never consume quota.
+    // - Guardrail runs second so rate-limited requests are still audited.
+    // - Audit runs last and is the only interceptor with a before() justification gate;
+    //   a request blocked earlier in the chain skips that gate. This means policy-denied
+    //   requests do not require a justification — intentional, since they are already
+    //   rejected on stronger grounds.
     const interceptors: ToolInterceptor[] = [];
     const policyFile = process.env.BRAVE_MCP_POLICY_FILE;
     if (policyFile) {

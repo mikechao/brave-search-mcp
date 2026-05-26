@@ -153,6 +153,8 @@ When enforcement is enabled, every tool accepts the same additional request fiel
 
 Justification enforcement is independent of audit logging. Denied requests return a structured error to the caller but no audit events are written to `stderr` unless `BRAVE_MCP_AUDIT_LOG=true` is also set.
 
+> **Interceptor ordering note:** Interceptors run in the order policy → guardrail → audit. A request that is rejected by the query policy layer or the usage guardrail never reaches the justification gate. This means a policy-blocked query does not need a justification — it is rejected on stronger grounds first.
+
 ### Representative success event
 
 ```json
@@ -200,5 +202,5 @@ Justification enforcement is independent of audit logging. Denied requests retur
 | Variable | Required | Default | Description |
 |---|---|---|---|
 | `BRAVE_MCP_AUDIT_LOG` | No | `false` | Set to `true` to emit one audit JSON line to `stderr` after each tool call. |
-| `BRAVE_MCP_AUDIT_LOG_RAW` | No | `false` | Set to `true` to log raw `query`, `url`, and `justification` text instead of hashes. |
+| `BRAVE_MCP_AUDIT_LOG_RAW` | No | `false` | Set to `true` to log raw `query`, `url`, and `justification` text instead of hashes. Has no effect unless `BRAVE_MCP_AUDIT_LOG=true` is also set. |
 | `BRAVE_MCP_REQUIRE_JUSTIFICATION` | No | `false` | Set to `true` to deny any tool call whose `justification` is missing or blank after trimming. This currently also enables audit-event emission to `stderr` even if `BRAVE_MCP_AUDIT_LOG` is unset. |
