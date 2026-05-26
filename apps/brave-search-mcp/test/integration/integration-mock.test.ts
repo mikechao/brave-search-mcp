@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { MCPClientManager } from '@mcpjam/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { TOOL_NAMES } from '../../src/tool-catalog.js';
@@ -13,18 +14,32 @@ import { TOOL_NAMES } from '../../src/tool-catalog.js';
 describe('brave search mcp server integration (mocked)', () => {
   let manager: MCPClientManager;
   const serverName = 'brave-search-mock';
+  const enforcedServerName = 'brave-search-mock-require-justification';
   const expectedToolNames = Object.values(TOOL_NAMES);
 
   beforeAll(async () => {
     manager = new MCPClientManager();
-    await manager.connectToServer(serverName, {
-      command: 'node',
-      args: ['.test-build/test-server.js'],
-    });
+    await Promise.all([
+      manager.connectToServer(serverName, {
+        command: 'node',
+        args: ['.test-build/test-server.js'],
+      }),
+      manager.connectToServer(enforcedServerName, {
+        command: 'node',
+        args: ['.test-build/test-server.js'],
+        env: {
+          ...process.env,
+          BRAVE_MCP_REQUIRE_JUSTIFICATION: 'true',
+        },
+      }),
+    ]);
   }, 30000);
 
   afterAll(async () => {
-    await manager.disconnectServer(serverName);
+    await Promise.all([
+      manager.disconnectServer(serverName),
+      manager.disconnectServer(enforcedServerName),
+    ]);
   });
 
   describe('tool registration', () => {
@@ -91,6 +106,36 @@ describe('brave search mcp server integration (mocked)', () => {
 
       expect(result).toBeDefined();
       expect('content' in result).toBe(true);
+    }, 30000);
+
+    it('denies requests without justification when enforcement is enabled', async () => {
+      const result = await manager.executeTool(enforcedServerName, TOOL_NAMES.web, {
+        query: 'test query',
+        count: 3,
+      });
+
+      expect('isError' in result ? result.isError : false).toBe(true);
+      if ('content' in result) {
+        const content = result.content as Array<{ type: string; text?: string }>;
+        expect(content[0]?.type).toBe('text');
+        expect(content[0]?.text).toContain('[POLICY:DENIED]');
+        expect(content[0]?.text).toContain('justification is required');
+      }
+    }, 30000);
+
+    it('allows equivalent requests when justification is supplied', async () => {
+      const result = await manager.executeTool(enforcedServerName, TOOL_NAMES.web, {
+        query: 'test query',
+        count: 3,
+        justification: 'User requested a web search',
+      });
+
+      expect(result).toBeDefined();
+      expect('isError' in result ? result.isError : false).not.toBe(true);
+      if ('content' in result) {
+        const content = result.content as Array<{ type: string; text?: string }>;
+        expect(content[0]?.type).toBe('text');
+      }
     }, 30000);
   });
 });

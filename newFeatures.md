@@ -94,3 +94,111 @@ Error: Failed to start server: Policy file error: could not read "/bad/path.json
 |---|---|---|---|
 | `BRAVE_MCP_POLICY_FILE` | No | _(unset — feature disabled)_ | Absolute path to the JSON policy file. |
 | `BRAVE_MCP_POLICY_REDACT` | No | `false` | Set to `true` to enable redaction mode instead of hard-blocking. |
+
+## Audit Logging And Justification Enforcement
+
+Operators can now enable structured audit events for every MCP tool invocation and optionally require callers to provide a business reason for each request. This works in both stdio mode and Streamable HTTP mode.
+
+### What it does
+
+- **Structured audit events:** When enabled, the server writes one JSON line to `stderr` after every tool call. Each event records the tool name, whether the call succeeded, failed, or was denied, whether it was a local-to-web fallback, and whether `query`, `url`, or `justification` were present.
+- **Safe-by-default logging:** Raw `query`, `url`, and `justification` values are not logged unless explicitly requested. By default the audit event includes SHA-256 hashes and field lengths instead.
+- **Optional justification enforcement:** When enabled, every tool call must include a non-empty `justification` string. Requests that omit it, or provide only whitespace, are denied before the Brave API is called.
+- **Shared tool support:** Every tool now accepts an optional `justification` field. If `brave_local_search` falls back to `brave_web_search`, the same justification is preserved on the fallback call.
+
+### How to turn on audit logging
+
+Set `BRAVE_MCP_AUDIT_LOG=true` before starting the server:
+
+```sh
+BRAVE_API_KEY=your_key \
+BRAVE_MCP_AUDIT_LOG=true \
+npx brave-search-mcp
+```
+
+Audit events are written to `stderr`, not `stdout`, so stdio MCP traffic stays intact.
+
+### How to log raw inputs instead of hashes
+
+Add `BRAVE_MCP_AUDIT_LOG_RAW=true`:
+
+```sh
+BRAVE_API_KEY=your_key \
+BRAVE_MCP_AUDIT_LOG=true \
+BRAVE_MCP_AUDIT_LOG_RAW=true \
+npx brave-search-mcp
+```
+
+Use this only when operators explicitly need human-readable request payloads in the process logs.
+
+### How to require justification
+
+Add `BRAVE_MCP_REQUIRE_JUSTIFICATION=true`:
+
+```sh
+BRAVE_API_KEY=your_key \
+BRAVE_MCP_AUDIT_LOG=true \
+BRAVE_MCP_REQUIRE_JUSTIFICATION=true \
+npx brave-search-mcp
+```
+
+When enforcement is enabled, every tool accepts the same additional request field:
+
+```json
+{
+  "query": "test query",
+  "justification": "User requested a web search"
+}
+```
+
+Justification enforcement is independent of audit logging. Denied requests return a structured error to the caller but no audit events are written to `stderr` unless `BRAVE_MCP_AUDIT_LOG=true` is also set.
+
+### Representative success event
+
+```json
+{
+  "schemaVersion": "1",
+  "timestamp": "2026-05-26T18:11:23.124Z",
+  "toolName": "brave_web_search",
+  "outcome": "success",
+  "isFallback": false,
+  "durationMs": 0,
+  "hasQuery": true,
+  "queryHash": "050579eeae87a0436e1ff56d7a8388c2ee9b71b5f9170eb7aaaec1bcb405ca12",
+  "queryLength": 10,
+  "hasUrl": false,
+  "justificationProvided": true,
+  "justificationHash": "846c3fca0a9e2ed04fd7d44490acac0f169019789fe041d22d1199a79679c2a4",
+  "justificationLength": 27,
+  "wasRedacted": false
+}
+```
+
+### Representative denial event
+
+```json
+{
+  "schemaVersion": "1",
+  "timestamp": "2026-05-26T18:11:23.121Z",
+  "toolName": "brave_web_search",
+  "outcome": "denied",
+  "isFallback": false,
+  "durationMs": 0,
+  "hasQuery": true,
+  "queryHash": "050579eeae87a0436e1ff56d7a8388c2ee9b71b5f9170eb7aaaec1bcb405ca12",
+  "queryLength": 10,
+  "hasUrl": false,
+  "justificationProvided": false,
+  "wasRedacted": false,
+  "denyCode": "JUSTIFICATION_REQUIRED",
+  "denyReason": "A non-empty justification is required"
+}
+```
+
+### Environment variables summary
+
+| Variable | Required | Default | Description |
+|---|---|---|---|
+| `BRAVE_MCP_AUDIT_LOG` | No | `false` | Set to `true` to emit one audit JSON line to `stderr` after each tool call. |
+| `BRAVE_MCP_AUDIT_LOG_RAW` | No | `false` | Set to `true` to log raw `query`, `url`, and `justification` text instead of hashes. |
+| `BRAVE_MCP_REQUIRE_JUSTIFICATION` | No | `false` | Set to `true` to deny any tool call whose `justification` is missing or blank after trimming. This currently also enables audit-event emission to `stderr` even if `BRAVE_MCP_AUDIT_LOG` is unset. |

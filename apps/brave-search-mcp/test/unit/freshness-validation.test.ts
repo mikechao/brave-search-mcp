@@ -1,5 +1,8 @@
 import type { BraveSearch } from 'brave-search';
 import { describe, expect, it } from 'vitest';
+import { BraveImageSearchTool } from '../../src/tools/BraveImageSearchTool.js';
+import { BraveLLMContextSearchTool } from '../../src/tools/BraveLLMContextSearchTool.js';
+import { BraveLocalSearchTool } from '../../src/tools/BraveLocalSearchTool.js';
 import { BraveNewsSearchTool } from '../../src/tools/BraveNewsSearchTool.js';
 import { BraveVideoSearchTool } from '../../src/tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from '../../src/tools/BraveWebSearchTool.js';
@@ -14,6 +17,10 @@ The following values are supported:
 
 function createLogStub() {
   return () => {};
+}
+
+function createFallbackStub() {
+  return async () => ({ content: [{ type: 'text' as const, text: 'fallback' }] });
 }
 
 describe('freshness date validation', () => {
@@ -55,6 +62,14 @@ describe('freshness date validation', () => {
 
     it('preserves freshness description metadata on the public schema shape', () => {
       expect(tool.inputSchema.shape.freshness.description).toBe(expectedFreshnessDescription);
+    });
+
+    it('exposes optional justification on the public schema shape', () => {
+      expect(tool.inputSchema.shape.justification.description).toContain('audit logging');
+      expect(tool.inputSchema.safeParse({
+        query: 'test',
+        justification: 'User requested verification',
+      }).success).toBe(true);
     });
 
     it('rejects invalid month (returns NaN) with exactly one error', () => {
@@ -183,6 +198,13 @@ describe('freshness date validation', () => {
       });
       expect(result.success).toBe(false);
     });
+
+    it('accepts optional justification', () => {
+      expect(tool.inputSchema.safeParse({
+        query: 'test',
+        justification: 'Need recent reporting',
+      }).success).toBe(true);
+    });
   });
 
   describe('braveVideoSearchTool', () => {
@@ -229,6 +251,39 @@ describe('freshness date validation', () => {
         freshness: '2026-99-99to2026-99-99',
       });
       expect(result.success).toBe(false);
+    });
+
+    it('accepts optional justification', () => {
+      expect(tool.inputSchema.safeParse({
+        query: 'test',
+        justification: 'Find a tutorial video',
+      }).success).toBe(true);
+    });
+  });
+
+  describe('other tool schemas', () => {
+    it('adds optional justification to image search', () => {
+      const tool = new BraveImageSearchTool(createLogStub(), null as unknown as BraveSearch, false);
+      expect(tool.inputSchema.safeParse({
+        query: 'diagram',
+        justification: 'Need an image reference',
+      }).success).toBe(true);
+    });
+
+    it('adds optional justification to local search', () => {
+      const tool = new BraveLocalSearchTool(createLogStub(), null as unknown as BraveSearch, createFallbackStub(), false);
+      expect(tool.inputSchema.safeParse({
+        query: 'restaurant near union square',
+        justification: 'Find nearby dinner options',
+      }).success).toBe(true);
+    });
+
+    it('adds optional justification to llm context search', () => {
+      const tool = new BraveLLMContextSearchTool(createLogStub(), null as unknown as BraveSearch, false);
+      expect(tool.inputSchema.safeParse({
+        query: 'summarize this page',
+        justification: 'Need page context for analysis',
+      }).success).toBe(true);
     });
   });
 });
