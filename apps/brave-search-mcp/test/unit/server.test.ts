@@ -4,7 +4,7 @@ import type { MockBraveSearch } from '../mocks/index.js';
 import { RESOURCE_MIME_TYPE } from '@modelcontextprotocol/ext-apps/server';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import packageJson from '../../package.json' with { type: 'json' };
 import { BraveMcpServer } from '../../src/server.js';
 import { TOOL_NAMES } from '../../src/tool-catalog.js';
@@ -336,6 +336,136 @@ describe('braveMcpServer', () => {
       }
       finally {
         await close();
+      }
+    });
+  });
+
+  describe('guardrail env wiring', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('denies the second call end-to-end when BRAVE_MCP_REQUEST_LIMIT=1', async () => {
+      vi.stubEnv('BRAVE_MCP_REQUEST_LIMIT', '1');
+      const guardedServer = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch);
+      const { client, close } = await createConnectedClient(guardedServer);
+      try {
+        const first = await client.callTool({ name: TOOL_NAMES.web, arguments: { query: 'test' } });
+        expect(first.isError).toBeFalsy();
+
+        const second = await client.callTool({ name: TOOL_NAMES.web, arguments: { query: 'test 2' } });
+        expect(second.isError).toBe(true);
+        const text = ((second.content as unknown[])[0] as { type: 'text'; text: string }).text;
+        expect(text).toContain('[POLICY:DENIED]');
+        expect(text).toContain('Request limit of 1 exceeded');
+      }
+      finally {
+        await close();
+      }
+    });
+
+    it('does not activate the guardrail when BRAVE_MCP_REQUEST_LIMIT is malformed (e.g. "1oops")', async () => {
+      vi.stubEnv('BRAVE_MCP_REQUEST_LIMIT', '1oops');
+      const server2 = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch);
+      const { client, close } = await createConnectedClient(server2);
+      try {
+        const first = await client.callTool({ name: TOOL_NAMES.web, arguments: { query: 'test' } });
+        const second = await client.callTool({ name: TOOL_NAMES.web, arguments: { query: 'test 2' } });
+        expect(first.isError).toBeFalsy();
+        expect(second.isError).toBeFalsy();
+      }
+      finally {
+        await close();
+      }
+    });
+
+    it('does not activate the guardrail when BRAVE_MCP_REQUEST_LIMIT is not set', async () => {
+      const { client, close } = await createConnectedClient(server);
+      try {
+        const first = await client.callTool({ name: TOOL_NAMES.web, arguments: { query: 'test' } });
+        const second = await client.callTool({ name: TOOL_NAMES.web, arguments: { query: 'test 2' } });
+        expect(first.isError).toBeFalsy();
+        expect(second.isError).toBeFalsy();
+      }
+      finally {
+        await close();
+      }
+    });
+
+    it('treats malformed BRAVE_MCP_WINDOW_SECONDS as 0 (process-lifetime cap)', async () => {
+      vi.useFakeTimers();
+      vi.stubEnv('BRAVE_MCP_REQUEST_LIMIT', '1');
+      vi.stubEnv('BRAVE_MCP_WINDOW_SECONDS', '1oops');
+
+      try {
+        const guardedServer = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch);
+        const interceptors = (guardedServer as unknown as {
+          buildInterceptors: () => readonly ToolInterceptor[];
+        }).buildInterceptors();
+        const guardrail = interceptors[0];
+
+        expect(guardrail).toBeDefined();
+        expect(await guardrail?.before?.({
+          toolName: TOOL_NAMES.web,
+          input: Object.freeze({ query: 'test' }),
+          isFallback: false,
+          startedAtMs: Date.now(),
+        })).toBeUndefined();
+
+        vi.advanceTimersByTime(5000);
+
+        const result = await guardrail?.before?.({
+          toolName: TOOL_NAMES.web,
+          input: Object.freeze({ query: 'test 2' }),
+          isFallback: false,
+          startedAtMs: Date.now(),
+        });
+        expect(result).toMatchObject({ allow: false, code: 'RATE_LIMITED' });
+      }
+      finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('treats malformed BRAVE_MCP_COOLDOWN_SECONDS as 0 (no extra cooldown)', async () => {
+      vi.useFakeTimers();
+      vi.stubEnv('BRAVE_MCP_REQUEST_LIMIT', '1');
+      vi.stubEnv('BRAVE_MCP_WINDOW_SECONDS', '1');
+      vi.stubEnv('BRAVE_MCP_COOLDOWN_SECONDS', '5oops');
+
+      try {
+        const guardedServer = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch);
+        const interceptors = (guardedServer as unknown as {
+          buildInterceptors: () => readonly ToolInterceptor[];
+        }).buildInterceptors();
+        const guardrail = interceptors[0];
+
+        expect(guardrail).toBeDefined();
+        expect(await guardrail?.before?.({
+          toolName: TOOL_NAMES.web,
+          input: Object.freeze({ query: 'test' }),
+          isFallback: false,
+          startedAtMs: Date.now(),
+        })).toBeUndefined();
+
+        expect(await guardrail?.before?.({
+          toolName: TOOL_NAMES.web,
+          input: Object.freeze({ query: 'test 2' }),
+          isFallback: false,
+          startedAtMs: Date.now(),
+        })).toMatchObject({ allow: false, code: 'RATE_LIMITED' });
+
+        vi.advanceTimersByTime(1001);
+
+        expect(await guardrail?.before?.({
+          toolName: TOOL_NAMES.web,
+          input: Object.freeze({ query: 'test 3' }),
+          isFallback: false,
+          startedAtMs: Date.now(),
+        })).toBeUndefined();
+      }
+      finally {
+        vi.useRealTimers();
       }
     });
   });

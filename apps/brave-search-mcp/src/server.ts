@@ -15,6 +15,7 @@ import { BraveVideoSearchTool } from './tools/BraveVideoSearchTool.js';
 import { BraveWebSearchTool } from './tools/BraveWebSearchTool.js';
 import { QueryPolicyInterceptor } from './tools/QueryPolicyInterceptor.js';
 import { buildToolErrorResult, executeTool } from './tools/tool-helpers.js';
+import { UsageGuardrailInterceptor } from './tools/UsageGuardrailInterceptor.js';
 
 const DIST_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 const { version: SERVER_VERSION } = packageJson;
@@ -110,6 +111,19 @@ export class BraveMcpServer {
       const rules = loadPolicyRulesSync(policyFile);
       const redactMode = (process.env.BRAVE_MCP_POLICY_REDACT ?? '').toLowerCase() === 'true';
       interceptors.push(new QueryPolicyInterceptor(rules, redactMode));
+    }
+    const requestLimitStr = process.env.BRAVE_MCP_REQUEST_LIMIT;
+    if (requestLimitStr !== undefined) {
+      const requestLimit = /^\d+$/.test(requestLimitStr) ? Number(requestLimitStr) : 0;
+      if (requestLimit > 0) {
+        const windowStr = process.env.BRAVE_MCP_WINDOW_SECONDS ?? '0';
+        const cooldownStr = process.env.BRAVE_MCP_COOLDOWN_SECONDS ?? '0';
+        interceptors.push(new UsageGuardrailInterceptor({
+          requestLimit,
+          windowMs: /^\d+$/.test(windowStr) ? Number(windowStr) * 1000 : 0,
+          cooldownMs: /^\d+$/.test(cooldownStr) ? Number(cooldownStr) * 1000 : 0,
+        }));
+      }
     }
     return interceptors;
   }
