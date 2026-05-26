@@ -7,6 +7,7 @@ import { BraveSearch } from 'brave-search';
 import packageJson from '../package.json' with { type: 'json' };
 import { loadPolicyRulesSync } from './policy-loader.js';
 import { registerUiSearchTools } from './server-ui.js';
+import { AuditLoggingInterceptor } from './tools/AuditLoggingInterceptor.js';
 import { BraveImageSearchTool } from './tools/BraveImageSearchTool.js';
 import { BraveLLMContextSearchTool } from './tools/BraveLLMContextSearchTool.js';
 import { BraveLocalSearchTool } from './tools/BraveLocalSearchTool.js';
@@ -124,6 +125,16 @@ export class BraveMcpServer {
           cooldownMs: /^\d+$/.test(cooldownStr) ? Number(cooldownStr) * 1000 : 0,
         }));
       }
+    }
+    const auditLoggingEnabled = (process.env.BRAVE_MCP_AUDIT_LOG ?? '').toLowerCase() === 'true';
+    const logRawInputs = (process.env.BRAVE_MCP_AUDIT_LOG_RAW ?? '').toLowerCase() === 'true';
+    const requireJustification = (process.env.BRAVE_MCP_REQUIRE_JUSTIFICATION ?? '').toLowerCase() === 'true';
+    if (auditLoggingEnabled || requireJustification) {
+      interceptors.push(new AuditLoggingInterceptor({
+        auditLoggingEnabled,
+        logRawInputs,
+        requireJustification,
+      }));
     }
     return interceptors;
   }

@@ -75,6 +75,7 @@ describe('braveLocalSearchTool', () => {
       query: 'pizza near me',
       count: 4,
       offset: 0,
+      justification: 'Find nearby food options for a traveler',
     });
 
     expect(mockBraveSearch.webSearch).toHaveBeenCalledWith('pizza near me', {
@@ -87,6 +88,7 @@ describe('braveLocalSearchTool', () => {
       query: 'pizza near me',
       count: 4,
       offset: 0,
+      justification: 'Find nearby food options for a traveler',
     });
     expect(result).toBe(fallbackResult);
     expect(log).toHaveBeenCalledWith(
@@ -161,6 +163,23 @@ describe('braveLocalSearchTool', () => {
       fallbackToWeb: true,
       moreResultsAvailable: false,
     });
+  });
+
+  it('accepts optional justification on the public input schema', () => {
+    const tool = new BraveLocalSearchTool(
+      createLogStub(),
+      createMockBraveSearch() as unknown as BraveSearch,
+      createWebFallbackStub(),
+      false,
+    );
+
+    const parsed = tool.inputSchema.safeParse({
+      query: 'coffee near me',
+      justification: 'Locate a cafe for a user request',
+    });
+
+    expect(parsed.success).toBe(true);
+    expect(tool.inputSchema.shape.justification.description).toContain('audit logging');
   });
 
   it('preserves empty fallback web payloads in UI mode', async () => {

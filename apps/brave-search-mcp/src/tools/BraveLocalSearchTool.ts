@@ -13,6 +13,7 @@ import {
   createPagedSearchOutputSchema,
   executeTool,
   getErrorMessage,
+  justificationInputSchema,
   webResultSchema,
   webSearchOutputSchema,
 } from './tool-helpers.js';
@@ -54,6 +55,7 @@ const localSearchInputSchema = z.object({
   query: z.string().describe('Local search query (e.g. \'pizza near Central Park\')'),
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
   offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
+  justification: justificationInputSchema,
 });
 
 const localBusinessSchema = z.object({
@@ -164,7 +166,7 @@ export class BraveLocalSearchTool {
   }
 
   public async executeCore(input: z.infer<typeof localSearchInputSchema>): Promise<CallToolResult> {
-    const { query, count, offset } = input;
+    const { query, count, offset, justification } = input;
     const requestedCount = count ?? 10;
     const requestedOffset = offset ?? 0;
     const results = await this.braveSearch.webSearch(query, {
@@ -179,7 +181,7 @@ export class BraveLocalSearchTool {
     // Only the initial page falls back to web search when no local ids are available.
     if (locationResults.length === 0 && requestedOffset === 0) {
       this.logMessage(`No location results found for "${query}" falling back to web search. Make sure your API Plan is at least "Pro"`);
-      const webResult = await this.executeWebFallback({ query, count, offset: 0 });
+      const webResult = await this.executeWebFallback({ query, count, offset: 0, justification });
 
       // If UI mode, add fallback flag
       if (this.isUI) {

@@ -3,7 +3,7 @@ import type { BraveSearch, ContextThresholdMode } from 'brave-search';
 import type { ToolInterceptor, ToolLogger } from './tool-helpers.js';
 import { z } from 'zod';
 import { TOOL_NAMES } from '../tool-catalog.js';
-import { buildToolErrorResult, executeTool } from './tool-helpers.js';
+import { buildToolErrorResult, executeTool, justificationInputSchema } from './tool-helpers.js';
 
 const COMPACT_DEFAULTS = {
   count: 8,
@@ -43,6 +43,7 @@ const llmContextSearchInputSchema = z.object({
   responseMode: z.enum(['compact', 'full']).default('compact').optional().describe('compact applies Brave\'s balanced relevance filtering plus local snippet filtering/truncation. full disables Brave\'s relevance filtering and returns raw snippets without local filtering or truncation.'),
   maxSnippetChars: z.number().int().min(80).max(4000).default(COMPACT_DEFAULTS.maxSnippetChars).optional().describe(`Maximum characters per snippet in compact mode. Default ${COMPACT_DEFAULTS.maxSnippetChars}.`),
   maxOutputChars: z.number().int().min(1000).max(100000).default(COMPACT_DEFAULTS.maxOutputChars).optional().describe(`Approximate maximum serialized response size in compact mode. Default ${COMPACT_DEFAULTS.maxOutputChars}.`),
+  justification: justificationInputSchema,
 });
 
 export type BraveLLMContextSearchInput = z.infer<typeof llmContextSearchInputSchema>;

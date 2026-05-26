@@ -20,6 +20,7 @@ export interface LocalWebFallbackInput {
   query: string;
   count?: number;
   offset?: number;
+  justification?: string;
 }
 
 export type LocalWebFallbackExecutor = (
@@ -83,6 +84,10 @@ export const freshnessInputSchema = z.union([
   .optional()
   .describe(FRESHNESS_DESCRIPTION);
 
+export const justificationInputSchema = z.string().optional().describe(
+  'Optional operator-facing reason for the request, used by audit logging and optional justification enforcement.',
+);
+
 export const webSearchOutputSchema = createPagedSearchOutputSchema(webResultSchema);
 
 export type PagedStructuredContent<TItem, TExtra extends object = Record<string, never>> = {
@@ -114,6 +119,17 @@ export interface ToolInterceptorContext<TInput extends Record<string, unknown> =
   startedAtMs: number;
 }
 
+export interface ToolAfterInterceptorContext<TInput extends Record<string, unknown> = Record<string, unknown>>
+  extends ToolInterceptorContext<TInput> {
+  outcome: ToolExecutionOutcome;
+  endedAtMs: number;
+  effectiveInput: Readonly<Record<string, unknown>>;
+  wasRedacted: boolean;
+  denyCode?: string;
+  denyReason?: string;
+  errorMessage?: string;
+}
+
 export interface PreInterceptorResult {
   allow: boolean;
   reason?: string;
@@ -123,7 +139,7 @@ export interface PreInterceptorResult {
 
 export interface ToolInterceptor<TInput extends Record<string, unknown> = Record<string, unknown>> {
   before?: (context: ToolInterceptorContext<TInput>) => Promise<PreInterceptorResult | void>;
-  after?: (context: ToolInterceptorContext<TInput> & { outcome: ToolExecutionOutcome; endedAtMs: number }) => Promise<void>;
+  after?: (context: ToolAfterInterceptorContext<TInput>) => Promise<void>;
 }
 
 interface ExecuteToolOptions<TInput> {
@@ -247,14 +263,28 @@ export async function executeTool<TInput>({
   const startedAtMs = Date.now();
   const frozenInput = Object.freeze({ ...(input as Record<string, unknown>) }) as Readonly<Record<string, unknown>>;
   const context: ToolInterceptorContext = { toolName, input: frozenInput, isFallback, startedAtMs };
+  let wasRedacted = false;
+  let denyCode: string | undefined;
+  let denyReason: string | undefined;
+  let errorMessage: string | undefined;
 
-  async function runAfterHooks(outcome: ToolExecutionOutcome): Promise<void> {
+  async function runAfterHooks(outcome: ToolExecutionOutcome, effectiveInputForAfter: Readonly<Record<string, unknown>>): Promise<void> {
     if (!interceptors?.length)
       return;
+    const afterContext: ToolAfterInterceptorContext = {
+      ...context,
+      outcome,
+      endedAtMs: Date.now(),
+      effectiveInput: effectiveInputForAfter,
+      wasRedacted,
+      ...(denyCode ? { denyCode } : {}),
+      ...(denyReason ? { denyReason } : {}),
+      ...(errorMessage ? { errorMessage } : {}),
+    };
     for (const interceptor of interceptors) {
       if (interceptor.after) {
         try {
-          await interceptor.after({ ...context, outcome, endedAtMs: Date.now() });
+          await interceptor.after(afterContext);
         }
         catch (err) {
           console.error(`Error in after() interceptor for ${toolName}:`, err);
@@ -275,27 +305,31 @@ export async function executeTool<TInput>({
       if (interceptor.before) {
         const result = await interceptor.before(beforeContext);
         if (result && result.allow === false) {
+          denyCode = result.code;
+          denyReason = result.reason ?? 'request denied';
           const denyError = new Error(`[POLICY:DENIED] ${result.reason ?? 'request denied'}`);
           const denyResult = buildErrorResult
             ? buildErrorResult(input, denyError)
             : buildDefaultErrorResult(toolName, denyError);
-          await runAfterHooks('denied');
+          await runAfterHooks('denied', beforeContext.input);
           return denyResult;
         }
         if (result?.redactedInput) {
           effectiveInput = { ...result.redactedInput } as TInput;
+          wasRedacted = true;
           beforeContext = { ...context, input: Object.freeze({ ...result.redactedInput }) };
         }
       }
     }
 
     const toolResult = await executeCore(effectiveInput);
-    await runAfterHooks('success');
+    await runAfterHooks('success', beforeContext.input);
     return toolResult;
   }
   catch (error) {
     console.error(`Error executing ${toolName}:`, error);
-    await runAfterHooks('error');
+    errorMessage = getErrorMessage(error);
+    await runAfterHooks('error', beforeContext.input);
     return buildErrorResult
       ? buildErrorResult(input, error)
       : buildDefaultErrorResult(toolName, error);

@@ -13,6 +13,7 @@ import {
   executeTool,
   freshnessInputSchema,
   getErrorMessage,
+  justificationInputSchema,
 } from './tool-helpers.js';
 
 const newsSearchInputSchema = z.object({
@@ -20,6 +21,7 @@ const newsSearchInputSchema = z.object({
   count: z.number().min(1).max(20).default(10).optional().describe('The number of results to return, minimum 1, maximum 20'),
   offset: z.number().min(0).max(9).default(0).optional().describe('The zero-based offset for pagination, indicating the index of the first result to return. Maximum value is 9.'),
   freshness: freshnessInputSchema,
+  justification: justificationInputSchema,
 });
 
 export type BraveNewsSearchInput = z.infer<typeof newsSearchInputSchema>;
