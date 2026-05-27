@@ -55,7 +55,9 @@ const mockState = vi.hoisted(() => {
     }
   }
 
-  const corsMock = vi.fn(() => vi.fn());
+  const corsMock = vi.fn(() => vi.fn(async (_c: unknown, next: () => Promise<void>) => {
+    await next();
+  }));
 
   let _serveCallback: (() => void) | undefined;
   const mockHttpServer = {
@@ -124,12 +126,72 @@ interface ServerLike {
   close: ReturnType<typeof vi.fn>;
 }
 
+interface MockContext {
+  req: {
+    raw: Request;
+    header: (name: string) => string | undefined;
+  };
+  get: (key: string) => unknown;
+  set: (key: string, value: unknown) => void;
+  json: (body: any, status?: number) => Response;
+}
+
 function createServerLike(overrides?: Partial<ServerLike>): ServerLike {
   return {
     connect: vi.fn().mockResolvedValue(undefined),
     close: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
+}
+
+function createMockContext(headers: Record<string, string> = {}): MockContext {
+  const normalizedHeaders = new Headers(headers);
+  const values = new Map<string, unknown>();
+  return {
+    req: {
+      raw: new Request('http://localhost:3001/mcp', { method: 'POST', headers: normalizedHeaders }),
+      header: (name: string) => normalizedHeaders.get(name) ?? undefined,
+    },
+    get: (key: string) => values.get(key),
+    set: (key: string, value: unknown) => {
+      values.set(key, value);
+    },
+    json: (body: any, status?: number) => new Response(JSON.stringify(body), { status: status ?? 200 }),
+  };
+}
+
+async function runMcpRequest(context: MockContext): Promise<Response> {
+  const middlewares = mockState.getMiddlewareHandlers();
+  const handler = mockState.getMcpHandler();
+  if (!handler) {
+    throw new TypeError('Expected /mcp route handler');
+  }
+  const routeHandler = handler;
+
+  async function dispatch(index: number): Promise<Response> {
+    if (index >= middlewares.length) {
+      return routeHandler(context);
+    }
+
+    const middleware = middlewares[index];
+    let nextCalled = false;
+    const response = await middleware(context, async () => {
+      nextCalled = true;
+      return undefined;
+    });
+
+    if (response instanceof Response) {
+      return response;
+    }
+
+    if (!nextCalled) {
+      return dispatch(index + 1);
+    }
+
+    return dispatch(index + 1);
+  }
+
+  return dispatch(0);
 }
 
 function restoreEnvVar(key: 'PORT' | 'HOST' | 'ALLOWED_HOSTS', value: string | undefined) {
@@ -271,20 +333,12 @@ describe('server-utils', () => {
     expect(processOnSpy).toHaveBeenCalledWith('SIGTERM', expect.any(Function));
 
     // Invoke the /mcp route handler
-    const handler = mockState.getMcpHandler();
-    expect(handler).toBeTypeOf('function');
-    if (!handler) {
-      throw new TypeError('Expected /mcp route handler');
-    }
-
     // Create a mock Hono context with AbortController for lifecycle testing
     const abortController = new AbortController();
-    const mockContext = {
-      req: { raw: new Request('http://localhost:4567/mcp', { method: 'POST', signal: abortController.signal }) },
-      json: vi.fn((body: any, status?: number) => new Response(JSON.stringify(body), { status: status ?? 200 })),
-    };
+    const mockContext = createMockContext();
+    mockContext.req.raw = new Request('http://localhost:4567/mcp', { method: 'POST', signal: abortController.signal });
 
-    await handler(mockContext);
+    await runMcpRequest(mockContext);
 
     expect(createServer).toHaveBeenCalledTimes(1);
     expect(seenRequestContext).toMatchObject({
@@ -358,17 +412,10 @@ describe('server-utils', () => {
     vi.spyOn(process, 'on').mockReturnValue(process);
 
     await startStreamableHttpServer(createServer);
-    const handler = mockState.getMcpHandler();
-    if (!handler) {
-      throw new TypeError('Expected /mcp route handler');
-    }
+    const mockContext = createMockContext();
+    mockContext.json = vi.fn((body: any, status?: number) => new Response(JSON.stringify(body), { status: status ?? 200 }));
 
-    const mockContext = {
-      req: { raw: new Request('http://localhost:3001/mcp', { method: 'POST' }) },
-      json: vi.fn((body: any, status?: number) => new Response(JSON.stringify(body), { status: status ?? 200 })),
-    };
-
-    const _response = await handler(mockContext);
+    const _response = await runMcpRequest(mockContext);
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('MCP error:', error);
     expect(mockContext.json).toHaveBeenCalledWith(
@@ -390,7 +437,7 @@ describe('server-utils', () => {
     await startStreamableHttpServer(createServer, { allowedHosts: ['localhost'] });
 
     const middlewares = mockState.getMiddlewareHandlers();
-    expect(middlewares).toHaveLength(2);
+    expect(middlewares).toHaveLength(3);
 
     const hostGuard = middlewares[1];
     const next = vi.fn().mockResolvedValue(undefined);
@@ -413,5 +460,67 @@ describe('server-utils', () => {
     const response = await hostGuard(deniedContext, next);
     expect(deniedContext.json).toHaveBeenCalledWith({ error: 'Forbidden: invalid Host header' }, 403);
     expect(response).toBeInstanceOf(Response);
+  });
+
+  it('returns 401 with bearer challenge when authorization is missing', async () => {
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await startStreamableHttpServer(createServer, { auth: { httpApiKey: 'test-http-key' } });
+
+    const response = await runMcpRequest(createMockContext());
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('www-authenticate')).toBe('Bearer realm="brave-search-mcp"');
+    expect(createServer).not.toHaveBeenCalled();
+    expect(mockState.webStandardCtorMock).not.toHaveBeenCalled();
+    expect(server.connect).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 for malformed or incorrect authorization headers', async () => {
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await startStreamableHttpServer(createServer, { auth: { httpApiKey: 'test-http-key' } });
+
+    const malformedResponse = await runMcpRequest(createMockContext({ Authorization: 'Basic nope' }));
+    const wrongKeyResponse = await runMcpRequest(createMockContext({ Authorization: 'Bearer wrong-key' }));
+
+    expect(malformedResponse.status).toBe(401);
+    expect(malformedResponse.headers.get('www-authenticate')).toBe('Bearer realm="brave-search-mcp"');
+    expect(wrongKeyResponse.status).toBe(401);
+    expect(wrongKeyResponse.headers.get('www-authenticate')).toBe('Bearer realm="brave-search-mcp"');
+    expect(createServer).not.toHaveBeenCalled();
+    expect(mockState.webStandardCtorMock).not.toHaveBeenCalled();
+    expect(server.connect).not.toHaveBeenCalled();
+  });
+
+  it('propagates hashed caller identity for authenticated HTTP requests', async () => {
+    let seenRequestContext = getRequestContext();
+    const server = createServerLike();
+    server.connect.mockImplementation(async () => {
+      seenRequestContext = getRequestContext();
+    });
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await startStreamableHttpServer(createServer, { auth: { httpApiKey: 'test-http-key' } });
+
+    const response = await runMcpRequest(createMockContext({ Authorization: 'Bearer test-http-key' }));
+
+    expect(response.status).toBe(200);
+    expect(createServer).toHaveBeenCalledTimes(1);
+    expect(seenRequestContext).toMatchObject({
+      identity: {
+        transport: 'http',
+        authSource: 'http-api-key',
+        callerId: 'ed9b6e4af4a465ee9ca2baab14bc5f6702227e46cb529978bebf9b81239c8e3c',
+      },
+      requestId: expect.any(String),
+    });
+    expect(server.connect).toHaveBeenCalledTimes(1);
+    expect(mockState.webStandardInstances[0].handleRequest).toHaveBeenCalledTimes(1);
   });
 });

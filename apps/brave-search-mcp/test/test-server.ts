@@ -40,6 +40,7 @@ const http = process.argv.includes('--http');
 
 startServer(createServer, http, {
   allowedHosts: runtimeConfig.featureConfig.server.allowedHosts,
+  auth: runtimeConfig.featureConfig.auth,
 }).catch((error) => {
   console.error('Failed to start test MCP server:', error);
   process.exit(1);

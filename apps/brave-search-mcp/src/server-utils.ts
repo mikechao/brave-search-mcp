@@ -3,12 +3,14 @@
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { CallerIdentity } from './auth/identity-context.js';
 import process from 'node:process';
 import { serve } from '@hono/node-server';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { resolveAuthenticatedHttpIdentity } from './auth/http-api-key.js';
 import { createRequestContext, runWithRequestContext } from './auth/identity-context.js';
 
 export interface StartServerOptions {
@@ -19,6 +21,24 @@ export interface StartServerOptions {
     httpApiKey?: string;
     jwt?: object;
     oauth?: object;
+  };
+}
+
+const HTTP_UNAUTHORIZED_HEADERS = {
+  'content-type': 'application/json',
+  'www-authenticate': 'Bearer realm="brave-search-mcp"',
+};
+
+const HTTP_ANONYMOUS_IDENTITY: CallerIdentity = {
+  transport: 'http',
+  authSource: 'none',
+};
+
+const CALLER_IDENTITY_CONTEXT_KEY = 'callerIdentity';
+
+interface HonoVariables {
+  Variables: {
+    callerIdentity: CallerIdentity;
   };
 }
 
@@ -86,7 +106,7 @@ export async function startStreamableHttpServer(
   const hostname = process.env.HOST ?? '0.0.0.0';
   const allowedHosts = options?.allowedHosts;
 
-  const app = new Hono();
+  const app = new Hono<HonoVariables>();
 
   // Enable CORS for all origins
   app.use('*', cors());
@@ -120,10 +140,31 @@ export async function startStreamableHttpServer(
       + 'or use authentication to protect your server.',
     );
   }
+  const httpApiKey = options?.auth?.httpApiKey;
+  app.use('/mcp', async (c, next) => {
+    const identity = httpApiKey
+      ? resolveAuthenticatedHttpIdentity(httpApiKey, c.req.header('authorization'))
+      : HTTP_ANONYMOUS_IDENTITY;
+
+    if (!identity) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        {
+          status: 401,
+          headers: HTTP_UNAUTHORIZED_HEADERS,
+        },
+      );
+    }
+
+    c.set(CALLER_IDENTITY_CONTEXT_KEY, identity);
+    await next();
+  });
+
   // MCP endpoint - create a fresh transport and server per request (stateless)
   app.all('/mcp', async (c) => {
+    const identity = (c.get(CALLER_IDENTITY_CONTEXT_KEY) as CallerIdentity | undefined) ?? HTTP_ANONYMOUS_IDENTITY;
     return runWithRequestContext(
-      createRequestContext({ transport: 'http', authSource: 'none' }),
+      createRequestContext(identity),
       async () => {
         const server = createServer();
         const transport = new WebStandardStreamableHTTPServerTransport({
