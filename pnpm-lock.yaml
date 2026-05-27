@@ -63,6 +63,9 @@ importers:
       preact:
         specifier: ^10.28.4
         version: 10.28.4
+      smol-toml:
+        specifier: ^1.6.1
+        version: 1.6.1
       snarkdown:
         specifier: ^2.0.0
         version: 2.0.0
@@ -5592,6 +5595,10 @@ packages:
   slash@3.0.0:
     resolution: {integrity: sha512-g9Q1haeby36OSStwb4ntCGGGaKsaVSjQ68fBxoQcutl5fS1vuY18H3wSt3jFyFtrkx+Kz0V1G85A4MyAdDMi2Q==}
     engines: {node: '>=8'}
+
+  smol-toml@1.6.1:
+    resolution: {integrity: sha512-dWUG8F5sIIARXih1DTaQAX4SsiTXhInKf1buxdY9DIg4ZYPZK5nGM1VRIYmEbDbsHt7USo99xSLFu5Q1IqTmsg==}
+    engines: {node: '>= 18'}
 
   snarkdown@2.0.0:
     resolution: {integrity: sha512-MgL/7k/AZdXCTJiNgrO7chgDqaB9FGM/1Tvlcenenb7div6obaDATzs16JhFyHHBGodHT3B7RzRc5qk8pFhg3A==}
@@ -12509,6 +12516,8 @@ snapshots:
   sisteransi@1.0.5: {}
 
   slash@3.0.0: {}
+
+  smol-toml@1.6.1: {}
 
   snarkdown@2.0.0: {}
 

@@ -133,7 +133,7 @@
 ## 6. Cross-Cutting Concerns
 - Authn/authz:
   - Current model: API key to Brave only; no end-user auth in the MCP server itself.
-  - HTTP mode relies on bind address and optional `ALLOWED_HOSTS` validation for basic protection.
+  - HTTP mode relies on bind address plus host-header validation sourced from `ALLOWED_HOSTS` in env mode or `[server].allowedHosts` in file mode.
   - Default policy: keep the server read-only and assume upstream auth/containment if exposed beyond localhost.
 - Logging and observability:
   - Tool logs flow through MCP logging messages.
@@ -146,8 +146,10 @@
   - HTTP transport returns JSON-RPC internal error envelopes on transport failures.
 - Configuration and secrets:
   - Required: `BRAVE_API_KEY`.
-  - Optional: `PORT`, `HOST`, `ALLOWED_HOSTS`, CLI flags like `--http` and `--ui`.
-  - Secrets must come from env, never from checked-in files or widget code.
+  - `PORT` and `HOST` remain environment-only deployment settings.
+  - Feature settings resolve once at process startup from either env mode or a `BRAVE_MCP_CONFIG` TOML file.
+  - In file mode, the config file is authoritative for feature toggles and host allowlists; overlapping feature env vars are ignored with warnings.
+  - Secrets must never come from checked-in files or widget code.
 
 ## 7. Data and Integrations
 - Datastores:

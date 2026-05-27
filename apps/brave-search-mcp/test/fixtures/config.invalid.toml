@@ -1,0 +1,3 @@
+[guardrail]
+requestLimit = "abc"
+windowSeconds = 60

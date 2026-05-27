@@ -10,6 +10,10 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 
+export interface StartServerOptions {
+  allowedHosts?: string[];
+}
+
 /**
  * Starts an MCP server using the appropriate transport based on command-line arguments.
  *
@@ -20,10 +24,11 @@ import { cors } from 'hono/cors';
 export async function startServer(
   createServer: () => McpServer,
   isHttp: boolean = false,
+  options?: StartServerOptions,
 ): Promise<void> {
   try {
     if (isHttp) {
-      await startStreamableHttpServer(createServer);
+      await startStreamableHttpServer(createServer, options);
     }
     else {
       await startStdioServer(createServer);
@@ -59,14 +64,11 @@ export async function startStdioServer(
  */
 export async function startStreamableHttpServer(
   createServer: () => McpServer,
+  options?: StartServerOptions,
 ): Promise<void> {
   const port = Number.parseInt(process.env.PORT ?? '3001', 10);
   const hostname = process.env.HOST ?? '0.0.0.0';
-  const allowedHostsEnv = process.env.ALLOWED_HOSTS;
-  const allowedHosts = allowedHostsEnv
-    ?.split(',')
-    .map(value => value.trim())
-    .filter(Boolean);
+  const allowedHosts = options?.allowedHosts;
 
   const app = new Hono();
 
@@ -98,7 +100,7 @@ export async function startStreamableHttpServer(
   else if (hostname === '0.0.0.0' || hostname === '::') {
     console.warn(
       `Warning: Server is binding to ${hostname} without DNS rebinding protection. `
-      + 'Consider using the ALLOWED_HOSTS environment variable to restrict allowed hosts, '
+      + 'Consider using the ALLOWED_HOSTS environment variable in env mode or [server].allowedHosts in file mode to restrict allowed hosts, '
       + 'or use authentication to protect your server.',
     );
   }

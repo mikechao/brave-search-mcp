@@ -28,7 +28,10 @@ const mockState = vi.hoisted(() => {
 
   // Capture the route handler registered via app.all('/mcp', ...)
   let mcpHandler: ((c: any) => Promise<Response>) | undefined;
-  const honoUseMock = vi.fn();
+  const middlewareHandlers: Array<(c: any, next: () => Promise<void>) => Promise<unknown>> = [];
+  const honoUseMock = vi.fn((_path: string, handler: (c: any, next: () => Promise<void>) => Promise<unknown>) => {
+    middlewareHandlers.push(handler);
+  });
   const honoAllMock = vi.fn((path: string, handler: (c: any) => Promise<Response>) => {
     if (path === '/mcp') {
       mcpHandler = handler;
@@ -79,7 +82,9 @@ const mockState = vi.hoisted(() => {
     serveMock,
     mockHttpServer,
     getMcpHandler: () => mcpHandler,
+    getMiddlewareHandlers: () => [...middlewareHandlers],
     resetMcpHandler: () => { mcpHandler = undefined; },
+    resetMiddlewareHandlers: () => { middlewareHandlers.length = 0; },
   };
 });
 
@@ -145,6 +150,7 @@ describe('server-utils', () => {
     mockState.stdioInstances.length = 0;
     mockState.webStandardInstances.length = 0;
     mockState.resetMcpHandler();
+    mockState.resetMiddlewareHandlers();
 
     restoreEnvVar('PORT', originalPort);
     restoreEnvVar('HOST', originalHost);
@@ -185,7 +191,7 @@ describe('server-utils', () => {
     const createServer = vi.fn(() => server as never);
     const processOnSpy = vi.spyOn(process, 'on').mockReturnValue(process);
 
-    await startServer(createServer, true);
+    await startServer(createServer, true, { allowedHosts: ['localhost'] });
 
     expect(mockState.serveMock).toHaveBeenCalledTimes(1);
     expect(processOnSpy).toHaveBeenCalledWith('SIGINT', expect.any(Function));
@@ -340,5 +346,39 @@ describe('server-utils', () => {
       },
       500,
     );
+  });
+
+  it('uses the resolved allowedHosts option for host-header protection', async () => {
+    process.env.ALLOWED_HOSTS = 'ignored.example.com';
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await startStreamableHttpServer(createServer, { allowedHosts: ['localhost'] });
+
+    const middlewares = mockState.getMiddlewareHandlers();
+    expect(middlewares).toHaveLength(2);
+
+    const hostGuard = middlewares[1];
+    const next = vi.fn().mockResolvedValue(undefined);
+    const allowedContext = {
+      req: {
+        header: vi.fn((name: string) => name === 'host' ? 'localhost:3001' : undefined),
+      },
+      json: vi.fn(),
+    };
+    const deniedContext = {
+      req: {
+        header: vi.fn((name: string) => name === 'host' ? 'evil.example.com:3001' : undefined),
+      },
+      json: vi.fn((body: any, status?: number) => new Response(JSON.stringify(body), { status: status ?? 200 })),
+    };
+
+    await hostGuard(allowedContext, next);
+    expect(next).toHaveBeenCalledTimes(1);
+
+    const response = await hostGuard(deniedContext, next);
+    expect(deniedContext.json).toHaveBeenCalledWith({ error: 'Forbidden: invalid Host header' }, 403);
+    expect(response).toBeInstanceOf(Response);
   });
 });

@@ -11,9 +11,15 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { BraveSearch } from 'brave-search';
 import process from 'node:process';
+import { resolveRuntimeConfig } from '../src/config-loader.js';
 import { startServer } from '../src/server-utils.js';
 import { BraveMcpServer } from '../src/server.js';
 import { createMockBraveSearch } from './mocks/index.js';
+
+const runtimeConfig = resolveRuntimeConfig({
+  env: process.env,
+  warn: message => console.warn(message),
+});
 
 function createServer(): McpServer {
   const isUI = process.argv.includes('--ui');
@@ -26,12 +32,15 @@ function createServer(): McpServer {
     'mock-api-key',
     isUI,
     mockBraveSearch as unknown as BraveSearch,
+    runtimeConfig.featureConfig,
   ).serverInstance;
 }
 
 const http = process.argv.includes('--http');
 
-startServer(createServer, http).catch((error) => {
+startServer(createServer, http, {
+  allowedHosts: runtimeConfig.featureConfig.server.allowedHosts,
+}).catch((error) => {
   console.error('Failed to start test MCP server:', error);
   process.exit(1);
 });

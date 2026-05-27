@@ -1,30 +1,81 @@
 #!/usr/bin/env node
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import type { FeatureConfig } from './config-loader.js';
 import process from 'node:process';
+import { resolveRuntimeConfig } from './config-loader.js';
 import { startServer } from './server-utils.js';
 import { BraveMcpServer } from './server.js';
 
-function createServer(): McpServer {
-  // Check for API key
-  const BRAVE_API_KEY = process.env.BRAVE_API_KEY;
-  if (!BRAVE_API_KEY) {
-    console.error('Error: BRAVE_API_KEY environment variable is required');
-    process.exit(1);
-  }
-  const isUI = process.argv.includes('--ui');
-  try {
-    return new BraveMcpServer(BRAVE_API_KEY, isUI).serverInstance;
-  }
-  catch (err) {
-    console.error(`Error: Failed to start server: ${err instanceof Error ? err.message : String(err)}`);
-    process.exit(1);
-  }
+interface CliOptions {
+  checkConfigPath?: string;
+  isHttp: boolean;
+  isUI: boolean;
 }
 
-const http = process.argv.includes('--http');
+function parseCliOptions(argv: readonly string[]): CliOptions {
+  const checkConfigIndex = argv.indexOf('--check-config');
+  let checkConfigPath: string | undefined;
 
-startServer(createServer, http).catch((error) => {
-  console.error('Failed to start MCP server:', error);
+  if (checkConfigIndex !== -1) {
+    checkConfigPath = argv[checkConfigIndex + 1];
+    if (!checkConfigPath || checkConfigPath.startsWith('--'))
+      throw new Error('Error: --check-config requires a file path');
+  }
+
+  return {
+    checkConfigPath,
+    isHttp: argv.includes('--http'),
+    isUI: argv.includes('--ui'),
+  };
+}
+
+function createServerFactory(apiKey: string, isUI: boolean, featureConfig: FeatureConfig): () => McpServer {
+  return () => {
+    try {
+      return new BraveMcpServer(apiKey, isUI, undefined, featureConfig).serverInstance;
+    }
+    catch (error) {
+      console.error(`Error: Failed to start server: ${error instanceof Error ? error.message : String(error)}`);
+      process.exit(1);
+      return undefined as never;
+    }
+  };
+}
+
+async function main(): Promise<void> {
+  const cliOptions = parseCliOptions(process.argv.slice(2));
+  const runtimeConfig = resolveRuntimeConfig({
+    env: process.env,
+    explicitConfigPath: cliOptions.checkConfigPath,
+    warn: message => console.warn(message),
+  });
+
+  if (cliOptions.checkConfigPath) {
+    console.log(JSON.stringify(runtimeConfig.maskedForDisplay, null, 2));
+    return;
+  }
+
+  const braveApiKey = process.env.BRAVE_API_KEY;
+  if (!braveApiKey) {
+    console.error('Error: BRAVE_API_KEY environment variable is required');
+    process.exit(1);
+    return;
+  }
+
+  if (runtimeConfig.mode === 'file' && runtimeConfig.configPath)
+    console.error(`Loaded config file: ${runtimeConfig.configPath}`);
+
+  await startServer(
+    createServerFactory(braveApiKey, cliOptions.isUI, runtimeConfig.featureConfig),
+    cliOptions.isHttp,
+    { allowedHosts: runtimeConfig.featureConfig.server.allowedHosts },
+  );
+}
+
+main().catch((error) => {
+  console.error(
+    error instanceof Error ? error.message : `Failed to start MCP server: ${String(error)}`,
+  );
   process.exit(1);
 });

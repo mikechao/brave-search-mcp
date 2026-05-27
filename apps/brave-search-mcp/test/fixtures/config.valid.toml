@@ -1,0 +1,37 @@
+[auth]
+httpApiKey = "sk-test-config"
+requireAuth = true
+callerId = "team-a"
+
+[auth.jwt]
+jwksUri = "https://idp.example.com/.well-known/jwks.json"
+audience = "brave-search-mcp"
+clockSkewSeconds = 30
+
+[auth.oauth]
+issuer = "https://idp.example.com"
+audience = "brave-search-mcp"
+clientId = "client-123"
+clientSecret = "super-secret"
+verifyStrategy = "jwks"
+
+[audit]
+enabled = true
+logRaw = false
+hmacSecret = "audit-secret"
+
+[policy]
+file = "/etc/brave-mcp/policy.json"
+redact = true
+
+[guardrail]
+requestLimit = 5
+windowSeconds = 60
+cooldownSeconds = 10
+requireJustification = true
+
+[server]
+allowedHosts = [
+  "localhost",
+  "127.0.0.1",
+]

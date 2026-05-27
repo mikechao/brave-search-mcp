@@ -1,10 +1,11 @@
+import type { FeatureConfig } from './config-loader.js';
 import type { LocalWebFallbackExecutor, ToolInterceptor, ToolLogger } from './tools/tool-helpers.js';
 import path from 'node:path';
-import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { BraveSearch } from 'brave-search';
 import packageJson from '../package.json' with { type: 'json' };
+import { createDefaultFeatureConfig } from './config-loader.js';
 import { loadPolicyRulesSync } from './policy-loader.js';
 import { registerUiSearchTools } from './server-ui.js';
 import { AuditLoggingInterceptor } from './tools/AuditLoggingInterceptor.js';
@@ -46,6 +47,7 @@ interface ServerTools {
 export class BraveMcpServer {
   private server: McpServer;
   private tools: ServerTools;
+  private featureConfig: FeatureConfig;
 
   /**
    * Creates a new BraveMcpServer instance.
@@ -57,6 +59,7 @@ export class BraveMcpServer {
     braveSearchApiKey: string,
     isUI: boolean = false,
     braveSearchInstance?: BraveSearch,
+    featureConfig: FeatureConfig = createDefaultFeatureConfig(),
   ) {
     this.server = new McpServer(
       {
@@ -73,6 +76,7 @@ export class BraveMcpServer {
     );
 
     const braveSearch = braveSearchInstance ?? new BraveSearch(braveSearchApiKey);
+    this.featureConfig = featureConfig;
     const log: ToolLogger = this.log.bind(this);
     const activeInterceptors = this.buildInterceptors();
 
@@ -114,28 +118,23 @@ export class BraveMcpServer {
     //   requests do not require a justification — intentional, since they are already
     //   rejected on stronger grounds.
     const interceptors: ToolInterceptor[] = [];
-    const policyFile = process.env.BRAVE_MCP_POLICY_FILE;
+    const policyFile = this.featureConfig.policy.file;
     if (policyFile) {
       const rules = loadPolicyRulesSync(policyFile);
-      const redactMode = (process.env.BRAVE_MCP_POLICY_REDACT ?? '').toLowerCase() === 'true';
+      const redactMode = this.featureConfig.policy.redact;
       interceptors.push(new QueryPolicyInterceptor(rules, redactMode));
     }
-    const requestLimitStr = process.env.BRAVE_MCP_REQUEST_LIMIT;
-    if (requestLimitStr !== undefined) {
-      const requestLimit = /^\d+$/.test(requestLimitStr) ? Number(requestLimitStr) : 0;
-      if (requestLimit > 0) {
-        const windowStr = process.env.BRAVE_MCP_WINDOW_SECONDS ?? '0';
-        const cooldownStr = process.env.BRAVE_MCP_COOLDOWN_SECONDS ?? '0';
-        interceptors.push(new UsageGuardrailInterceptor({
-          requestLimit,
-          windowMs: /^\d+$/.test(windowStr) ? Number(windowStr) * 1000 : 0,
-          cooldownMs: /^\d+$/.test(cooldownStr) ? Number(cooldownStr) * 1000 : 0,
-        }));
-      }
+    const requestLimit = this.featureConfig.guardrail.requestLimit;
+    if (requestLimit !== undefined) {
+      interceptors.push(new UsageGuardrailInterceptor({
+        requestLimit,
+        windowMs: this.featureConfig.guardrail.windowSeconds * 1000,
+        cooldownMs: this.featureConfig.guardrail.cooldownSeconds * 1000,
+      }));
     }
-    const auditLoggingEnabled = (process.env.BRAVE_MCP_AUDIT_LOG ?? '').toLowerCase() === 'true';
-    const logRawInputs = (process.env.BRAVE_MCP_AUDIT_LOG_RAW ?? '').toLowerCase() === 'true';
-    const requireJustification = (process.env.BRAVE_MCP_REQUIRE_JUSTIFICATION ?? '').toLowerCase() === 'true';
+    const auditLoggingEnabled = this.featureConfig.audit.enabled;
+    const logRawInputs = this.featureConfig.audit.logRaw;
+    const requireJustification = this.featureConfig.guardrail.requireJustification;
     if (auditLoggingEnabled || requireJustification) {
       interceptors.push(new AuditLoggingInterceptor({
         auditLoggingEnabled,

@@ -8,6 +8,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import packageJson from '../../package.json' with { type: 'json' };
+import { createDefaultFeatureConfig, resolveRuntimeConfig } from '../../src/config-loader.js';
 import { BraveMcpServer } from '../../src/server.js';
 import { TOOL_NAMES } from '../../src/tool-catalog.js';
 import { createMockBraveSearch } from '../mocks/index.js';
@@ -34,6 +35,14 @@ const UI_RESOURCES = {
 
 const { version: SERVER_VERSION } = packageJson;
 const allToolNames = Object.values(TOOL_NAMES);
+
+function resolveFeatureConfigFromCurrentEnv() {
+  return resolveRuntimeConfig({
+    env: process.env,
+    warn: () => {},
+  }).featureConfig;
+}
+
 const UI_TOOL_METADATA_EXPECTATIONS = {
   [TOOL_NAMES.image]: {
     invoking: 'Searching for images…',
@@ -92,6 +101,7 @@ describe('braveMcpServer', () => {
       'fake-api-key',
       false,
       mockBraveSearch as unknown as BraveSearch,
+      createDefaultFeatureConfig(),
     );
   });
 
@@ -200,6 +210,7 @@ describe('braveMcpServer', () => {
         'fake-api-key',
         false,
         mockBraveSearch as unknown as BraveSearch,
+        createDefaultFeatureConfig(),
       );
       const { client, close } = await createConnectedClient(interceptedServer);
 
@@ -250,6 +261,7 @@ describe('braveMcpServer', () => {
         'fake-api-key',
         false,
         mockBraveSearch as unknown as BraveSearch,
+        resolveFeatureConfigFromCurrentEnv(),
       );
       const stderrSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
       const { client, close } = await createConnectedClient(enforcedServer);
@@ -306,6 +318,7 @@ describe('braveMcpServer', () => {
         'fake-api-key',
         true,
         mockBraveSearch as unknown as BraveSearch,
+        createDefaultFeatureConfig(),
       );
       const { client, close } = await createConnectedClient(uiServer);
 
@@ -377,6 +390,7 @@ describe('braveMcpServer', () => {
           'fake-api-key',
           true,
           mockBraveSearch as unknown as BraveSearch,
+          createDefaultFeatureConfig(),
         );
         const { client, close } = await createConnectedClient(uiServer);
 
@@ -426,7 +440,7 @@ describe('braveMcpServer', () => {
 
     it('denies the second call end-to-end when BRAVE_MCP_REQUEST_LIMIT=1', async () => {
       vi.stubEnv('BRAVE_MCP_REQUEST_LIMIT', '1');
-      const guardedServer = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch);
+      const guardedServer = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch, resolveFeatureConfigFromCurrentEnv());
       const { client, close } = await createConnectedClient(guardedServer);
       try {
         const first = await client.callTool({ name: TOOL_NAMES.web, arguments: { query: 'test' } });
@@ -445,7 +459,7 @@ describe('braveMcpServer', () => {
 
     it('does not activate the guardrail when BRAVE_MCP_REQUEST_LIMIT is malformed (e.g. "1oops")', async () => {
       vi.stubEnv('BRAVE_MCP_REQUEST_LIMIT', '1oops');
-      const server2 = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch);
+      const server2 = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch, resolveFeatureConfigFromCurrentEnv());
       const { client, close } = await createConnectedClient(server2);
       try {
         const first = await client.callTool({ name: TOOL_NAMES.web, arguments: { query: 'test' } });
@@ -477,7 +491,7 @@ describe('braveMcpServer', () => {
       vi.stubEnv('BRAVE_MCP_WINDOW_SECONDS', '1oops');
 
       try {
-        const guardedServer = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch);
+        const guardedServer = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch, resolveFeatureConfigFromCurrentEnv());
         const interceptors = (guardedServer as unknown as {
           buildInterceptors: () => readonly ToolInterceptor[];
         }).buildInterceptors();
@@ -513,7 +527,7 @@ describe('braveMcpServer', () => {
       vi.stubEnv('BRAVE_MCP_COOLDOWN_SECONDS', '5oops');
 
       try {
-        const guardedServer = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch);
+        const guardedServer = new BraveMcpServer('fake-api-key', false, mockBraveSearch as unknown as BraveSearch, resolveFeatureConfigFromCurrentEnv());
         const interceptors = (guardedServer as unknown as {
           buildInterceptors: () => readonly ToolInterceptor[];
         }).buildInterceptors();

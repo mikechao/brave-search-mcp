@@ -6,10 +6,6 @@ An MCP Server implementation that integrates the [Brave Search API](https://brav
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@mikechao/brave-search-mcp/badge" alt="Brave Search MCP server" />
 </a>
 
-## Hosted deployment
-
-A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/mikechao-brave-search-mcp).
-
 ## Features
 
 - **Web Search**: Perform a regular search on the web
@@ -113,7 +109,7 @@ There is now support for [OpenAI Apps](https://developers.openai.com/apps-sdk/) 
 2. Choose a plan
 3. Generate your API key [from the developer dashboard](https://api.search.brave.com/app/keys)
 
-### Streamable HTTP mode
+### Runtime modes
 
 By default the MCP server runs in stdio mode.
 
@@ -134,16 +130,35 @@ The URL is:
 http://0.0.0.0:3001/mcp
 ```
 
-### Environment variables
+There are two configuration modes:
 
-When running in HTTP mode, the following environment variables are supported:
+- Env mode: `BRAVE_MCP_CONFIG` is unset. Feature toggles come from environment variables exactly as in previous releases.
+- File mode: `BRAVE_MCP_CONFIG=/path/to/config.toml` is set. The TOML file becomes the single source of truth for feature settings, and overlapping feature env vars are ignored with warnings.
+
+### Environment-only settings
+
+These settings are always read from the process environment, regardless of mode:
 
 - `BRAVE_API_KEY` (required): Brave Search API key.
 - `PORT` (optional): HTTP port (default: `3001`).
 - `HOST` (optional): Interface to bind to (default: `0.0.0.0`).
-- `ALLOWED_HOSTS` (optional): Comma-separated list of allowed hostnames for Host header validation.
+- `BRAVE_MCP_CONFIG` (optional): Absolute or relative path to a TOML config file for feature settings.
+
+### Env mode feature settings
+
+When `BRAVE_MCP_CONFIG` is not set, these feature env vars are supported:
+
+- `ALLOWED_HOSTS` (HTTP mode only): Comma-separated list of allowed hostnames for Host header validation.
   - Example: `ALLOWED_HOSTS=localhost,127.0.0.1,my-app.ngrok-free.app`
   - Use hostnames only (no scheme/path), e.g. `my-app.ngrok-free.app` not `https://my-app.ngrok-free.app/mcp`
+- `BRAVE_MCP_POLICY_FILE`: JSON policy file path.
+- `BRAVE_MCP_POLICY_REDACT`: `true` to redact matched text instead of blocking it.
+- `BRAVE_MCP_REQUEST_LIMIT`: Positive integer request cap.
+- `BRAVE_MCP_WINDOW_SECONDS`: Non-negative integer rolling window size.
+- `BRAVE_MCP_COOLDOWN_SECONDS`: Non-negative integer cooldown after the limit is exceeded.
+- `BRAVE_MCP_AUDIT_LOG`: `true` to emit audit logs.
+- `BRAVE_MCP_AUDIT_LOG_RAW`: `true` to include raw query text in audit logs.
+- `BRAVE_MCP_REQUIRE_JUSTIFICATION`: `true` to reject tool calls without a `justification` string.
 
 Examples:
 
@@ -155,6 +170,71 @@ HOST=127.0.0.1 ALLOWED_HOSTS=localhost,127.0.0.1 BRAVE_API_KEY="your_key_here" n
 ```bash
 # Local with ngrok tunnel
 HOST=127.0.0.1 ALLOWED_HOSTS=localhost,127.0.0.1,my-app.ngrok-free.app BRAVE_API_KEY="your_key_here" npx -y brave-search-mcp --http --ui
+```
+
+### File mode (`BRAVE_MCP_CONFIG`)
+
+When `BRAVE_MCP_CONFIG` is set, the file controls feature configuration, including the HTTP host allowlist.
+
+```toml
+[auth]
+httpApiKey = "sk-..."
+requireAuth = true
+callerId = "team-a"
+
+[auth.jwt]
+jwksUri = "https://idp.example.com/.well-known/jwks.json"
+audience = "brave-search-mcp"
+clockSkewSeconds = 30
+
+[auth.oauth]
+issuer = "https://idp.example.com"
+audience = "brave-search-mcp"
+clientId = "client-123"
+clientSecret = "super-secret"
+verifyStrategy = "jwks"
+
+[audit]
+enabled = true
+logRaw = false
+hmacSecret = "audit-secret"
+
+[policy]
+file = "/etc/brave-mcp/policy.json"
+redact = false
+
+[guardrail]
+requestLimit = 100
+windowSeconds = 60
+cooldownSeconds = 10
+requireJustification = false
+
+[server]
+allowedHosts = [
+  "localhost",
+  "127.0.0.1",
+  "my-app.ngrok-free.app",
+]
+```
+
+Notes:
+
+- `BRAVE_API_KEY`, `PORT`, and `HOST` remain environment-only even in file mode.
+- If you set overlapping feature env vars such as `BRAVE_MCP_REQUEST_LIMIT` or `ALLOWED_HOSTS` alongside `BRAVE_MCP_CONFIG`, startup warns that they are being ignored.
+- Unknown TOML keys also emit warnings so typos like `[guardrails]` are visible before you debug runtime behavior.
+
+To validate a config file without starting the server, use the packaged entrypoint after building the app workspace:
+
+```bash
+pnpm -C apps/brave-search-mcp run build
+node apps/brave-search-mcp/dist/index.js --check-config ./apps/brave-search-mcp/test/fixtures/config.valid.toml
+```
+
+To run the built local entrypoint in file mode:
+
+```bash
+pnpm -C apps/brave-search-mcp run build
+BRAVE_API_KEY="your_key_here" BRAVE_MCP_CONFIG="$PWD/apps/brave-search-mcp/test/fixtures/config.valid.toml" node apps/brave-search-mcp/dist/index.js --http
 ```
 
 ### Usage with ChatGPT
