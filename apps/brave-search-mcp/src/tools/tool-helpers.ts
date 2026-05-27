@@ -1,5 +1,7 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { AuthSource, TransportKind } from '../auth/identity-context.js';
 import { z } from 'zod';
+import { createRequestContext, getRequestContext } from '../auth/identity-context.js';
 
 export type ToolLogLevel
   = 'error'
@@ -117,6 +119,10 @@ export interface ToolInterceptorContext<TInput extends Record<string, unknown> =
   input: Readonly<TInput>;
   isFallback: boolean;
   startedAtMs: number;
+  requestId: string;
+  transport: TransportKind;
+  authSource: AuthSource;
+  callerId?: string;
 }
 
 export interface ToolAfterInterceptorContext<TInput extends Record<string, unknown> = Record<string, unknown>>
@@ -262,7 +268,17 @@ export async function executeTool<TInput>({
 }: ExecuteToolOptions<TInput>): Promise<CallToolResult> {
   const startedAtMs = Date.now();
   const frozenInput = Object.freeze({ ...(input as Record<string, unknown>) }) as Readonly<Record<string, unknown>>;
-  const context: ToolInterceptorContext = { toolName, input: frozenInput, isFallback, startedAtMs };
+  const requestContext = getRequestContext() ?? createRequestContext({ transport: 'stdio', authSource: 'none' });
+  const context: ToolInterceptorContext = {
+    toolName,
+    input: frozenInput,
+    isFallback,
+    startedAtMs,
+    requestId: requestContext.requestId,
+    transport: requestContext.identity.transport,
+    authSource: requestContext.identity.authSource,
+    ...(requestContext.identity.callerId ? { callerId: requestContext.identity.callerId } : {}),
+  };
   let wasRedacted = false;
   let denyCode: string | undefined;
   let denyReason: string | undefined;

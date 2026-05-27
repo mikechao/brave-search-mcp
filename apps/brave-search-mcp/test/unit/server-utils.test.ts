@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { getRequestContext } from '../../src/auth/identity-context.js';
 import { startServer, startStdioServer, startStreamableHttpServer } from '../../src/server-utils.js';
 
 const mockState = vi.hoisted(() => {
@@ -165,7 +166,11 @@ describe('server-utils', () => {
   });
 
   it('startStdioServer connects server with stdio transport', async () => {
+    let seenRequestContext = getRequestContext();
     const server = createServerLike();
+    server.connect.mockImplementation(async () => {
+      seenRequestContext = getRequestContext();
+    });
     const createServer = vi.fn(() => server as never);
 
     await startStdioServer(createServer);
@@ -173,6 +178,26 @@ describe('server-utils', () => {
     expect(createServer).toHaveBeenCalledTimes(1);
     expect(mockState.stdioCtorMock).toHaveBeenCalledTimes(1);
     expect(server.connect).toHaveBeenCalledWith(mockState.stdioInstances[0]);
+    expect(seenRequestContext).toMatchObject({
+      identity: { transport: 'stdio', authSource: 'stdio-process' },
+      requestId: expect.any(String),
+    });
+  });
+
+  it('startStdioServer uses callerId from auth options', async () => {
+    let seenRequestContext = getRequestContext();
+    const server = createServerLike();
+    server.connect.mockImplementation(async () => {
+      seenRequestContext = getRequestContext();
+    });
+    const createServer = vi.fn(() => server as never);
+
+    await startStdioServer(createServer, { auth: { callerId: 'ops-session-1' } });
+
+    expect(seenRequestContext).toMatchObject({
+      identity: { transport: 'stdio', authSource: 'stdio-env', callerId: 'ops-session-1' },
+      requestId: expect.any(String),
+    });
   });
 
   it('startServer routes to stdio by default', async () => {
@@ -218,7 +243,11 @@ describe('server-utils', () => {
   it('startStreamableHttpServer configures app and handles request lifecycle', async () => {
     process.env.PORT = '4567';
 
+    let seenRequestContext = getRequestContext();
     const server = createServerLike();
+    server.connect.mockImplementation(async () => {
+      seenRequestContext = getRequestContext();
+    });
     const createServer = vi.fn(() => server as never);
     const signalHandlers = new Map<string, () => void>();
     const processOnSpy = vi.spyOn(process, 'on').mockImplementation(((event: string, cb: () => void) => {
@@ -258,6 +287,10 @@ describe('server-utils', () => {
     await handler(mockContext);
 
     expect(createServer).toHaveBeenCalledTimes(1);
+    expect(seenRequestContext).toMatchObject({
+      identity: { transport: 'http', authSource: 'none' },
+      requestId: expect.any(String),
+    });
     expect(mockState.webStandardCtorMock).toHaveBeenCalledWith({
       sessionIdGenerator: undefined,
     });

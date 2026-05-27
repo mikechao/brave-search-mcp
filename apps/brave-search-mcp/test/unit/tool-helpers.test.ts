@@ -2,6 +2,7 @@ import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import type { ToolInterceptor } from '../../src/tools/tool-helpers.js';
 import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
+import { createRequestContext, runWithRequestContext } from '../../src/auth/identity-context.js';
 import {
   buildPagedStructuredContent,
   buildStructuredToolResult,
@@ -352,6 +353,40 @@ describe('toolHelpers', () => {
         input: { query: 'hello' },
         effectiveInput: { query: 'hello' },
         wasRedacted: false,
+        transport: 'stdio',
+        authSource: 'none',
+        requestId: expect.any(String),
+      });
+    });
+
+    it('propagates request identity from async context into before() and after()', async () => {
+      const beforeCaptured = vi.fn();
+      const afterCaptured = vi.fn();
+      const interceptors: ToolInterceptor[] = [
+        {
+          async before(ctx) { beforeCaptured(ctx); },
+          async after(ctx) { afterCaptured(ctx); },
+        },
+      ];
+
+      await runWithRequestContext(
+        createRequestContext({ transport: 'http', authSource: 'http-api-key', callerId: 'tenant-7' }, 'req-http-1'),
+        () => executeTool({ toolName: 'test_tool', input: successInput, executeCore: makeSuccessCore(), interceptors }),
+      );
+
+      expect(beforeCaptured).toHaveBeenCalledOnce();
+      expect(afterCaptured).toHaveBeenCalledOnce();
+      expect(beforeCaptured.mock.calls[0][0]).toMatchObject({
+        requestId: 'req-http-1',
+        transport: 'http',
+        authSource: 'http-api-key',
+        callerId: 'tenant-7',
+      });
+      expect(afterCaptured.mock.calls[0][0]).toMatchObject({
+        requestId: 'req-http-1',
+        transport: 'http',
+        authSource: 'http-api-key',
+        callerId: 'tenant-7',
       });
     });
 

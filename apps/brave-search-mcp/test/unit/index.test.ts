@@ -74,7 +74,7 @@ describe('index entrypoint', () => {
   it('passes createServer callback, http flag, and allowedHosts to startServer', async () => {
     let capturedCreateServer: (() => McpServer) | undefined;
     let capturedHttpFlag: boolean | undefined;
-    let capturedOptions: { allowedHosts?: string[] } | undefined;
+    let capturedOptions: { allowedHosts?: string[]; auth?: Record<string, unknown> } | undefined;
     const featureConfig = {
       ...createFeatureConfig(),
       server: { allowedHosts: ['localhost'] },
@@ -103,7 +103,7 @@ describe('index entrypoint', () => {
     }));
     expect(mockState.startServerMock).toHaveBeenCalledTimes(1);
     expect(capturedHttpFlag).toBe(true);
-    expect(capturedOptions).toEqual({ allowedHosts: ['localhost'] });
+    expect(capturedOptions).toEqual({ allowedHosts: ['localhost'], auth: featureConfig.auth });
     expect(capturedCreateServer).toBeTypeOf('function');
 
     const serverInstance = capturedCreateServer!();
@@ -166,6 +166,68 @@ describe('index entrypoint', () => {
 
     expect(consoleErrorSpy).toHaveBeenCalledWith('startup failed');
     expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it('fails startup in http mode when requireAuth is enabled without an HTTP auth mechanism', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+    process.argv = ['node', 'index.js', '--http'];
+    mockState.resolveRuntimeConfigMock.mockReturnValue({
+      mode: 'env',
+      featureConfig: {
+        ...createFeatureConfig(),
+        auth: { requireAuth: true },
+      },
+      ignoredEnvVars: [],
+      unknownKeys: [],
+      maskedForDisplay: createFeatureConfig(),
+    });
+
+    await importIndexModule();
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Error: BRAVE_MCP_REQUIRE_AUTH=true requires one of auth.httpApiKey, auth.jwt, or auth.oauth when --http is used',
+    );
+    expect(exitSpy).toHaveBeenCalledWith(1);
+    expect(mockState.startServerMock).not.toHaveBeenCalled();
+  });
+
+  it('warns in stdio mode when HTTP auth config is present', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mockState.resolveRuntimeConfigMock.mockReturnValue({
+      mode: 'env',
+      featureConfig: {
+        ...createFeatureConfig(),
+        auth: { requireAuth: true, httpApiKey: 'secret' },
+      },
+      ignoredEnvVars: [],
+      unknownKeys: [],
+      maskedForDisplay: createFeatureConfig(),
+    });
+
+    await importIndexModule();
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith('Warning: HTTP auth configuration is ignored in stdio mode');
+    expect(mockState.startServerMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not warn in stdio mode when only callerId is configured', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mockState.resolveRuntimeConfigMock.mockReturnValue({
+      mode: 'env',
+      featureConfig: {
+        ...createFeatureConfig(),
+        auth: { callerId: 'ops-session-1' },
+      },
+      ignoredEnvVars: [],
+      unknownKeys: [],
+      maskedForDisplay: createFeatureConfig(),
+    });
+
+    await importIndexModule();
+
+    expect(consoleWarnSpy).not.toHaveBeenCalledWith('Warning: HTTP auth configuration is ignored in stdio mode');
+    expect(mockState.startServerMock).toHaveBeenCalledTimes(1);
   });
 
   it('logs and exits when BraveMcpServer throws', async () => {

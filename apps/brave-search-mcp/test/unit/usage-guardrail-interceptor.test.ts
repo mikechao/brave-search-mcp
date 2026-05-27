@@ -3,12 +3,16 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { executeTool } from '../../src/tools/tool-helpers.js';
 import { UsageGuardrailInterceptor } from '../../src/tools/UsageGuardrailInterceptor.js';
 
-function makeContext(isFallback = false): ToolInterceptorContext {
+function makeContext(isFallback = false, overrides: Partial<ToolInterceptorContext> = {}): ToolInterceptorContext {
   return {
     toolName: 'test_tool',
     input: Object.freeze({}),
     isFallback,
     startedAtMs: Date.now(),
+    requestId: overrides.requestId ?? 'req-1',
+    transport: overrides.transport ?? 'stdio',
+    authSource: overrides.authSource ?? 'stdio-process',
+    callerId: overrides.callerId,
   };
 }
 
@@ -123,6 +127,28 @@ describe('usageGuardrailInterceptor', () => {
     vi.advanceTimersByTime(6000); // past cooldown duration
     const result = await interceptor.before(makeContext()); // still denied
     expect(result).toMatchObject({ allow: false, code: 'RATE_LIMITED' });
+  });
+
+  it('tracks counters independently per callerId', async () => {
+    const interceptor = new UsageGuardrailInterceptor({ requestLimit: 1, windowMs: 0, cooldownMs: 0 });
+    await interceptor.before(makeContext(false, { callerId: 'alpha', requestId: 'req-alpha-1' }));
+
+    const alphaDenied = await interceptor.before(makeContext(false, { callerId: 'alpha', requestId: 'req-alpha-2' }));
+    const betaAllowed = await interceptor.before(makeContext(false, { callerId: 'beta', requestId: 'req-beta-1' }));
+
+    expect(alphaDenied).toMatchObject({ allow: false, code: 'RATE_LIMITED' });
+    expect(betaAllowed).toBeUndefined();
+  });
+
+  it('shares anonymous buckets by transport when callerId is missing', async () => {
+    const interceptor = new UsageGuardrailInterceptor({ requestLimit: 1, windowMs: 0, cooldownMs: 0 });
+    await interceptor.before(makeContext(false, { transport: 'http', authSource: 'none', requestId: 'req-http-1' }));
+
+    const httpDenied = await interceptor.before(makeContext(false, { transport: 'http', authSource: 'none', requestId: 'req-http-2' }));
+    const stdioAllowed = await interceptor.before(makeContext(false, { transport: 'stdio', authSource: 'stdio-process', requestId: 'req-stdio-1' }));
+
+    expect(httpDenied).toMatchObject({ allow: false, code: 'RATE_LIMITED' });
+    expect(stdioAllowed).toBeUndefined();
   });
 });
 

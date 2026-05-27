@@ -9,9 +9,17 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { createRequestContext, runWithRequestContext } from './auth/identity-context.js';
 
 export interface StartServerOptions {
   allowedHosts?: string[];
+  auth?: {
+    callerId?: string;
+    requireAuth?: boolean;
+    httpApiKey?: string;
+    jwt?: object;
+    oauth?: object;
+  };
 }
 
 /**
@@ -31,7 +39,7 @@ export async function startServer(
       await startStreamableHttpServer(createServer, options);
     }
     else {
-      await startStdioServer(createServer);
+      await startStdioServer(createServer, options);
     }
   }
   catch (e) {
@@ -47,8 +55,16 @@ export async function startServer(
  */
 export async function startStdioServer(
   createServer: () => McpServer,
+  options?: StartServerOptions,
 ): Promise<void> {
-  await createServer().connect(new StdioServerTransport());
+  const callerId = options?.auth?.callerId;
+  const identity = callerId
+    ? { transport: 'stdio' as const, authSource: 'stdio-env' as const, callerId }
+    : { transport: 'stdio' as const, authSource: 'stdio-process' as const };
+
+  await runWithRequestContext(createRequestContext(identity), async () => {
+    await createServer().connect(new StdioServerTransport());
+  });
 }
 
 /**
@@ -106,34 +122,39 @@ export async function startStreamableHttpServer(
   }
   // MCP endpoint - create a fresh transport and server per request (stateless)
   app.all('/mcp', async (c) => {
-    const server = createServer();
-    const transport = new WebStandardStreamableHTTPServerTransport({
-      sessionIdGenerator: undefined,
-    });
+    return runWithRequestContext(
+      createRequestContext({ transport: 'http', authSource: 'none' }),
+      async () => {
+        const server = createServer();
+        const transport = new WebStandardStreamableHTTPServerTransport({
+          sessionIdGenerator: undefined,
+        });
 
-    try {
-      await server.connect(transport);
-      const response = await transport.handleRequest(c.req.raw);
+        try {
+          await server.connect(transport);
+          const response = await transport.handleRequest(c.req.raw);
 
-      // Clean up when the client disconnects (not immediately — the response
-      // may contain an SSE ReadableStream that's still being consumed)
-      c.req.raw.signal.addEventListener('abort', () => {
-        transport.close().catch(() => {});
-        server.close().catch(() => {});
-      });
+          // Clean up when the client disconnects (not immediately — the response
+          // may contain an SSE ReadableStream that's still being consumed)
+          c.req.raw.signal.addEventListener('abort', () => {
+            transport.close().catch(() => {});
+            server.close().catch(() => {});
+          });
 
-      return response;
-    }
-    catch (error) {
-      console.error('MCP error:', error);
-      transport.close().catch(() => {});
-      server.close().catch(() => {});
-      return c.json({
-        jsonrpc: '2.0',
-        error: { code: -32603, message: 'Internal server error' },
-        id: null,
-      }, 500);
-    }
+          return response;
+        }
+        catch (error) {
+          console.error('MCP error:', error);
+          transport.close().catch(() => {});
+          server.close().catch(() => {});
+          return c.json({
+            jsonrpc: '2.0',
+            error: { code: -32603, message: 'Internal server error' },
+            id: null,
+          }, 500);
+        }
+      },
+    );
   });
 
   let resolveServerStarted!: () => void;

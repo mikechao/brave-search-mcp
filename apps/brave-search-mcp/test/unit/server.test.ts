@@ -8,6 +8,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { InMemoryTransport } from '@modelcontextprotocol/sdk/inMemory.js';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import packageJson from '../../package.json' with { type: 'json' };
+import { createRequestContext, runWithRequestContext } from '../../src/auth/identity-context.js';
 import { createDefaultFeatureConfig, resolveRuntimeConfig } from '../../src/config-loader.js';
 import { BraveMcpServer } from '../../src/server.js';
 import { TOOL_NAMES } from '../../src/tool-catalog.js';
@@ -149,10 +150,13 @@ describe('braveMcpServer', () => {
       const { client, close } = await createConnectedClient(server);
 
       try {
-        await client.callTool({
-          name: TOOL_NAMES.web,
-          arguments: { query: 'dependency injection query' },
-        });
+        await runWithRequestContext(
+          createRequestContext({ transport: 'stdio', authSource: 'stdio-process' }, 'req-server-ctor'),
+          () => client.callTool({
+            name: TOOL_NAMES.web,
+            arguments: { query: 'dependency injection query' },
+          }),
+        );
       }
       finally {
         await close();
@@ -166,11 +170,17 @@ describe('braveMcpServer', () => {
     });
 
     it('should thread built interceptors through direct and fallback tool execution', async () => {
-      const seenContexts: Array<{ toolName: string; isFallback: boolean }> = [];
+      const seenContexts: Array<{ toolName: string; isFallback: boolean; requestId: string; transport: string; authSource: string }> = [];
       const interceptors: readonly ToolInterceptor[] = [
         {
           async before(context) {
-            seenContexts.push({ toolName: context.toolName, isFallback: context.isFallback });
+            seenContexts.push({
+              toolName: context.toolName,
+              isFallback: context.isFallback,
+              requestId: context.requestId,
+              transport: context.transport,
+              authSource: context.authSource,
+            });
           },
         },
       ];
@@ -215,10 +225,13 @@ describe('braveMcpServer', () => {
       const { client, close } = await createConnectedClient(interceptedServer);
 
       try {
-        await client.callTool({
-          name: TOOL_NAMES.local,
-          arguments: { query: 'pizza near me', count: 2, offset: 0 },
-        });
+        await runWithRequestContext(
+          createRequestContext({ transport: 'stdio', authSource: 'stdio-env', callerId: 'ops-session-1' }, 'req-server-fallback'),
+          () => client.callTool({
+            name: TOOL_NAMES.local,
+            arguments: { query: 'pizza near me', count: 2, offset: 0 },
+          }),
+        );
       }
       finally {
         buildInterceptorsSpy.mockRestore();
@@ -226,8 +239,8 @@ describe('braveMcpServer', () => {
       }
 
       expect(seenContexts).toEqual([
-        { toolName: TOOL_NAMES.local, isFallback: false },
-        { toolName: TOOL_NAMES.web, isFallback: true },
+        { toolName: TOOL_NAMES.local, isFallback: false, requestId: 'req-server-fallback', transport: 'stdio', authSource: 'stdio-env' },
+        { toolName: TOOL_NAMES.web, isFallback: true, requestId: 'req-server-fallback', transport: 'stdio', authSource: 'stdio-env' },
       ]);
     });
 
@@ -267,10 +280,13 @@ describe('braveMcpServer', () => {
       const { client, close } = await createConnectedClient(enforcedServer);
 
       try {
-        const result = await client.callTool({
-          name: TOOL_NAMES.web,
-          arguments: { query: 'dependency injection query' },
-        });
+        const result = await runWithRequestContext(
+          createRequestContext({ transport: 'stdio', authSource: 'stdio-process' }, 'req-audit-1'),
+          () => client.callTool({
+            name: TOOL_NAMES.web,
+            arguments: { query: 'dependency injection query' },
+          }),
+        );
 
         expect(result.isError).toBe(true);
         const toolResult = result as CallToolResult;
@@ -284,6 +300,9 @@ describe('braveMcpServer', () => {
         const event = JSON.parse(String(stderrSpy.mock.calls[0][0]));
         expect(event.outcome).toBe('denied');
         expect(event.denyCode).toBe('JUSTIFICATION_REQUIRED');
+        expect(event.requestId).toBe('req-audit-1');
+        expect(event.transport).toBe('stdio');
+        expect(event.authSource).toBe('stdio-process');
       }
       finally {
         stderrSpy.mockRestore();
@@ -503,6 +522,9 @@ describe('braveMcpServer', () => {
           input: Object.freeze({ query: 'test' }),
           isFallback: false,
           startedAtMs: Date.now(),
+          requestId: 'req-window-1',
+          transport: 'stdio',
+          authSource: 'stdio-process',
         })).toBeUndefined();
 
         vi.advanceTimersByTime(5000);
@@ -512,6 +534,9 @@ describe('braveMcpServer', () => {
           input: Object.freeze({ query: 'test 2' }),
           isFallback: false,
           startedAtMs: Date.now(),
+          requestId: 'req-window-2',
+          transport: 'stdio',
+          authSource: 'stdio-process',
         });
         expect(result).toMatchObject({ allow: false, code: 'RATE_LIMITED' });
       }
@@ -539,6 +564,9 @@ describe('braveMcpServer', () => {
           input: Object.freeze({ query: 'test' }),
           isFallback: false,
           startedAtMs: Date.now(),
+          requestId: 'req-cooldown-1',
+          transport: 'stdio',
+          authSource: 'stdio-process',
         })).toBeUndefined();
 
         expect(await guardrail?.before?.({
@@ -546,6 +574,9 @@ describe('braveMcpServer', () => {
           input: Object.freeze({ query: 'test 2' }),
           isFallback: false,
           startedAtMs: Date.now(),
+          requestId: 'req-cooldown-2',
+          transport: 'stdio',
+          authSource: 'stdio-process',
         })).toMatchObject({ allow: false, code: 'RATE_LIMITED' });
 
         vi.advanceTimersByTime(1001);
@@ -555,6 +586,9 @@ describe('braveMcpServer', () => {
           input: Object.freeze({ query: 'test 3' }),
           isFallback: false,
           startedAtMs: Date.now(),
+          requestId: 'req-cooldown-3',
+          transport: 'stdio',
+          authSource: 'stdio-process',
         })).toBeUndefined();
       }
       finally {

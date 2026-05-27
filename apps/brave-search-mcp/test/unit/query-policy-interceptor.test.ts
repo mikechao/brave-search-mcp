@@ -16,6 +16,9 @@ function makeContext(input: Record<string, unknown>, isFallback = false) {
     input: Object.freeze(input) as Readonly<Record<string, unknown>>,
     isFallback,
     startedAtMs: Date.now(),
+    requestId: 'req-policy',
+    transport: 'stdio' as const,
+    authSource: 'stdio-process' as const,
   };
 }
 

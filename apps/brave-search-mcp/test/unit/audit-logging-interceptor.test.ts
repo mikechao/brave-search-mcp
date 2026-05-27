@@ -9,6 +9,9 @@ function makeBeforeContext(input: Record<string, unknown>): ToolInterceptorConte
     input: Object.freeze({ ...input }),
     isFallback: false,
     startedAtMs: 1000,
+    requestId: 'req-before',
+    transport: 'stdio',
+    authSource: 'stdio-process',
   };
 }
 
@@ -25,6 +28,10 @@ function makeAfterContext(
     endedAtMs: overrides.endedAtMs ?? 1012,
     outcome: overrides.outcome ?? 'success',
     wasRedacted: overrides.wasRedacted ?? false,
+    requestId: overrides.requestId ?? 'req-after',
+    transport: overrides.transport ?? 'stdio',
+    authSource: overrides.authSource ?? 'stdio-process',
+    callerId: overrides.callerId,
   };
 }
 
@@ -39,6 +46,9 @@ describe('auditLoggingInterceptor', () => {
     const event = JSON.parse(String(stderrSpy.mock.calls[0][0]));
     expect(event).toMatchObject({
       schemaVersion: '1',
+      requestId: 'req-after',
+      transport: 'stdio',
+      authSource: 'stdio-process',
       toolName: 'test_tool',
       outcome: 'success',
       isFallback: false,
@@ -147,6 +157,23 @@ describe('auditLoggingInterceptor', () => {
     const event = JSON.parse(String(stderrSpy.mock.calls[0][0]));
     expect(event.outcome).toBe('error');
     expect(event.errorMessage).toBe('upstream timeout');
+    stderrSpy.mockRestore();
+  });
+
+  it('records caller identity metadata when provided', async () => {
+    const interceptor = new AuditLoggingInterceptor({ auditLoggingEnabled: true, logRawInputs: false, requireJustification: false });
+    const stderrSpy = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
+
+    await interceptor.after(makeAfterContext({
+      transport: 'http',
+      authSource: 'http-api-key',
+      callerId: 'tenant-42',
+    }));
+
+    const event = JSON.parse(String(stderrSpy.mock.calls[0][0]));
+    expect(event.transport).toBe('http');
+    expect(event.authSource).toBe('http-api-key');
+    expect(event.callerId).toBe('tenant-42');
     stderrSpy.mockRestore();
   });
 

@@ -3,6 +3,7 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { FeatureConfig } from './config-loader.js';
 import process from 'node:process';
+import { validateTransportAuthConfig } from './auth/startup-validation.js';
 import { resolveRuntimeConfig } from './config-loader.js';
 import { startServer } from './server-utils.js';
 import { BraveMcpServer } from './server.js';
@@ -66,10 +67,19 @@ async function main(): Promise<void> {
   if (runtimeConfig.mode === 'file' && runtimeConfig.configPath)
     console.error(`Loaded config file: ${runtimeConfig.configPath}`);
 
+  validateTransportAuthConfig(
+    runtimeConfig.featureConfig.auth,
+    cliOptions.isHttp,
+    message => console.warn(message),
+  );
+
   await startServer(
     createServerFactory(braveApiKey, cliOptions.isUI, runtimeConfig.featureConfig),
     cliOptions.isHttp,
-    { allowedHosts: runtimeConfig.featureConfig.server.allowedHosts },
+    {
+      allowedHosts: runtimeConfig.featureConfig.server.allowedHosts,
+      auth: runtimeConfig.featureConfig.auth,
+    },
   );
 }
 

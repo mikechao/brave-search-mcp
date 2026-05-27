@@ -1,3 +1,4 @@
+import type { AuthSource, TransportKind } from '../auth/identity-context.js';
 import type { PreInterceptorResult, ToolAfterInterceptorContext, ToolInterceptor, ToolInterceptorContext } from './tool-helpers.js';
 import { createHash } from 'node:crypto';
 import process from 'node:process';
@@ -11,6 +12,10 @@ export interface AuditLoggingConfig {
 export interface AuditEvent {
   schemaVersion: '1';
   timestamp: string;
+  requestId: string;
+  transport: TransportKind;
+  authSource: AuthSource;
+  callerId?: string;
   toolName: string;
   outcome: 'success' | 'error' | 'denied';
   isFallback: boolean;
@@ -72,6 +77,10 @@ export class AuditLoggingInterceptor implements ToolInterceptor {
     return {
       schemaVersion: '1',
       timestamp: new Date(context.endedAtMs).toISOString(),
+      requestId: context.requestId,
+      transport: context.transport,
+      authSource: context.authSource,
+      ...(context.callerId ? { callerId: context.callerId } : {}),
       toolName: context.toolName,
       outcome: context.outcome,
       isFallback: context.isFallback,
@@ -82,6 +91,8 @@ export class AuditLoggingInterceptor implements ToolInterceptor {
       ...this.serializeOptionalTextField('url', url),
       // Audit the caller's original request, not the potentially redacted effective input.
       // `wasRedacted` signals that execution used a sanitized form instead.
+      // `callerId` is the normalized identity surface. Audit logs must not try to
+      // reconstruct credentials or auth material from transport-specific inputs.
       justificationProvided: hasMeaningfulJustification,
       ...this.serializeOptionalTextField('justification', justification),
       wasRedacted: context.wasRedacted,

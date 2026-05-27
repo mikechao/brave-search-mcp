@@ -2,6 +2,7 @@ import type { BraveSearch } from 'brave-search';
 import type { ToolInterceptor, ToolInterceptorContext } from '../../src/tools/tool-helpers.js';
 import { SafeSearchLevel } from 'brave-search';
 import { describe, expect, it, vi } from 'vitest';
+import { createRequestContext, runWithRequestContext } from '../../src/auth/identity-context.js';
 import { TOOL_NAMES } from '../../src/tool-catalog.js';
 import { BraveLocalSearchTool, formatPoiResults } from '../../src/tools/BraveLocalSearchTool.js';
 import { createMockBraveSearch } from '../mocks/index.js';
@@ -1023,10 +1024,18 @@ describe('braveLocalSearchTool interceptors', () => {
       results: [],
     } as unknown as Awaited<ReturnType<BraveSearch['localDescriptionsSearch']>>);
 
-    await tool.execute({ query: 'pizza near me', count: 1 });
+    await runWithRequestContext(
+      createRequestContext({ transport: 'http', authSource: 'none' }, 'req-local-1'),
+      () => tool.execute({ query: 'pizza near me', count: 1 }),
+    );
 
     expect(capturedContexts).toHaveLength(1);
     expect(capturedContexts[0]?.toolName).toBe(TOOL_NAMES.local);
     expect(capturedContexts[0]?.isFallback).toBe(false);
+    expect(capturedContexts[0]).toMatchObject({
+      requestId: 'req-local-1',
+      transport: 'http',
+      authSource: 'none',
+    });
   });
 });
