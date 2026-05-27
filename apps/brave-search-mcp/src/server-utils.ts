@@ -4,6 +4,7 @@
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { CallerIdentity } from './auth/identity-context.js';
+import type { AuthConfig } from './config-loader.js';
 import process from 'node:process';
 import { serve } from '@hono/node-server';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
@@ -12,16 +13,11 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { resolveAuthenticatedHttpIdentity } from './auth/http-api-key.js';
 import { createRequestContext, runWithRequestContext } from './auth/identity-context.js';
+import { createJwtIdentityResolver } from './auth/jwt-bearer.js';
 
 export interface StartServerOptions {
   allowedHosts?: string[];
-  auth?: {
-    callerId?: string;
-    requireAuth?: boolean;
-    httpApiKey?: string;
-    jwt?: object;
-    oauth?: object;
-  };
+  auth?: AuthConfig;
 }
 
 const HTTP_UNAUTHORIZED_HEADERS = {
@@ -141,10 +137,24 @@ export async function startStreamableHttpServer(
     );
   }
   const httpApiKey = options?.auth?.httpApiKey;
+  const jwtIdentityResolver = options?.auth?.jwt
+    ? await createJwtIdentityResolver(options.auth.jwt)
+    : undefined;
   app.use('/mcp', async (c, next) => {
-    const identity = httpApiKey
-      ? resolveAuthenticatedHttpIdentity(httpApiKey, c.req.header('authorization'))
-      : HTTP_ANONYMOUS_IDENTITY;
+    const authorizationHeader = c.req.header('authorization');
+    let identity: CallerIdentity | undefined;
+
+    if (jwtIdentityResolver) {
+      identity = await jwtIdentityResolver(authorizationHeader);
+      if (!identity && httpApiKey)
+        identity = resolveAuthenticatedHttpIdentity(httpApiKey, authorizationHeader);
+    }
+    else if (httpApiKey) {
+      identity = resolveAuthenticatedHttpIdentity(httpApiKey, authorizationHeader);
+    }
+    else {
+      identity = HTTP_ANONYMOUS_IDENTITY;
+    }
 
     if (!identity) {
       return new Response(

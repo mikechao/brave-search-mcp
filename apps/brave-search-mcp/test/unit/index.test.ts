@@ -198,7 +198,7 @@ describe('index entrypoint', () => {
       mode: 'env',
       featureConfig: {
         ...createFeatureConfig(),
-        auth: { requireAuth: true, httpApiKey: 'secret' },
+        auth: { requireAuth: true, jwt: { jwksUri: 'https://idp.example.com/.well-known/jwks.json' } },
       },
       ignoredEnvVars: [],
       unknownKeys: [],

@@ -4,8 +4,8 @@
  * Used for integration testing with MCPJam SDK without making real API calls.
  *
  * Usage:
- *   node dist/test/test-server.js
- *   node dist/test/test-server.js --http
+ *   node .test-build/test-server.js
+ *   node .test-build/test-server.js --http
  */
 
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';

@@ -39,6 +39,11 @@ describe('config-loader', () => {
     expect(runtimeConfig.mode).toBe('file');
     expect(runtimeConfig.featureConfig.guardrail.requestLimit).toBe(5);
     expect(runtimeConfig.featureConfig.server.allowedHosts).toEqual(['localhost', '127.0.0.1']);
+    expect(runtimeConfig.featureConfig.auth.jwt).toEqual({
+      jwksUri: 'https://idp.example.com/.well-known/jwks.json',
+      audience: 'brave-search-mcp',
+      clockSkewSeconds: 30,
+    });
     expect(runtimeConfig.maskedForDisplay).toMatchObject({
       auth: {
         httpApiKey: '***',
@@ -69,6 +74,28 @@ describe('config-loader', () => {
     expect(warnings).toContain('Warning: ignoring BRAVE_MCP_REQUEST_LIMIT because BRAVE_MCP_CONFIG is set');
     expect(warnings).toContain('Warning: unknown config key auth.oauth.badSecretRef');
     expect(warnings).toContain('Warning: unknown config key guardrails');
+  });
+
+  it('builds env-mode JWT auth config without disturbing unrelated config', () => {
+    const runtimeConfig = resolveRuntimeConfig({
+      env: {
+        BRAVE_MCP_JWKS_URI: 'https://env-idp.example.com/.well-known/jwks.json',
+        BRAVE_MCP_AUTH_AUDIENCE: 'env-audience',
+        BRAVE_MCP_AUTH_CLOCK_SKEW_SECONDS: '45',
+        BRAVE_MCP_POLICY_REDACT: 'true',
+        ALLOWED_HOSTS: 'localhost',
+      },
+      warn: () => {},
+    });
+
+    expect(runtimeConfig.mode).toBe('env');
+    expect(runtimeConfig.featureConfig.auth.jwt).toEqual({
+      jwksUri: 'https://env-idp.example.com/.well-known/jwks.json',
+      audience: 'env-audience',
+      clockSkewSeconds: 45,
+    });
+    expect(runtimeConfig.featureConfig.policy).toEqual({ redact: true, file: undefined });
+    expect(runtimeConfig.featureConfig.server.allowedHosts).toEqual(['localhost']);
   });
 
   it('fails fast for schema-invalid TOML files', () => {

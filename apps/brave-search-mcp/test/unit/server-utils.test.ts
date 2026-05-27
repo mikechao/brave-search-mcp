@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getRequestContext } from '../../src/auth/identity-context.js';
 import { startServer, startStdioServer, startStreamableHttpServer } from '../../src/server-utils.js';
+import { createJwtFixtureToken, JWT_FIXTURE_AUDIENCE, JWT_FIXTURE_SUBJECT, jwtFixtureJwks } from '../helpers/jwt-fixtures.js';
 
 const mockState = vi.hoisted(() => {
   const stdioCtorMock = vi.fn();
@@ -207,6 +208,7 @@ describe('server-utils', () => {
   const originalPort = process.env.PORT;
   const originalHost = process.env.HOST;
   const originalAllowedHosts = process.env.ALLOWED_HOSTS;
+  const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -218,12 +220,17 @@ describe('server-utils', () => {
     restoreEnvVar('PORT', originalPort);
     restoreEnvVar('HOST', originalHost);
     restoreEnvVar('ALLOWED_HOSTS', originalAllowedHosts);
+    globalThis.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(jwtFixtureJwks), {
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+    }));
   });
 
   afterEach(() => {
     restoreEnvVar('PORT', originalPort);
     restoreEnvVar('HOST', originalHost);
     restoreEnvVar('ALLOWED_HOSTS', originalAllowedHosts);
+    globalThis.fetch = originalFetch;
     vi.restoreAllMocks();
   });
 
@@ -478,6 +485,24 @@ describe('server-utils', () => {
     expect(server.connect).not.toHaveBeenCalled();
   });
 
+  it('fails startup before serving when JWT auth JWKS loading fails', async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('connect ECONNREFUSED 127.0.0.1:4010'));
+    const createServer = vi.fn(() => createServerLike() as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await expect(startStreamableHttpServer(createServer, {
+      auth: {
+        jwt: {
+          jwksUri: 'http://127.0.0.1:4010/.well-known/jwks.json',
+          audience: JWT_FIXTURE_AUDIENCE,
+        },
+      },
+    })).rejects.toThrow('JWT auth startup error: could not fetch JWKS from http://127.0.0.1:4010/.well-known/jwks.json: connect ECONNREFUSED 127.0.0.1:4010');
+
+    expect(mockState.serveMock).not.toHaveBeenCalled();
+    expect(createServer).not.toHaveBeenCalled();
+  });
+
   it('returns 401 for malformed or incorrect authorization headers', async () => {
     const server = createServerLike();
     const createServer = vi.fn(() => server as never);
@@ -522,5 +547,62 @@ describe('server-utils', () => {
     });
     expect(server.connect).toHaveBeenCalledTimes(1);
     expect(mockState.webStandardInstances[0].handleRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('propagates JWT caller identity for authenticated HTTP requests', async () => {
+    let seenRequestContext = getRequestContext();
+    const server = createServerLike();
+    server.connect.mockImplementation(async () => {
+      seenRequestContext = getRequestContext();
+    });
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+    const token = await createJwtFixtureToken();
+
+    await startStreamableHttpServer(createServer, {
+      auth: {
+        jwt: {
+          jwksUri: 'http://127.0.0.1:4010/.well-known/jwks.json',
+          audience: JWT_FIXTURE_AUDIENCE,
+        },
+      },
+    });
+
+    const response = await runMcpRequest(createMockContext({ Authorization: `Bearer ${token}` }));
+
+    expect(response.status).toBe(200);
+    expect(createServer).toHaveBeenCalledTimes(1);
+    expect(seenRequestContext).toMatchObject({
+      identity: {
+        transport: 'http',
+        authSource: 'jwt',
+        callerId: JWT_FIXTURE_SUBJECT,
+      },
+      requestId: expect.any(String),
+    });
+  });
+
+  it('returns 401 for invalid JWT bearer tokens before request handling starts', async () => {
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+    const wrongAudienceToken = await createJwtFixtureToken({ audience: 'not-brave-search-mcp' });
+
+    await startStreamableHttpServer(createServer, {
+      auth: {
+        jwt: {
+          jwksUri: 'http://127.0.0.1:4010/.well-known/jwks.json',
+          audience: JWT_FIXTURE_AUDIENCE,
+        },
+      },
+    });
+
+    const response = await runMcpRequest(createMockContext({ Authorization: `Bearer ${wrongAudienceToken}` }));
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('www-authenticate')).toBe('Bearer realm="brave-search-mcp"');
+    expect(createServer).not.toHaveBeenCalled();
+    expect(mockState.webStandardCtorMock).not.toHaveBeenCalled();
+    expect(server.connect).not.toHaveBeenCalled();
   });
 });

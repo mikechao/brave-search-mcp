@@ -1,5 +1,6 @@
 import type { CallerIdentity } from './identity-context.js';
 import { createHash } from 'node:crypto';
+import { parseBearerToken } from './bearer-token.js';
 
 export function resolveAuthenticatedHttpIdentity(
   configuredApiKey: string,
@@ -15,15 +16,6 @@ export function resolveAuthenticatedHttpIdentity(
     callerId: hashCallerId(configuredApiKey),
   };
 }
-
-function parseBearerToken(authorizationHeader: string | undefined): string | undefined {
-  if (!authorizationHeader?.startsWith('Bearer '))
-    return undefined;
-
-  const token = authorizationHeader.slice('Bearer '.length);
-  return token.length > 0 ? token : undefined;
-}
-
 function hashCallerId(apiKey: string): string {
   return createHash('sha256').update(apiKey).digest('hex');
 }
