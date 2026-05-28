@@ -146,7 +146,7 @@ export async function startStreamableHttpServer(
   const oauthIdentityResolver = oauthConfig
     ? await createOAuthIdentityResolver(oauthConfig)
     : undefined;
-  const httpApiKey = oauthIdentityResolver ? undefined : options?.auth?.httpApiKey;
+  const httpApiKey = oauthIdentityResolver || options?.auth?.jwt ? undefined : options?.auth?.httpApiKey;
   const jwtIdentityResolver = oauthIdentityResolver
     ? undefined
     : options?.auth?.jwt
