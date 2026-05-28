@@ -16,6 +16,7 @@ describe('http-api-key auth helper', () => {
     'Bearer ',
     'Basic secret-key',
     'Bearer wrong-key',
+    'Bearer short',
     'bearer secret-key',
   ])('rejects malformed or incorrect authorization header %j', (authorizationHeader) => {
     expect(resolveAuthenticatedHttpIdentity('secret-key', authorizationHeader)).toBeUndefined();

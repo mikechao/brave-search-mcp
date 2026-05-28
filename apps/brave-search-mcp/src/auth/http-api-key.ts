@@ -1,5 +1,6 @@
 import type { CallerIdentity } from './identity-context.js';
-import { createHash } from 'node:crypto';
+import { Buffer } from 'node:buffer';
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { parseBearerToken } from './bearer-token.js';
 
 export function resolveAuthenticatedHttpIdentity(
@@ -7,7 +8,7 @@ export function resolveAuthenticatedHttpIdentity(
   authorizationHeader: string | undefined,
 ): CallerIdentity | undefined {
   const presentedApiKey = parseBearerToken(authorizationHeader);
-  if (!presentedApiKey || presentedApiKey !== configuredApiKey)
+  if (!presentedApiKey || !keysMatch(presentedApiKey, configuredApiKey))
     return undefined;
 
   return {
@@ -16,6 +17,17 @@ export function resolveAuthenticatedHttpIdentity(
     callerId: hashCallerId(configuredApiKey),
   };
 }
+
+function keysMatch(presentedApiKey: string, configuredApiKey: string): boolean {
+  if (presentedApiKey.length !== configuredApiKey.length)
+    return false;
+
+  return timingSafeEqual(
+    Buffer.from(presentedApiKey),
+    Buffer.from(configuredApiKey),
+  );
+}
+
 function hashCallerId(apiKey: string): string {
   return createHash('sha256').update(apiKey).digest('hex');
 }
