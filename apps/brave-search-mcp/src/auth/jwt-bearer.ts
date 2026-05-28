@@ -2,7 +2,7 @@ import type { JSONWebKeySet, JWTVerifyOptions } from 'jose';
 import type { AuthConfig } from '../config-loader.js';
 import type { CallerIdentity } from './identity-context.js';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { parseBearerToken } from './bearer-token.js';
+import { normalizeScopes, parseBearerToken } from './bearer-token.js';
 
 const DEFAULT_CLOCK_SKEW_SECONDS = 30;
 
@@ -81,24 +81,6 @@ function isJsonWebKeySet(value: unknown): value is JSONWebKeySet {
 
 function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-function normalizeScopes(scopeClaim: unknown): string[] {
-  if (typeof scopeClaim === 'string') {
-    return scopeClaim
-      .split(/\s+/)
-      .map(scope => scope.trim())
-      .filter(Boolean);
-  }
-
-  if (Array.isArray(scopeClaim)) {
-    return scopeClaim
-      .filter((scope): scope is string => typeof scope === 'string')
-      .map(scope => scope.trim())
-      .filter(Boolean);
-  }
-
-  return [];
 }
 
 export { DEFAULT_CLOCK_SKEW_SECONDS };

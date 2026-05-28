@@ -3,7 +3,7 @@ import type { AuthConfig } from '../config-loader.js';
 import type { CallerIdentity } from './identity-context.js';
 import { Buffer } from 'node:buffer';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
-import { parseBearerToken } from './bearer-token.js';
+import { normalizeScopes, parseBearerToken } from './bearer-token.js';
 import { DEFAULT_CLOCK_SKEW_SECONDS } from './jwt-bearer.js';
 
 type OAuthAuthConfig = NonNullable<AuthConfig['oauth']>;
@@ -345,24 +345,6 @@ function isTokenActiveAtCurrentTime(response: IntrospectionResponseShape): boole
   if (typeof response.nbf === 'number' && response.nbf > nowInSeconds + DEFAULT_CLOCK_SKEW_SECONDS)
     return false;
   return true;
-}
-
-function normalizeScopes(scopeClaim: unknown): string[] {
-  if (typeof scopeClaim === 'string') {
-    return scopeClaim
-      .split(/\s+/)
-      .map(scope => scope.trim())
-      .filter(Boolean);
-  }
-
-  if (Array.isArray(scopeClaim)) {
-    return scopeClaim
-      .filter((scope): scope is string => typeof scope === 'string')
-      .map(scope => scope.trim())
-      .filter(Boolean);
-  }
-
-  return [];
 }
 
 function normalizeIssuerUrl(issuer: string): string {
