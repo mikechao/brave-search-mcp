@@ -279,10 +279,11 @@ describe('server-utils', () => {
     restoreEnvVar('PORT', originalPort);
     restoreEnvVar('HOST', originalHost);
     restoreEnvVar('ALLOWED_HOSTS', originalAllowedHosts);
-    globalThis.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(jwtFixtureJwks), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    }));
+    globalThis.fetch = vi.fn().mockImplementation(async () =>
+      new Response(JSON.stringify(jwtFixtureJwks), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }));
   });
 
   afterEach(() => {
