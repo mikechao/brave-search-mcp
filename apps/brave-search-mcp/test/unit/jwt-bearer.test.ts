@@ -1,4 +1,6 @@
+import type { JWK } from 'jose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import { createJwtIdentityResolver, DEFAULT_CLOCK_SKEW_SECONDS } from '../../src/auth/jwt-bearer.js';
 import { createJwtFixtureToken, JWT_FIXTURE_AUDIENCE, JWT_FIXTURE_SUBJECT, jwtFixtureJwks } from '../helpers/jwt-fixtures.js';
 
@@ -6,7 +8,7 @@ describe('jwt bearer auth helper', () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
-    globalThis.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify(jwtFixtureJwks), {
+    globalThis.fetch = vi.fn().mockImplementation(async () => new Response(JSON.stringify(jwtFixtureJwks), {
       status: 200,
       headers: { 'content-type': 'application/json' },
     }));
@@ -31,6 +33,48 @@ describe('jwt bearer auth helper', () => {
       scopes: ['search:read', 'tools:list'],
     });
     expect(globalThis.fetch).toHaveBeenCalledWith('http://127.0.0.1:4010/.well-known/jwks.json');
+  });
+
+  it('refreshes JWKS when a token references a new kid', async () => {
+    const nextKeyPair = await generateKeyPair('RS256');
+    const nextPublicJwk = await exportJWK(nextKeyPair.publicKey) as JWK;
+    const rotatedJwks = {
+      keys: [
+        {
+          ...nextPublicJwk,
+          alg: 'RS256',
+          kid: 'rotated-rs256-key',
+          use: 'sig',
+        },
+      ],
+    };
+    let jwksRequestCount = 0;
+
+    globalThis.fetch = vi.fn().mockImplementation(async () => {
+      jwksRequestCount += 1;
+      return new Response(JSON.stringify(jwksRequestCount === 1 ? jwtFixtureJwks : rotatedJwks), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+
+    const resolveIdentity = await createJwtIdentityResolver({
+      jwksUri: 'http://127.0.0.1:4010/.well-known/jwks.json',
+      audience: JWT_FIXTURE_AUDIENCE,
+    });
+    const rotatedToken = await new SignJWT({ sub: JWT_FIXTURE_SUBJECT })
+      .setProtectedHeader({ alg: 'RS256', kid: 'rotated-rs256-key' })
+      .setIssuedAt()
+      .setExpirationTime('5m')
+      .setAudience(JWT_FIXTURE_AUDIENCE)
+      .sign(nextKeyPair.privateKey);
+
+    await expect(resolveIdentity(`Bearer ${rotatedToken}`)).resolves.toEqual({
+      transport: 'http',
+      authSource: 'jwt',
+      callerId: JWT_FIXTURE_SUBJECT,
+    });
+    expect(jwksRequestCount).toBeGreaterThanOrEqual(2);
   });
 
   it('rejects missing, malformed, or invalid authorization headers', async () => {

@@ -1,4 +1,6 @@
+import type { JWK } from 'jose';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { exportJWK, generateKeyPair, SignJWT } from 'jose';
 import {
   buildOAuthProtectedResourceMetadata,
   buildOAuthUnauthorizedHeaders,
@@ -56,6 +58,54 @@ describe('oauth resource server auth helper', () => {
       callerId: OAUTH_FIXTURE_SUBJECT,
       scopes: ['search:read', 'tools:list'],
     });
+  });
+
+  it('refreshes JWKS when OAuth tokens reference a new kid', async () => {
+    const nextKeyPair = await generateKeyPair('RS256');
+    const nextPublicJwk = await exportJWK(nextKeyPair.publicKey) as JWK;
+    const rotatedJwks = {
+      keys: [
+        {
+          ...nextPublicJwk,
+          alg: 'RS256',
+          kid: 'rotated-rs256-key',
+          use: 'sig',
+        },
+      ],
+    };
+    let jwksRequestCount = 0;
+
+    globalThis.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+      const url = toUrlString(input);
+      if (url === `${OAUTH_FIXTURE_ISSUER}${OAUTH_FIXTURE_DISCOVERY_PATH}`)
+        return jsonResponse(buildOAuthAuthorizationServerMetadata());
+      if (url === OAUTH_FIXTURE_JWKS_URI) {
+        jwksRequestCount += 1;
+        return jsonResponse(jwksRequestCount === 1 ? jwtFixtureJwks : rotatedJwks);
+      }
+      throw new Error(`Unexpected fetch ${url}`);
+    });
+
+    const resolveIdentity = await createOAuthIdentityResolver({
+      issuer: OAUTH_FIXTURE_ISSUER,
+      audience: OAUTH_FIXTURE_AUDIENCE,
+      verifyStrategy: 'jwks',
+    });
+    const rotatedToken = await new SignJWT({ sub: OAUTH_FIXTURE_SUBJECT, scope: 'search:read tools:list' })
+      .setProtectedHeader({ alg: 'RS256', kid: 'rotated-rs256-key' })
+      .setIssuedAt()
+      .setExpirationTime('5m')
+      .setAudience(OAUTH_FIXTURE_AUDIENCE)
+      .setIssuer(OAUTH_FIXTURE_ISSUER)
+      .sign(nextKeyPair.privateKey);
+
+    await expect(resolveIdentity(`Bearer ${rotatedToken}`)).resolves.toEqual({
+      transport: 'http',
+      authSource: 'oauth',
+      callerId: OAUTH_FIXTURE_SUBJECT,
+      scopes: ['search:read', 'tools:list'],
+    });
+    expect(jwksRequestCount).toBeGreaterThanOrEqual(2);
   });
 
   it('falls back to OpenID Connect discovery when OAuth authorization metadata is unavailable', async () => {

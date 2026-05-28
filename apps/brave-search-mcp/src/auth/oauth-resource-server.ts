@@ -2,7 +2,7 @@ import type { JSONWebKeySet, JWTVerifyOptions } from 'jose';
 import type { AuthConfig } from '../config-loader.js';
 import type { CallerIdentity } from './identity-context.js';
 import { Buffer } from 'node:buffer';
-import { createLocalJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { parseBearerToken } from './bearer-token.js';
 import { DEFAULT_CLOCK_SKEW_SECONDS } from './jwt-bearer.js';
 
@@ -79,8 +79,8 @@ async function createJwksIdentityResolver(
     );
   }
 
-  const jwks = await loadJsonWebKeySet(jwksUri);
-  const localJwkSet = createLocalJWKSet(jwks);
+  await loadJsonWebKeySet(jwksUri);
+  const remoteJwkSet = createRemoteJWKSet(new URL(jwksUri));
   const verifyOptions: JWTVerifyOptions = {
     audience: oauthConfig.audience,
     clockTolerance: `${DEFAULT_CLOCK_SKEW_SECONDS} seconds`,
@@ -94,7 +94,7 @@ async function createJwksIdentityResolver(
       return undefined;
 
     try {
-      const { payload } = await jwtVerify(token, localJwkSet, verifyOptions);
+      const { payload } = await jwtVerify(token, remoteJwkSet, verifyOptions);
       if (!payload.sub)
         return undefined;
 

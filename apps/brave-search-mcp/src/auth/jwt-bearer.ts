@@ -1,7 +1,7 @@
 import type { JSONWebKeySet, JWTVerifyOptions } from 'jose';
 import type { AuthConfig } from '../config-loader.js';
 import type { CallerIdentity } from './identity-context.js';
-import { createLocalJWKSet, jwtVerify } from 'jose';
+import { createRemoteJWKSet, jwtVerify } from 'jose';
 import { parseBearerToken } from './bearer-token.js';
 
 const DEFAULT_CLOCK_SKEW_SECONDS = 30;
@@ -10,8 +10,8 @@ type JwtAuthConfig = NonNullable<AuthConfig['jwt']>;
 type JwtIdentityResolver = (authorizationHeader: string | undefined) => Promise<CallerIdentity | undefined>;
 
 export async function createJwtIdentityResolver(jwtConfig: JwtAuthConfig): Promise<JwtIdentityResolver> {
-  const jwks = await loadJsonWebKeySet(jwtConfig.jwksUri);
-  const localJwkSet = createLocalJWKSet(jwks);
+  await loadJsonWebKeySet(jwtConfig.jwksUri);
+  const remoteJwkSet = createRemoteJWKSet(new URL(jwtConfig.jwksUri));
   const verifyOptions = buildVerifyOptions(jwtConfig);
 
   return async (authorizationHeader: string | undefined) => {
@@ -20,7 +20,7 @@ export async function createJwtIdentityResolver(jwtConfig: JwtAuthConfig): Promi
       return undefined;
 
     try {
-      const { payload } = await jwtVerify(token, localJwkSet, verifyOptions);
+      const { payload } = await jwtVerify(token, remoteJwkSet, verifyOptions);
       if (!payload.sub)
         return undefined;
 
