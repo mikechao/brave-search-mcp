@@ -211,6 +211,60 @@ describe('index entrypoint', () => {
     expect(mockState.startServerMock).toHaveBeenCalledTimes(1);
   });
 
+  it('warns in http mode when both JWT and static API key auth are configured', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    process.argv = ['node', 'index.js', '--http'];
+    mockState.resolveRuntimeConfigMock.mockReturnValue({
+      mode: 'env',
+      featureConfig: {
+        ...createFeatureConfig(),
+        auth: {
+          httpApiKey: 'legacy-api-key',
+          jwt: { jwksUri: 'https://idp.example.com/.well-known/jwks.json' },
+        },
+      },
+      ignoredEnvVars: [],
+      unknownKeys: [],
+      maskedForDisplay: createFeatureConfig(),
+    });
+
+    await importIndexModule();
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'Warning: auth.httpApiKey is ignored in HTTP mode because auth.jwt takes precedence',
+    );
+    expect(mockState.startServerMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('warns in http mode when OAuth takes precedence over JWT and static API key auth', async () => {
+    const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    process.argv = ['node', 'index.js', '--http'];
+    mockState.resolveRuntimeConfigMock.mockReturnValue({
+      mode: 'env',
+      featureConfig: {
+        ...createFeatureConfig(),
+        auth: {
+          httpApiKey: 'legacy-api-key',
+          jwt: { jwksUri: 'https://idp.example.com/.well-known/jwks.json' },
+          oauth: { issuer: 'https://idp.example.com', verifyStrategy: 'jwks' },
+        },
+      },
+      ignoredEnvVars: [],
+      unknownKeys: [],
+      maskedForDisplay: createFeatureConfig(),
+    });
+
+    await importIndexModule();
+
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'Warning: auth.jwt is ignored in HTTP mode because auth.oauth takes precedence',
+    );
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      'Warning: auth.httpApiKey is ignored in HTTP mode because auth.oauth takes precedence',
+    );
+    expect(mockState.startServerMock).toHaveBeenCalledTimes(1);
+  });
+
   it('does not warn in stdio mode when only callerId is configured', async () => {
     const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockState.resolveRuntimeConfigMock.mockReturnValue({

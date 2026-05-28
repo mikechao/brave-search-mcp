@@ -370,7 +370,12 @@ describe('toolHelpers', () => {
       ];
 
       await runWithRequestContext(
-        createRequestContext({ transport: 'http', authSource: 'http-api-key', callerId: 'tenant-7' }, 'req-http-1'),
+        createRequestContext({
+          transport: 'http',
+          authSource: 'http-api-key',
+          callerId: 'tenant-7',
+          scopes: ['search:read', 'tools:list'],
+        }, 'req-http-1'),
         () => executeTool({ toolName: 'test_tool', input: successInput, executeCore: makeSuccessCore(), interceptors }),
       );
 
@@ -381,12 +386,14 @@ describe('toolHelpers', () => {
         transport: 'http',
         authSource: 'http-api-key',
         callerId: 'tenant-7',
+        scopes: ['search:read', 'tools:list'],
       });
       expect(afterCaptured.mock.calls[0][0]).toMatchObject({
         requestId: 'req-http-1',
         transport: 'http',
         authSource: 'http-api-key',
         callerId: 'tenant-7',
+        scopes: ['search:read', 'tools:list'],
       });
     });
 

@@ -3,6 +3,7 @@ httpApiKey = "sk-test-config"
 
 [auth.oauth]
 issuer = "https://idp.example.com"
+clientId = "client-unknown"
 clientSecret = "oauth-secret"
 badSecretRef = "wrong"
 

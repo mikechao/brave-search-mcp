@@ -62,7 +62,7 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p ui/tsconfig.json && tsc --noEmit -p test/tsconfig.json",
     "check": "pnpm run lint:check && pnpm run typecheck && pnpm run check:manifest:tools",
     "prebuild:test-server": "pnpm run build:sdk",
-    "build:test-server": "tsup test/test-server.ts --format esm --target node20 --outDir .test-build --no-splitting --shims",
+    "build:test-server": "tsup test/test-server.ts test/helpers/oauth-provider-stub.ts --format esm --target node20 --outDir .test-build --no-splitting --shims",
     "pretest:unit": "pnpm run build:sdk && pnpm run build:ui",
     "test": "pnpm run test:unit && pnpm run test:integration",
     "test:unit": "vitest run test/unit",

@@ -1,7 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getRequestContext } from '../../src/auth/identity-context.js';
+import { OAUTH_PROTECTED_RESOURCE_METADATA_PATH } from '../../src/auth/oauth-resource-server.js';
 import { startServer, startStdioServer, startStreamableHttpServer } from '../../src/server-utils.js';
 import { createJwtFixtureToken, JWT_FIXTURE_AUDIENCE, JWT_FIXTURE_SUBJECT, jwtFixtureJwks } from '../helpers/jwt-fixtures.js';
+import {
+  buildOAuthAuthorizationServerMetadata,
+  buildOAuthIntrospectionResponse,
+  createOAuthAccessToken,
+  OAUTH_FIXTURE_AUDIENCE,
+  OAUTH_FIXTURE_DISCOVERY_PATH,
+  OAUTH_FIXTURE_INTROSPECTION_ENDPOINT,
+  OAUTH_FIXTURE_ISSUER,
+  OAUTH_FIXTURE_JWKS_URI,
+  OAUTH_FIXTURE_SUBJECT,
+} from '../helpers/oauth-fixtures.js';
 
 const mockState = vi.hoisted(() => {
   const stdioCtorMock = vi.fn();
@@ -30,9 +42,15 @@ const mockState = vi.hoisted(() => {
 
   // Capture the route handler registered via app.all('/mcp', ...)
   let mcpHandler: ((c: any) => Promise<Response>) | undefined;
+  let metadataHandler: ((c: any) => Response | Promise<Response>) | undefined;
   const middlewareHandlers: Array<(c: any, next: () => Promise<void>) => Promise<unknown>> = [];
   const honoUseMock = vi.fn((_path: string, handler: (c: any, next: () => Promise<void>) => Promise<unknown>) => {
     middlewareHandlers.push(handler);
+  });
+  const honoGetMock = vi.fn((path: string, handler: (c: any) => Response | Promise<Response>) => {
+    if (path === OAUTH_PROTECTED_RESOURCE_METADATA_PATH) {
+      metadataHandler = handler;
+    }
   });
   const honoAllMock = vi.fn((path: string, handler: (c: any) => Promise<Response>) => {
     if (path === '/mcp') {
@@ -43,12 +61,14 @@ const mockState = vi.hoisted(() => {
 
   const mockHonoInstance = {
     use: honoUseMock,
+    get: honoGetMock,
     all: honoAllMock,
     fetch: honoFetchMock,
   };
 
   class MockHono {
     use = honoUseMock;
+    get = honoGetMock;
     all = honoAllMock;
     fetch = honoFetchMock;
     constructor() {
@@ -80,14 +100,17 @@ const mockState = vi.hoisted(() => {
     MockWebStandardStreamableHTTPServerTransport,
     MockHono,
     honoUseMock,
+    honoGetMock,
     honoAllMock,
     honoFetchMock,
     corsMock,
     serveMock,
     mockHttpServer,
     getMcpHandler: () => mcpHandler,
+    getMetadataHandler: () => metadataHandler,
     getMiddlewareHandlers: () => [...middlewareHandlers],
     resetMcpHandler: () => { mcpHandler = undefined; },
+    resetMetadataHandler: () => { metadataHandler = undefined; },
     resetMiddlewareHandlers: () => { middlewareHandlers.length = 0; },
   };
 });
@@ -131,6 +154,7 @@ interface MockContext {
   req: {
     raw: Request;
     header: (name: string) => string | undefined;
+    url: string;
   };
   get: (key: string) => unknown;
   set: (key: string, value: unknown) => void;
@@ -145,13 +169,17 @@ function createServerLike(overrides?: Partial<ServerLike>): ServerLike {
   };
 }
 
-function createMockContext(headers: Record<string, string> = {}): MockContext {
+function createMockContext(
+  headers: Record<string, string> = {},
+  requestUrl: string = 'http://localhost:3001/mcp',
+): MockContext {
   const normalizedHeaders = new Headers(headers);
   const values = new Map<string, unknown>();
   return {
     req: {
-      raw: new Request('http://localhost:3001/mcp', { method: 'POST', headers: normalizedHeaders }),
+      raw: new Request(requestUrl, { method: 'POST', headers: normalizedHeaders }),
       header: (name: string) => normalizedHeaders.get(name) ?? undefined,
+      url: requestUrl,
     },
     get: (key: string) => values.get(key),
     set: (key: string, value: unknown) => {
@@ -195,6 +223,36 @@ async function runMcpRequest(context: MockContext): Promise<Response> {
   return dispatch(0);
 }
 
+async function runMetadataRequest(context: MockContext): Promise<Response> {
+  const handler = mockState.getMetadataHandler();
+  if (!handler) {
+    throw new TypeError('Expected OAuth metadata route handler');
+  }
+  return await handler(context);
+}
+
+function createJsonResponse(body: unknown, status: number = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
+}
+
+function toUrlString(input: RequestInfo | URL): string {
+  return input instanceof Request ? input.url : input.toString();
+}
+
+function installOAuthJwksFetchMock() {
+  globalThis.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+    const url = toUrlString(input);
+    if (url === `${OAUTH_FIXTURE_ISSUER}${OAUTH_FIXTURE_DISCOVERY_PATH}`)
+      return createJsonResponse(buildOAuthAuthorizationServerMetadata());
+    if (url === OAUTH_FIXTURE_JWKS_URI)
+      return createJsonResponse(jwtFixtureJwks);
+    throw new Error(`Unexpected fetch ${url}`);
+  });
+}
+
 function restoreEnvVar(key: 'PORT' | 'HOST' | 'ALLOWED_HOSTS', value: string | undefined) {
   if (value === undefined) {
     delete process.env[key];
@@ -215,6 +273,7 @@ describe('server-utils', () => {
     mockState.stdioInstances.length = 0;
     mockState.webStandardInstances.length = 0;
     mockState.resetMcpHandler();
+    mockState.resetMetadataHandler();
     mockState.resetMiddlewareHandlers();
 
     restoreEnvVar('PORT', originalPort);
@@ -485,6 +544,61 @@ describe('server-utils', () => {
     expect(server.connect).not.toHaveBeenCalled();
   });
 
+  it('serves OAuth protected resource metadata when OAuth auth is configured', async () => {
+    installOAuthJwksFetchMock();
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await startStreamableHttpServer(createServer, {
+      auth: {
+        oauth: {
+          issuer: OAUTH_FIXTURE_ISSUER,
+          audience: OAUTH_FIXTURE_AUDIENCE,
+          verifyStrategy: 'jwks',
+        },
+      },
+    });
+
+    const response = await runMetadataRequest(
+      createMockContext({}, `http://localhost:3001${OAUTH_PROTECTED_RESOURCE_METADATA_PATH}`),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      resource: 'http://localhost:3001/mcp',
+      authorization_servers: [OAUTH_FIXTURE_ISSUER],
+      bearer_methods_supported: ['header'],
+    });
+  });
+
+  it('returns OAuth bearer challenges with resource metadata when authorization is missing', async () => {
+    installOAuthJwksFetchMock();
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await startStreamableHttpServer(createServer, {
+      auth: {
+        oauth: {
+          issuer: OAUTH_FIXTURE_ISSUER,
+          audience: OAUTH_FIXTURE_AUDIENCE,
+          verifyStrategy: 'jwks',
+        },
+      },
+    });
+
+    const response = await runMcpRequest(createMockContext());
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('www-authenticate')).toBe(
+      `Bearer realm="brave-search-mcp", resource_metadata="http://localhost:3001${OAUTH_PROTECTED_RESOURCE_METADATA_PATH}"`,
+    );
+    expect(createServer).not.toHaveBeenCalled();
+    expect(mockState.webStandardCtorMock).not.toHaveBeenCalled();
+    expect(server.connect).not.toHaveBeenCalled();
+  });
+
   it('fails startup before serving when JWT auth JWKS loading fails', async () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error('connect ECONNREFUSED 127.0.0.1:4010'));
     const createServer = vi.fn(() => createServerLike() as never);
@@ -557,7 +671,7 @@ describe('server-utils', () => {
     });
     const createServer = vi.fn(() => server as never);
     vi.spyOn(process, 'on').mockReturnValue(process);
-    const token = await createJwtFixtureToken();
+    const token = await createJwtFixtureToken({ scope: 'search:read tools:list' });
 
     await startStreamableHttpServer(createServer, {
       auth: {
@@ -577,9 +691,76 @@ describe('server-utils', () => {
         transport: 'http',
         authSource: 'jwt',
         callerId: JWT_FIXTURE_SUBJECT,
+        scopes: ['search:read', 'tools:list'],
       },
       requestId: expect.any(String),
     });
+  });
+
+  it('propagates OAuth caller identity for authenticated HTTP requests', async () => {
+    installOAuthJwksFetchMock();
+    let seenRequestContext = getRequestContext();
+    const server = createServerLike();
+    server.connect.mockImplementation(async () => {
+      seenRequestContext = getRequestContext();
+    });
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+    const token = await createOAuthAccessToken();
+
+    await startStreamableHttpServer(createServer, {
+      auth: {
+        oauth: {
+          issuer: OAUTH_FIXTURE_ISSUER,
+          audience: OAUTH_FIXTURE_AUDIENCE,
+          verifyStrategy: 'jwks',
+        },
+      },
+    });
+
+    const response = await runMcpRequest(createMockContext({ Authorization: `Bearer ${token}` }));
+
+    expect(response.status).toBe(200);
+    expect(createServer).toHaveBeenCalledTimes(1);
+    expect(seenRequestContext).toMatchObject({
+      identity: {
+        transport: 'http',
+        authSource: 'oauth',
+        callerId: OAUTH_FIXTURE_SUBJECT,
+        scopes: ['search:read', 'tools:list'],
+      },
+      requestId: expect.any(String),
+    });
+  });
+
+  it('returns 401 for OAuth JWKS tokens whose issuer does not match the configured issuer', async () => {
+    installOAuthJwksFetchMock();
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+    const wrongIssuerToken = await createOAuthAccessToken({
+      issuer: 'http://127.0.0.1:4999',
+    });
+
+    await startStreamableHttpServer(createServer, {
+      auth: {
+        oauth: {
+          issuer: OAUTH_FIXTURE_ISSUER,
+          audience: OAUTH_FIXTURE_AUDIENCE,
+          verifyStrategy: 'jwks',
+        },
+      },
+    });
+
+    const response = await runMcpRequest(createMockContext({ Authorization: `Bearer ${wrongIssuerToken}` }));
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('www-authenticate')).toBe(
+      `Bearer realm="brave-search-mcp", resource_metadata="http://localhost:3001${OAUTH_PROTECTED_RESOURCE_METADATA_PATH}"`,
+    );
+    expect(createServer).not.toHaveBeenCalled();
+    expect(mockState.webStandardCtorMock).not.toHaveBeenCalled();
+    expect(server.connect).not.toHaveBeenCalled();
   });
 
   it('returns 401 for invalid JWT bearer tokens before request handling starts', async () => {
@@ -601,6 +782,97 @@ describe('server-utils', () => {
 
     expect(response.status).toBe(401);
     expect(response.headers.get('www-authenticate')).toBe('Bearer realm="brave-search-mcp"');
+    expect(createServer).not.toHaveBeenCalled();
+    expect(mockState.webStandardCtorMock).not.toHaveBeenCalled();
+    expect(server.connect).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back to static API key auth when JWT auth is also configured', async () => {
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await startStreamableHttpServer(createServer, {
+      auth: {
+        httpApiKey: 'legacy-api-key',
+        jwt: {
+          jwksUri: 'http://127.0.0.1:4010/.well-known/jwks.json',
+          audience: JWT_FIXTURE_AUDIENCE,
+        },
+      },
+    });
+
+    const response = await runMcpRequest(createMockContext({ Authorization: 'Bearer legacy-api-key' }));
+
+    expect(response.status).toBe(401);
+    expect(response.headers.get('www-authenticate')).toBe('Bearer realm="brave-search-mcp"');
+    expect(createServer).not.toHaveBeenCalled();
+    expect(mockState.webStandardCtorMock).not.toHaveBeenCalled();
+    expect(server.connect).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back to JWT auth when OAuth introspection is also configured', async () => {
+    const validJwt = await createJwtFixtureToken({ scope: 'search:read tools:list' });
+    globalThis.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+      const url = toUrlString(input);
+      if (url === `${OAUTH_FIXTURE_ISSUER}${OAUTH_FIXTURE_DISCOVERY_PATH}`) {
+        return createJsonResponse(buildOAuthAuthorizationServerMetadata({
+          introspection_endpoint: OAUTH_FIXTURE_INTROSPECTION_ENDPOINT,
+        }));
+      }
+      if (url === OAUTH_FIXTURE_INTROSPECTION_ENDPOINT)
+        return createJsonResponse(buildOAuthIntrospectionResponse({ active: false }));
+      throw new Error(`Unexpected fetch ${url}`);
+    });
+
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await startStreamableHttpServer(createServer, {
+      auth: {
+        jwt: {
+          jwksUri: 'http://127.0.0.1:4010/.well-known/jwks.json',
+          audience: JWT_FIXTURE_AUDIENCE,
+        },
+        oauth: {
+          issuer: OAUTH_FIXTURE_ISSUER,
+          audience: OAUTH_FIXTURE_AUDIENCE,
+          clientId: 'client-123',
+          clientSecret: 'secret-abc',
+          verifyStrategy: 'introspect',
+        },
+      },
+    });
+
+    const response = await runMcpRequest(createMockContext({ Authorization: `Bearer ${validJwt}` }));
+
+    expect(response.status).toBe(401);
+    expect(createServer).not.toHaveBeenCalled();
+    expect(mockState.webStandardCtorMock).not.toHaveBeenCalled();
+    expect(server.connect).not.toHaveBeenCalled();
+  });
+
+  it('does not fall back to static API key auth when OAuth auth is also configured', async () => {
+    installOAuthJwksFetchMock();
+    const server = createServerLike();
+    const createServer = vi.fn(() => server as never);
+    vi.spyOn(process, 'on').mockReturnValue(process);
+
+    await startStreamableHttpServer(createServer, {
+      auth: {
+        httpApiKey: 'legacy-api-key',
+        oauth: {
+          issuer: OAUTH_FIXTURE_ISSUER,
+          audience: OAUTH_FIXTURE_AUDIENCE,
+          verifyStrategy: 'jwks',
+        },
+      },
+    });
+
+    const response = await runMcpRequest(createMockContext({ Authorization: 'Bearer legacy-api-key' }));
+
+    expect(response.status).toBe(401);
     expect(createServer).not.toHaveBeenCalled();
     expect(mockState.webStandardCtorMock).not.toHaveBeenCalled();
     expect(server.connect).not.toHaveBeenCalled();

@@ -123,6 +123,7 @@ export interface ToolInterceptorContext<TInput extends Record<string, unknown> =
   transport: TransportKind;
   authSource: AuthSource;
   callerId?: string;
+  scopes?: string[];
 }
 
 export interface ToolAfterInterceptorContext<TInput extends Record<string, unknown> = Record<string, unknown>>
@@ -278,6 +279,7 @@ export async function executeTool<TInput>({
     transport: requestContext.identity.transport,
     authSource: requestContext.identity.authSource,
     ...(requestContext.identity.callerId ? { callerId: requestContext.identity.callerId } : {}),
+    ...(requestContext.identity.scopes?.length ? { scopes: requestContext.identity.scopes } : {}),
   };
   let wasRedacted = false;
   let denyCode: string | undefined;

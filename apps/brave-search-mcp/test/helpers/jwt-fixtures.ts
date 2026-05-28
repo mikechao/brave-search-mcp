@@ -16,8 +16,10 @@ let signingKeyPromise: Promise<JwtFixtureSigningKey> | undefined;
 interface CreateJwtFixtureTokenOptions {
   subject?: string | null;
   audience?: string;
+  issuer?: string;
   issuedAt?: number;
   expiresAt?: number;
+  scope?: string | string[];
 }
 
 export async function createJwtFixtureToken(options: CreateJwtFixtureTokenOptions = {}): Promise<string> {
@@ -26,8 +28,14 @@ export async function createJwtFixtureToken(options: CreateJwtFixtureTokenOption
   const issuedAt = options.issuedAt ?? nowInSeconds;
   const expiresAt = options.expiresAt ?? issuedAt + 300;
   const subject = options.subject === undefined ? JWT_FIXTURE_SUBJECT : options.subject;
+  const scope = options.scope;
 
-  const jwt = new SignJWT(subject ? { sub: subject } : {})
+  const jwtPayload = {
+    ...(subject ? { sub: subject } : {}),
+    ...(scope !== undefined ? { scope } : {}),
+  };
+
+  const jwt = new SignJWT(jwtPayload)
     .setProtectedHeader({ alg: 'RS256', kid: 'test-rs256-key' })
     .setIssuedAt(issuedAt)
     .setExpirationTime(expiresAt);
@@ -36,6 +44,8 @@ export async function createJwtFixtureToken(options: CreateJwtFixtureTokenOption
     jwt.setAudience(options.audience);
   else
     jwt.setAudience(JWT_FIXTURE_AUDIENCE);
+  if (options.issuer !== undefined)
+    jwt.setIssuer(options.issuer);
 
   return jwt.sign(signingKey);
 }

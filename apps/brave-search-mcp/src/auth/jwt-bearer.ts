@@ -24,10 +24,12 @@ export async function createJwtIdentityResolver(jwtConfig: JwtAuthConfig): Promi
       if (!payload.sub)
         return undefined;
 
+      const scopes = normalizeScopes(payload.scope);
       return {
         transport: 'http',
         authSource: 'jwt',
         callerId: payload.sub,
+        ...(scopes.length ? { scopes } : {}),
       };
     }
     catch {
@@ -79,6 +81,24 @@ function isJsonWebKeySet(value: unknown): value is JSONWebKeySet {
 
 function formatError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function normalizeScopes(scopeClaim: unknown): string[] {
+  if (typeof scopeClaim === 'string') {
+    return scopeClaim
+      .split(/\s+/)
+      .map(scope => scope.trim())
+      .filter(Boolean);
+  }
+
+  if (Array.isArray(scopeClaim)) {
+    return scopeClaim
+      .filter((scope): scope is string => typeof scope === 'string')
+      .map(scope => scope.trim())
+      .filter(Boolean);
+  }
+
+  return [];
 }
 
 export { DEFAULT_CLOCK_SKEW_SECONDS };

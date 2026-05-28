@@ -15,6 +15,16 @@ export function validateTransportAuthConfig(auth: AuthConfig, isHttp: boolean, w
         'Error: BRAVE_MCP_REQUIRE_AUTH=true requires one of auth.httpApiKey, auth.jwt, or auth.oauth when --http is used',
       );
     }
+    if (auth.oauth) {
+      if (auth.jwt)
+        warn('Warning: auth.jwt is ignored in HTTP mode because auth.oauth takes precedence');
+      if (auth.httpApiKey)
+        warn('Warning: auth.httpApiKey is ignored in HTTP mode because auth.oauth takes precedence');
+      return;
+    }
+    if (auth.jwt && auth.httpApiKey) {
+      warn('Warning: auth.httpApiKey is ignored in HTTP mode because auth.jwt takes precedence');
+    }
     return;
   }
 

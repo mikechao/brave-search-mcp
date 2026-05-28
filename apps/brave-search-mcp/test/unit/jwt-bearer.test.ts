@@ -22,12 +22,13 @@ describe('jwt bearer auth helper', () => {
       jwksUri: 'http://127.0.0.1:4010/.well-known/jwks.json',
       audience: JWT_FIXTURE_AUDIENCE,
     });
-    const token = await createJwtFixtureToken();
+    const token = await createJwtFixtureToken({ scope: 'search:read tools:list' });
 
     await expect(resolveIdentity(`Bearer ${token}`)).resolves.toEqual({
       transport: 'http',
       authSource: 'jwt',
       callerId: JWT_FIXTURE_SUBJECT,
+      scopes: ['search:read', 'tools:list'],
     });
     expect(globalThis.fetch).toHaveBeenCalledWith('http://127.0.0.1:4010/.well-known/jwks.json');
   });
@@ -91,6 +92,21 @@ describe('jwt bearer auth helper', () => {
     });
 
     await expect(resolveIdentity(`Bearer ${token}`)).resolves.toBeUndefined();
+  });
+
+  it('normalizes array-valued scope claims into identity scopes', async () => {
+    const resolveIdentity = await createJwtIdentityResolver({
+      jwksUri: 'http://127.0.0.1:4010/.well-known/jwks.json',
+      audience: JWT_FIXTURE_AUDIENCE,
+    });
+    const token = await createJwtFixtureToken({ scope: ['search:read', 'tools:list'] });
+
+    await expect(resolveIdentity(`Bearer ${token}`)).resolves.toEqual({
+      transport: 'http',
+      authSource: 'jwt',
+      callerId: JWT_FIXTURE_SUBJECT,
+      scopes: ['search:read', 'tools:list'],
+    });
   });
 
   it('fails startup when the JWKS endpoint is unreachable or malformed', async () => {

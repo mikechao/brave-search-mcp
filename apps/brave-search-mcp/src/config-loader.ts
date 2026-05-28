@@ -177,7 +177,7 @@ function resolveFeatureConfigFromEnv(env: NodeJS.ProcessEnv): FeatureConfig {
   const featureConfig = createDefaultFeatureConfig();
   const requestLimit = parseEnvPositiveInteger(env.BRAVE_MCP_REQUEST_LIMIT);
 
-  featureConfig.auth = buildAuthConfigFromEnv(env);
+  featureConfig.auth = validateResolvedAuthConfig(buildAuthConfigFromEnv(env));
   featureConfig.audit = {
     enabled: parseEnvBoolean(env.BRAVE_MCP_AUDIT_LOG),
     logRaw: parseEnvBoolean(env.BRAVE_MCP_AUDIT_LOG_RAW),
@@ -246,7 +246,7 @@ function buildAuthConfigFromEnv(env: NodeJS.ProcessEnv): AuthConfig {
 
 function validateFeatureConfig(parsed: ConfigTable): FeatureConfig {
   return {
-    auth: validateAuthConfig(readOptionalTable(parsed, 'auth'), 'auth'),
+    auth: validateResolvedAuthConfig(validateAuthConfig(readOptionalTable(parsed, 'auth'), 'auth')),
     audit: validateAuditConfig(readOptionalTable(parsed, 'audit'), 'audit'),
     policy: validatePolicyConfig(readOptionalTable(parsed, 'policy'), 'policy'),
     guardrail: validateGuardrailConfig(readOptionalTable(parsed, 'guardrail'), 'guardrail'),
@@ -282,6 +282,31 @@ function validateAuthConfig(table: ConfigTable | undefined, path: string): AuthC
         }
       : undefined,
   };
+}
+
+function validateResolvedAuthConfig(auth: AuthConfig): AuthConfig {
+  if (!auth.oauth)
+    return auth;
+
+  const verifyStrategy = auth.oauth.verifyStrategy ?? 'jwks';
+  if (auth.oauth.clientSecret && !auth.oauth.clientId) {
+    throw new Error('Config error: auth.oauth.clientId is required when auth.oauth.clientSecret is set');
+  }
+
+  if (verifyStrategy === 'introspect') {
+    if (!auth.oauth.clientId) {
+      throw new Error(
+        'Config error: auth.oauth.clientId is required when auth.oauth.verifyStrategy is "introspect"',
+      );
+    }
+    if (!auth.oauth.clientSecret) {
+      throw new Error(
+        'Config error: auth.oauth.clientSecret is required when auth.oauth.verifyStrategy is "introspect"',
+      );
+    }
+  }
+
+  return auth;
 }
 
 function validateAuditConfig(table: ConfigTable | undefined, path: string): AuditConfig {

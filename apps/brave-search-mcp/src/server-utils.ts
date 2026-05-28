@@ -14,6 +14,12 @@ import { cors } from 'hono/cors';
 import { resolveAuthenticatedHttpIdentity } from './auth/http-api-key.js';
 import { createRequestContext, runWithRequestContext } from './auth/identity-context.js';
 import { createJwtIdentityResolver } from './auth/jwt-bearer.js';
+import {
+  buildOAuthProtectedResourceMetadata,
+  buildOAuthUnauthorizedHeaders,
+  createOAuthIdentityResolver,
+  OAUTH_PROTECTED_RESOURCE_METADATA_PATH,
+} from './auth/oauth-resource-server.js';
 
 export interface StartServerOptions {
   allowedHosts?: string[];
@@ -136,18 +142,31 @@ export async function startStreamableHttpServer(
       + 'or use authentication to protect your server.',
     );
   }
-  const httpApiKey = options?.auth?.httpApiKey;
-  const jwtIdentityResolver = options?.auth?.jwt
-    ? await createJwtIdentityResolver(options.auth.jwt)
+  const oauthConfig = options?.auth?.oauth;
+  const oauthIdentityResolver = oauthConfig
+    ? await createOAuthIdentityResolver(oauthConfig)
     : undefined;
+  const httpApiKey = oauthIdentityResolver ? undefined : options?.auth?.httpApiKey;
+  const jwtIdentityResolver = oauthIdentityResolver
+    ? undefined
+    : options?.auth?.jwt
+      ? await createJwtIdentityResolver(options.auth.jwt)
+      : undefined;
+
+  if (oauthConfig) {
+    app.get(OAUTH_PROTECTED_RESOURCE_METADATA_PATH, c =>
+      c.json(buildOAuthProtectedResourceMetadata(c.req.url, oauthConfig)));
+  }
+
   app.use('/mcp', async (c, next) => {
     const authorizationHeader = c.req.header('authorization');
     let identity: CallerIdentity | undefined;
 
-    if (jwtIdentityResolver) {
+    if (oauthIdentityResolver) {
+      identity = await oauthIdentityResolver(authorizationHeader);
+    }
+    else if (jwtIdentityResolver) {
       identity = await jwtIdentityResolver(authorizationHeader);
-      if (!identity && httpApiKey)
-        identity = resolveAuthenticatedHttpIdentity(httpApiKey, authorizationHeader);
     }
     else if (httpApiKey) {
       identity = resolveAuthenticatedHttpIdentity(httpApiKey, authorizationHeader);
@@ -161,7 +180,9 @@ export async function startStreamableHttpServer(
         JSON.stringify({ error: 'Unauthorized' }),
         {
           status: 401,
-          headers: HTTP_UNAUTHORIZED_HEADERS,
+          headers: oauthIdentityResolver
+            ? buildOAuthUnauthorizedHeaders(c.req.url)
+            : HTTP_UNAUTHORIZED_HEADERS,
         },
       );
     }

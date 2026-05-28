@@ -16,6 +16,7 @@ export interface CallerIdentity {
   transport: TransportKind;
   authSource: AuthSource;
   callerId?: string;
+  scopes?: string[];
 }
 
 export interface RequestContext {

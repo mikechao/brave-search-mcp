@@ -2,6 +2,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { resolveRuntimeConfig } from '../../src/config-loader.js';
+import { OAUTH_FIXTURE_AUDIENCE, OAUTH_FIXTURE_ISSUER } from '../helpers/oauth-fixtures.js';
 
 const FIXTURES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../fixtures');
 
@@ -43,6 +44,13 @@ describe('config-loader', () => {
       jwksUri: 'https://idp.example.com/.well-known/jwks.json',
       audience: 'brave-search-mcp',
       clockSkewSeconds: 30,
+    });
+    expect(runtimeConfig.featureConfig.auth.oauth).toEqual({
+      issuer: 'https://idp.example.com',
+      audience: 'brave-search-mcp',
+      clientId: 'client-123',
+      clientSecret: 'super-secret',
+      verifyStrategy: 'jwks',
     });
     expect(runtimeConfig.maskedForDisplay).toMatchObject({
       auth: {
@@ -96,6 +104,50 @@ describe('config-loader', () => {
     });
     expect(runtimeConfig.featureConfig.policy).toEqual({ redact: true, file: undefined });
     expect(runtimeConfig.featureConfig.server.allowedHosts).toEqual(['localhost']);
+  });
+
+  it('builds env-mode OAuth auth config without disturbing unrelated config', () => {
+    const runtimeConfig = resolveRuntimeConfig({
+      env: {
+        BRAVE_MCP_OAUTH_ISSUER: OAUTH_FIXTURE_ISSUER,
+        BRAVE_MCP_OAUTH_AUDIENCE: OAUTH_FIXTURE_AUDIENCE,
+        BRAVE_MCP_OAUTH_CLIENT_ID: 'oauth-client-123',
+        BRAVE_MCP_OAUTH_CLIENT_SECRET: 'oauth-secret-123',
+        BRAVE_MCP_OAUTH_VERIFY_STRATEGY: 'introspect',
+        BRAVE_MCP_POLICY_REDACT: 'true',
+      },
+      warn: () => {},
+    });
+
+    expect(runtimeConfig.mode).toBe('env');
+    expect(runtimeConfig.featureConfig.auth.oauth).toEqual({
+      issuer: OAUTH_FIXTURE_ISSUER,
+      audience: OAUTH_FIXTURE_AUDIENCE,
+      clientId: 'oauth-client-123',
+      clientSecret: 'oauth-secret-123',
+      verifyStrategy: 'introspect',
+    });
+    expect(runtimeConfig.featureConfig.policy).toEqual({ redact: true, file: undefined });
+  });
+
+  it('fails fast for invalid OAuth config combinations', () => {
+    expect(() => resolveRuntimeConfig({
+      env: {
+        BRAVE_MCP_OAUTH_ISSUER: OAUTH_FIXTURE_ISSUER,
+        BRAVE_MCP_OAUTH_VERIFY_STRATEGY: 'introspect',
+      },
+      warn: () => {},
+    })).toThrow(
+      'Config error: auth.oauth.clientId is required when auth.oauth.verifyStrategy is "introspect"',
+    );
+
+    expect(() => resolveRuntimeConfig({
+      env: {
+        BRAVE_MCP_OAUTH_ISSUER: OAUTH_FIXTURE_ISSUER,
+        BRAVE_MCP_OAUTH_CLIENT_SECRET: 'orphaned-secret',
+      },
+      warn: () => {},
+    })).toThrow('Config error: auth.oauth.clientId is required when auth.oauth.clientSecret is set');
   });
 
   it('fails fast for schema-invalid TOML files', () => {
