@@ -290,7 +290,9 @@ function buildIssuerWellKnownUrl(issuer: string, documentName: string): string {
     ? ''
     : issuerUrl.pathname.replace(/\/$/, '');
 
-  issuerUrl.pathname = `/.well-known/${documentName}${issuerPath}`;
+  issuerUrl.pathname = documentName === 'openid-configuration'
+    ? `${issuerPath}/.well-known/${documentName}`
+    : `/.well-known/${documentName}${issuerPath}`;
   issuerUrl.search = '';
   issuerUrl.hash = '';
   return issuerUrl.toString();

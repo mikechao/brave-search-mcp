@@ -1,6 +1,6 @@
 import type { JWK } from 'jose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildOAuthProtectedResourceMetadata,
   buildOAuthUnauthorizedHeaders,
@@ -16,6 +16,7 @@ import {
   OAUTH_FIXTURE_DISCOVERY_PATH,
   OAUTH_FIXTURE_INTROSPECTION_ENDPOINT,
   OAUTH_FIXTURE_ISSUER,
+  OAUTH_FIXTURE_JWKS_PATH,
   OAUTH_FIXTURE_JWKS_URI,
   OAUTH_FIXTURE_OIDC_DISCOVERY_PATH,
   OAUTH_FIXTURE_SUBJECT,
@@ -126,6 +127,38 @@ describe('oauth resource server auth helper', () => {
       verifyStrategy: 'jwks',
     });
     const token = await createOAuthAccessToken();
+
+    await expect(resolveIdentity(`Bearer ${token}`)).resolves.toMatchObject({
+      authSource: 'oauth',
+      callerId: OAUTH_FIXTURE_SUBJECT,
+    });
+  });
+
+  it('uses the OIDC path-based discovery URL for issuers with path components', async () => {
+    const pathIssuer = `${OAUTH_FIXTURE_ISSUER}/realms/demo`;
+    const pathJwksUri = `${pathIssuer}${OAUTH_FIXTURE_JWKS_PATH}`;
+
+    globalThis.fetch = vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
+      const url = toUrlString(input);
+      if (url === `${OAUTH_FIXTURE_ISSUER}${OAUTH_FIXTURE_DISCOVERY_PATH}/realms/demo`)
+        return jsonResponse({ error: 'not_found' }, 404);
+      if (url === `${pathIssuer}${OAUTH_FIXTURE_OIDC_DISCOVERY_PATH}`) {
+        return jsonResponse(buildOAuthAuthorizationServerMetadata({
+          issuer: pathIssuer,
+          jwks_uri: pathJwksUri,
+        }));
+      }
+      if (url === pathJwksUri)
+        return jsonResponse(jwtFixtureJwks);
+      throw new Error(`Unexpected fetch ${url}`);
+    });
+
+    const resolveIdentity = await createOAuthIdentityResolver({
+      issuer: pathIssuer,
+      audience: OAUTH_FIXTURE_AUDIENCE,
+      verifyStrategy: 'jwks',
+    });
+    const token = await createOAuthAccessToken({ issuer: pathIssuer });
 
     await expect(resolveIdentity(`Bearer ${token}`)).resolves.toMatchObject({
       authSource: 'oauth',

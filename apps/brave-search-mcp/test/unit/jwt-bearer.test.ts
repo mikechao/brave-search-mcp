@@ -1,6 +1,6 @@
 import type { JWK } from 'jose';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { exportJWK, generateKeyPair, SignJWT } from 'jose';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createJwtIdentityResolver, DEFAULT_CLOCK_SKEW_SECONDS } from '../../src/auth/jwt-bearer.js';
 import { createJwtFixtureToken, JWT_FIXTURE_AUDIENCE, JWT_FIXTURE_SUBJECT, jwtFixtureJwks } from '../helpers/jwt-fixtures.js';
 
